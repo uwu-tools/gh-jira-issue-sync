@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/Sirupsen/logrus v1.0.0
 	github.com/andygrunwald/go-jira v0.0.0-20170626210351-aaa2d02b3ad3
-	github.com/cenkalti/backoff v1.0.0
+	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/coreos/issue-sync v0.0.0-20190429124542-ea9d009092f9
 	github.com/dghubble/oauth1 v0.7.2
 	github.com/fsnotify/fsnotify v1.4.3-0.20170329110642-4da3e2cfbabc

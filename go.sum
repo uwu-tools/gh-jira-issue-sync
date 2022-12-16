@@ -4,8 +4,8 @@ github.com/Sirupsen/logrus v1.0.0 h1:Rb4797caW6l6qnpZqL25Z79EjY2OG26Bbqwf7ozOIgQ
 github.com/Sirupsen/logrus v1.0.0/go.mod h1:rmk17hk6i8ZSAJkSDa7nOxamrG+SP4P0mm+DAvExv4U=
 github.com/andygrunwald/go-jira v0.0.0-20170626210351-aaa2d02b3ad3 h1:0kVzjiaHrUD97aoTgIcH/aHOL6oWgOh9C7pEJpglQks=
 github.com/andygrunwald/go-jira v0.0.0-20170626210351-aaa2d02b3ad3/go.mod h1:yNYQrX3nGSrVdcVsM2mWz2pm7tTeDtYfRyVEkc3VUiY=
-github.com/cenkalti/backoff v1.0.0 h1:2XeuDgvPv/6QDyzIuxb6n36ADVocyqTLlOSpYBGYtvM=
-github.com/cenkalti/backoff v1.0.0/go.mod h1:90ReRw6GdpyfrHakVjL/QHaoyV4aDUVVkXQJJJ3NXXM=
+github.com/cenkalti/backoff v2.2.1+incompatible h1:tNowT99t7UNflLxfYYSlKYsBpXdEet03Pg2g16Swow4=
+github.com/cenkalti/backoff v2.2.1+incompatible/go.mod h1:90ReRw6GdpyfrHakVjL/QHaoyV4aDUVVkXQJJJ3NXXM=
 github.com/coreos/issue-sync v0.0.0-20190429124542-ea9d009092f9 h1:z2bEx8wZY6VXj//bI2LeEIcTGEWctRWAIRZo8/xTP8M=
 github.com/coreos/issue-sync v0.0.0-20190429124542-ea9d009092f9/go.mod h1:t3sjIuE2gy2EKvbst6Sinpuq3TL1uJnGr/E9nAWRcWU=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
