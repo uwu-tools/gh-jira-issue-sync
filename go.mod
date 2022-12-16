@@ -7,7 +7,7 @@ require (
 	github.com/andygrunwald/go-jira v0.0.0-20170626210351-aaa2d02b3ad3
 	github.com/cenkalti/backoff v1.0.0
 	github.com/coreos/issue-sync v0.0.0-20190429124542-ea9d009092f9
-	github.com/dghubble/oauth1 v0.4.0
+	github.com/dghubble/oauth1 v0.7.2
 	github.com/fsnotify/fsnotify v1.4.3-0.20170329110642-4da3e2cfbabc
 	github.com/google/go-github v8.0.1-0.20170711160406-00874eae3fbf+incompatible
 	github.com/spf13/cobra v0.0.0-20170716104802-d994347edadc
@@ -18,7 +18,6 @@ require (
 
 require (
 	github.com/BurntSushi/toml v1.2.1 // indirect
-	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fatih/structs v1.0.1-0.20170612125544-7e5a8eef611e // indirect
 	github.com/golang/protobuf v0.0.0-20170712042213-0a4f71a498b7 // indirect
 	github.com/google/go-querystring v0.0.0-20170111101155-53e6ce116135 // indirect
@@ -31,7 +30,6 @@ require (
 	github.com/spf13/cast v1.1.0 // indirect
 	github.com/spf13/jwalterweatherman v0.0.0-20170523133247-0efa5202c046 // indirect
 	github.com/spf13/pflag v1.0.0 // indirect
-	github.com/stretchr/testify v1.8.1 // indirect
 	github.com/trivago/tgo v0.0.0-20170714134939-8a6fc6a04f07 // indirect
 	golang.org/x/net v0.0.0-20170716174642-b3756b4b77d7 // indirect
 	golang.org/x/sync v0.1.0 // indirect
