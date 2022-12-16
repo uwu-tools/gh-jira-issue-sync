@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff"
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v48/github"
 	"golang.org/x/oauth2"
 
 	"github.com/uwu-tools/gh-jira-sync/cfg"
@@ -91,8 +91,8 @@ func (g realGHClient) ListComments(issue github.Issue) ([]*github.IssueComment, 
 	user, repo := g.config.GetRepo()
 	c, _, err := g.request(func() (interface{}, *github.Response, error) {
 		return g.client.Issues.ListComments(ctx, user, repo, issue.GetNumber(), &github.IssueListCommentsOptions{
-			Sort:      "created",
-			Direction: "asc",
+			Sort:      github.String("created"),
+			Direction: github.String("asc"),
 		})
 	})
 	if err != nil {

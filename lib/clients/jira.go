@@ -12,7 +12,7 @@ import (
 
 	"github.com/andygrunwald/go-jira"
 	"github.com/cenkalti/backoff"
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v48/github"
 
 	"github.com/uwu-tools/gh-jira-sync/cfg"
 )

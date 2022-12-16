@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/andygrunwald/go-jira"
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v48/github"
 
 	"github.com/uwu-tools/gh-jira-sync/cfg"
 	"github.com/uwu-tools/gh-jira-sync/lib/clients"
