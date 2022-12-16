@@ -17,7 +17,7 @@ import (
 	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/term"
 )
 
 // dateFormat is the format used for the `since` configuration parameter
@@ -354,7 +354,7 @@ func (c *Config) validateConfig() error {
 		jPass := c.cmdConfig.GetString("jira-pass")
 		if jPass == "" {
 			fmt.Print("Enter your JIRA password: ")
-			bytePass, err := terminal.ReadPassword(int(syscall.Stdin))
+			bytePass, err := term.ReadPassword(int(syscall.Stdin))
 			if err != nil {
 				return errors.New("JIRA password required")
 			}
