@@ -6,10 +6,9 @@ require (
 	github.com/Sirupsen/logrus v1.0.0
 	github.com/andygrunwald/go-jira v0.0.0-20170626210351-aaa2d02b3ad3
 	github.com/cenkalti/backoff v2.2.1+incompatible
-	github.com/coreos/issue-sync v0.0.0-20190429124542-ea9d009092f9
 	github.com/dghubble/oauth1 v0.7.2
 	github.com/fsnotify/fsnotify v1.4.3-0.20170329110642-4da3e2cfbabc
-	github.com/google/go-github v8.0.1-0.20170711160406-00874eae3fbf+incompatible
+	github.com/google/go-github v17.0.0+incompatible
 	github.com/spf13/cobra v0.0.0-20170716104802-d994347edadc
 	github.com/spf13/viper v0.0.0-20170619124313-c1de95864d73
 	golang.org/x/crypto v0.0.0-20170808112155-b176d7def5d7

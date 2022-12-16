@@ -6,8 +6,6 @@ github.com/andygrunwald/go-jira v0.0.0-20170626210351-aaa2d02b3ad3 h1:0kVzjiaHrU
 github.com/andygrunwald/go-jira v0.0.0-20170626210351-aaa2d02b3ad3/go.mod h1:yNYQrX3nGSrVdcVsM2mWz2pm7tTeDtYfRyVEkc3VUiY=
 github.com/cenkalti/backoff v2.2.1+incompatible h1:tNowT99t7UNflLxfYYSlKYsBpXdEet03Pg2g16Swow4=
 github.com/cenkalti/backoff v2.2.1+incompatible/go.mod h1:90ReRw6GdpyfrHakVjL/QHaoyV4aDUVVkXQJJJ3NXXM=
-github.com/coreos/issue-sync v0.0.0-20190429124542-ea9d009092f9 h1:z2bEx8wZY6VXj//bI2LeEIcTGEWctRWAIRZo8/xTP8M=
-github.com/coreos/issue-sync v0.0.0-20190429124542-ea9d009092f9/go.mod h1:t3sjIuE2gy2EKvbst6Sinpuq3TL1uJnGr/E9nAWRcWU=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/dghubble/oauth1 v0.7.2 h1:pwcinOZy8z6XkNxvPmUDY52M7RDPxt0Xw1zgZ6Cl5JA=
 github.com/dghubble/oauth1 v0.7.2/go.mod h1:9erQdIhqhOHG/7K9s/tgh9Ks/AfoyrO5mW/43Lu2+kE=
@@ -17,8 +15,8 @@ github.com/fsnotify/fsnotify v1.4.3-0.20170329110642-4da3e2cfbabc h1:omfZI1v/Bu4
 github.com/fsnotify/fsnotify v1.4.3-0.20170329110642-4da3e2cfbabc/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
 github.com/golang/protobuf v0.0.0-20170712042213-0a4f71a498b7 h1:ulJ2cj/xlDlrwLCvWH4UeV9vJ/jXP6wEGgTSF7EOnmQ=
 github.com/golang/protobuf v0.0.0-20170712042213-0a4f71a498b7/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5yJMmIC1U=
-github.com/google/go-github v8.0.1-0.20170711160406-00874eae3fbf+incompatible h1:qIHfTD7SIqycqfMCguVzJsisqs0IXqmIF3kF9vQqyHQ=
-github.com/google/go-github v8.0.1-0.20170711160406-00874eae3fbf+incompatible/go.mod h1:zLgOLi98H3fifZn+44m+umXrS52loVEgC2AApnigrVQ=
+github.com/google/go-github v17.0.0+incompatible h1:N0LgJ1j65A7kfXrZnUDaYCs/Sf4rEjNlfyDHW9dolSY=
+github.com/google/go-github v17.0.0+incompatible/go.mod h1:zLgOLi98H3fifZn+44m+umXrS52loVEgC2AApnigrVQ=
 github.com/google/go-querystring v0.0.0-20170111101155-53e6ce116135 h1:zLTLjkaOFEFIOxY5BWLFLwh+cL8vOBW4XJ2aqLE/Tf0=
 github.com/google/go-querystring v0.0.0-20170111101155-53e6ce116135/go.mod h1:odCYkC5MyYFN7vkCjXpyrEuKhc/BUO6wN/zVPAxq5ck=
 github.com/hashicorp/hcl v0.0.0-20170509225359-392dba7d905e h1:KJWs1uTCkN3E/J5ofCH9Pf8KKsibTFc3fv0CA9+WsVo=
