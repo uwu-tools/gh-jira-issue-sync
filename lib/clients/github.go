@@ -101,7 +101,7 @@ func (g realGHClient) ListComments(issue github.Issue) ([]*github.IssueComment, 
 	comments, ok := c.([]*github.IssueComment)
 	if !ok {
 		log.Errorf("Get GitHub comments did not return comments! Got: %v", c)
-		return nil, fmt.Errorf("Get GitHub comments failed: expected []*github.IssueComment; got %T", c)
+		return nil, fmt.Errorf("get GitHub comments failed: expected []*github.IssueComment; got %T", c)
 	}
 
 	return comments, nil
@@ -121,7 +121,7 @@ func (g realGHClient) GetUser(login string) (github.User, error) {
 	user, ok := u.(*github.User)
 	if !ok {
 		log.Errorf("Get GitHub user did not return user! Got: %v", u)
-		return github.User{}, fmt.Errorf("Get GitHub user failed: expected *github.User; got %T", u)
+		return github.User{}, fmt.Errorf("get GitHub user failed: expected *github.User; got %T", u)
 	}
 
 	return *user, nil
@@ -138,7 +138,7 @@ func (g realGHClient) GetRateLimits() (github.RateLimits, error) {
 		return g.client.RateLimits(ctx)
 	})
 	if err != nil {
-		log.Errorf("Error connecting to GitHub; check your token. Error: %v", err)
+		log.Errorf("Error connecting to GitHub; check your token. Error: %w", err)
 		return github.RateLimits{}, err
 	}
 	rate, ok := rl.(*github.RateLimits)

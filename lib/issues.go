@@ -35,8 +35,8 @@ func CompareIssues(config cfg.Config, ghClient clients.GitHubClient, jiraClient 
 
 	ids := make([]int, len(ghIssues))
 	for i, v := range ghIssues {
-		ghId := v.GetID()
-		ids[i] = int(ghId)
+		ghID := v.GetID()
+		ids[i] = int(ghID)
 	}
 
 	jiraIssues, err := jiraClient.ListIssues(ids)
@@ -50,7 +50,7 @@ func CompareIssues(config cfg.Config, ghClient clients.GitHubClient, jiraClient 
 		found := false
 		for _, jIssue := range jiraIssues {
 			id, _ := jIssue.Fields.Unknowns.Int(config.GetFieldKey(cfg.GitHubID))
-			if int64(*ghIssue.ID) == id {
+			if *ghIssue.ID == id {
 				found = true
 				if err := UpdateIssue(config, ghIssue, jIssue, ghClient, jiraClient); err != nil {
 					log.Errorf("Error updating issue %s. Error: %v", jIssue.Key, err)

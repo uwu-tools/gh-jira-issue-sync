@@ -47,12 +47,12 @@ func oauthConfig(config cfg.Config) (oauth1.Config, error) {
 
 	pvtKeyFile, err := os.Open(pvtKeyPath)
 	if err != nil {
-		return oauth1.Config{}, fmt.Errorf("unable to open private key file for reading: %v", err)
+		return oauth1.Config{}, fmt.Errorf("unable to open private key file for reading: %w", err)
 	}
 
 	pvtKey, err := ioutil.ReadAll(pvtKeyFile)
 	if err != nil {
-		return oauth1.Config{}, fmt.Errorf("unable to read contents of private key file: %v", err)
+		return oauth1.Config{}, fmt.Errorf("unable to read contents of private key file: %w", err)
 	}
 
 	keyDERBlock, _ := pem.Decode(pvtKey)
@@ -65,7 +65,7 @@ func oauthConfig(config cfg.Config) (oauth1.Config, error) {
 
 	key, err := x509.ParsePKCS1PrivateKey(keyDERBlock.Bytes)
 	if err != nil {
-		return oauth1.Config{}, fmt.Errorf("unable to parse PKCS1 private key: %v", err)
+		return oauth1.Config{}, fmt.Errorf("unable to parse PKCS1 private key: %w", err)
 	}
 
 	uri := config.GetConfigString("jira-uri")
@@ -109,12 +109,12 @@ func jiraTokenFromConfig(config cfg.Config) (*oauth1.Token, bool) {
 func jiraTokenFromWeb(config oauth1.Config) (*oauth1.Token, error) {
 	requestToken, requestSecret, err := config.RequestToken()
 	if err != nil {
-		return nil, fmt.Errorf("unable to get request token: %v", err)
+		return nil, fmt.Errorf("unable to get request token: %w", err)
 	}
 
 	authURL, err := config.AuthorizationURL(requestToken)
 	if err != nil {
-		return nil, fmt.Errorf("unable to get authorize URL: %v", err)
+		return nil, fmt.Errorf("unable to get authorize URL: %w", err)
 	}
 
 	fmt.Printf("Please go to the following URL in your browser:\n%v\n\n", authURL.String())
@@ -124,12 +124,12 @@ func jiraTokenFromWeb(config oauth1.Config) (*oauth1.Token, error) {
 	_, err = fmt.Scan(&code)
 	fmt.Println()
 	if err != nil {
-		return nil, fmt.Errorf("unable to read auth code: %v", err)
+		return nil, fmt.Errorf("unable to read auth code: %w", err)
 	}
 
 	accessToken, accessSecret, err := config.AccessToken(requestToken, requestSecret, code)
 	if err != nil {
-		return nil, fmt.Errorf("unable to get access token: %v", err)
+		return nil, fmt.Errorf("unable to get access token: %w", err)
 	}
 
 	return oauth1.NewToken(accessToken, accessSecret), nil

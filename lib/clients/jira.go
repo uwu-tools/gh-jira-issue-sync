@@ -33,7 +33,7 @@ func getErrorBody(config cfg.Config, res *jira.Response) error {
 	defer res.Body.Close()
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		log.Errorf("Error occurred trying to read error body: %v", err)
+		log.Errorf("Error occurred trying to read error body: %w", err)
 		return err
 	}
 	log.Debugf("Error body: %s", body)
@@ -65,7 +65,7 @@ func NewJIRAClient(config *cfg.Config) (JIRAClient, error) {
 	if !config.IsBasicAuth() {
 		oauth, err = newJIRAHTTPClient(*config)
 		if err != nil {
-			log.Errorf("Error getting OAuth config: %v", err)
+			log.Errorf("Error getting OAuth config: %w", err)
 			return dryrunJIRAClient{}, err
 		}
 	}
@@ -74,7 +74,7 @@ func NewJIRAClient(config *cfg.Config) (JIRAClient, error) {
 
 	client, err := jira.NewClient(oauth, config.GetConfigString("jira-uri"))
 	if err != nil {
-		log.Errorf("Error initializing JIRA clients; check your base URI. Error: %v", err)
+		log.Errorf("Error initializing JIRA clients; check your base URI. Error: %w", err)
 		return dryrunJIRAClient{}, err
 	}
 
@@ -134,7 +134,7 @@ func (j realJIRAClient) ListIssues(ids []int) ([]jira.Issue, error) {
 		return j.client.Issue.Search(jql, nil)
 	})
 	if err != nil {
-		log.Errorf("Error retrieving JIRA issues: %v", err)
+		log.Errorf("Error retrieving JIRA issues: %w", err)
 		return nil, getErrorBody(j.config, res)
 	}
 	jiraIssues, ok := ji.([]jira.Issue)
@@ -173,7 +173,7 @@ func (j realJIRAClient) GetIssue(key string) (jira.Issue, error) {
 		return j.client.Issue.Get(key, nil)
 	})
 	if err != nil {
-		log.Errorf("Error retrieving JIRA issue: %v", err)
+		log.Errorf("Error retrieving JIRA issue: %w", err)
 		return jira.Issue{}, getErrorBody(j.config, res)
 	}
 	issue, ok := i.(*jira.Issue)
@@ -195,7 +195,7 @@ func (j realJIRAClient) CreateIssue(issue jira.Issue) (jira.Issue, error) {
 		return j.client.Issue.Create(&issue)
 	})
 	if err != nil {
-		log.Errorf("Error creating JIRA issue: %v", err)
+		log.Errorf("Error creating JIRA issue: %w", err)
 		return jira.Issue{}, getErrorBody(j.config, res)
 	}
 	is, ok := i.(*jira.Issue)
@@ -324,7 +324,7 @@ func (j realJIRAClient) UpdateComment(issue jira.Issue, id string, comment githu
 		return nil, res, err
 	})
 	if err != nil {
-		log.Errorf("Error updating comment: %v", err)
+		log.Errorf("Error updating comment: %w", err)
 		return jira.Comment{}, getErrorBody(j.config, res)
 	}
 	co, ok := com.(*jira.Comment)
@@ -421,7 +421,7 @@ func (j dryrunJIRAClient) ListIssues(ids []int) ([]jira.Issue, error) {
 		return j.client.Issue.Search(jql, nil)
 	})
 	if err != nil {
-		log.Errorf("Error retrieving JIRA issues: %v", err)
+		log.Errorf("Error retrieving JIRA issues: %w", err)
 		return nil, getErrorBody(j.config, res)
 	}
 	jiraIssues, ok := ji.([]jira.Issue)
@@ -462,7 +462,7 @@ func (j dryrunJIRAClient) GetIssue(key string) (jira.Issue, error) {
 		return j.client.Issue.Get(key, nil)
 	})
 	if err != nil {
-		log.Errorf("Error retrieving JIRA issue: %v", err)
+		log.Errorf("Error retrieving JIRA issue: %w", err)
 		return jira.Issue{}, getErrorBody(j.config, res)
 	}
 	issue, ok := i.(*jira.Issue)

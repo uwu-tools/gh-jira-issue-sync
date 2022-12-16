@@ -103,11 +103,11 @@ func NewConfig(cmd *cobra.Command) (Config, error) {
 func (c *Config) LoadJIRAConfig(client jira.Client) error {
 	proj, res, err := client.Project.Get(c.cmdConfig.GetString("jira-project"))
 	if err != nil {
-		c.log.Errorf("Error retrieving JIRA project; check key and credentials. Error: %v", err)
+		c.log.Errorf("error retrieving JIRA project; check key and credentials. Error: %s", err)
 		defer res.Body.Close()
 		body, err := ioutil.ReadAll(res.Body)
 		if err != nil {
-			c.log.Errorf("Error occurred trying to read error body: %v", err)
+			c.log.Errorf("error occurred trying to read error body: %s", err)
 			return err
 		}
 
@@ -348,15 +348,15 @@ func (c *Config) validateConfig() error {
 
 		jUser := c.cmdConfig.GetString("jira-user")
 		if jUser == "" {
-			return errors.New("Jira username required")
+			return errors.New("jira username required")
 		}
 
 		jPass := c.cmdConfig.GetString("jira-pass")
 		if jPass == "" {
-			fmt.Print("Enter your JIRA password: ")
-			bytePass, err := term.ReadPassword(int(syscall.Stdin))
+			fmt.Print("Enter your Jira password: ")
+			bytePass, err := term.ReadPassword(syscall.Stdin)
 			if err != nil {
-				return errors.New("JIRA password required")
+				return errors.New("jira password required")
 			}
 			fmt.Println()
 			c.cmdConfig.Set("jira-pass", string(bytePass))
@@ -366,12 +366,12 @@ func (c *Config) validateConfig() error {
 
 		token := c.cmdConfig.GetString("jira-token")
 		if token == "" {
-			return errors.New("JIRA access token required")
+			return errors.New("jira access token required")
 		}
 
 		secret := c.cmdConfig.GetString("jira-secret")
 		if secret == "" {
-			return errors.New("JIRA access token secret required")
+			return errors.New("jira access token secret required")
 		}
 
 		consumerKey := c.cmdConfig.GetString("jira-consumer-key")
