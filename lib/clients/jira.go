@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
-
 	"time"
 
 	"github.com/andygrunwald/go-jira"
@@ -34,7 +33,7 @@ func getErrorBody(config cfg.Config, res *jira.Response) error {
 	defer res.Body.Close()
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		log.Errorf("Error occured trying to read error body: %v", err)
+		log.Errorf("Error occurred trying to read error body: %v", err)
 		return err
 	}
 	log.Debugf("Error body: %s", body)
@@ -382,7 +381,7 @@ var newlineReplaceRegex = regexp.MustCompile("\r?\n")
 
 // truncate is a utility function to replace all the newlines in
 // the string with the characters "\n", then truncate it to no
-// more than 50 characters
+// more than 50 characters.
 func truncate(s string, length int) string {
 	if s == "" {
 		return "empty"

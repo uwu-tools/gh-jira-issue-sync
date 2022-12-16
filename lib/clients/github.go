@@ -3,7 +3,6 @@ package clients
 import (
 	"context"
 	"fmt"
-
 	"time"
 
 	"github.com/cenkalti/backoff"
@@ -115,7 +114,6 @@ func (g realGHClient) GetUser(login string) (github.User, error) {
 	u, _, err := g.request(func() (interface{}, *github.Response, error) {
 		return g.client.Users.Get(context.Background(), login)
 	})
-
 	if err != nil {
 		log.Errorf("Error retrieving GitHub user %s. Error: %v", login, err)
 	}

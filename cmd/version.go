@@ -21,7 +21,7 @@ import (
 
 var Version = "undefined"
 
-// versionCmd represents the version command
+// versionCmd represents the version command.
 var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Returns the current version of issue-sync",

@@ -20,13 +20,13 @@ import (
 	"golang.org/x/term"
 )
 
-// dateFormat is the format used for the `since` configuration parameter
+// dateFormat is the format used for the `since` configuration parameter.
 const dateFormat = "2006-01-02T15:04:05-0700"
 
-// defaultLogLevel is the level logrus should default to if the configured option can't be parsed
+// defaultLogLevel is the level logrus should default to if the configured option can't be parsed.
 const defaultLogLevel = logrus.InfoLevel
 
-// fieldKey is an enum-like type to represent the customfield ID keys
+// fieldKey is an enum-like type to represent the customfield ID keys.
 type fieldKey int
 
 const (
@@ -38,7 +38,7 @@ const (
 	LastISUpdate   fieldKey = iota
 )
 
-// fields represents the custom field IDs of the JIRA custom fields we care about
+// fields represents the custom field IDs of the JIRA custom fields we care about.
 type fields struct {
 	githubID       string
 	githubNumber   string
@@ -107,7 +107,7 @@ func (c *Config) LoadJIRAConfig(client jira.Client) error {
 		defer res.Body.Close()
 		body, err := ioutil.ReadAll(res.Body)
 		if err != nil {
-			c.log.Errorf("Error occured trying to read error body: %v", err)
+			c.log.Errorf("Error occurred trying to read error body: %v", err)
 			return err
 		}
 
@@ -155,7 +155,7 @@ func (c Config) IsDryRun() bool {
 	return c.cmdConfig.GetBool("dry-run")
 }
 
-// IsDaemon returns whether the application is running as a daemon
+// IsDaemon returns whether the application is running as a daemon.
 func (c Config) IsDaemon() bool {
 	return c.cmdConfig.GetDuration("period") != 0
 }
@@ -248,7 +248,7 @@ func (c *Config) SaveConfig() error {
 		return err
 	}
 
-	f, err := os.OpenFile(c.cmdConfig.ConfigFileUsed(), os.O_RDWR|os.O_TRUNC|os.O_CREATE, 0644)
+	f, err := os.OpenFile(c.cmdConfig.ConfigFileUsed(), os.O_RDWR|os.O_TRUNC|os.O_CREATE, 0o644)
 	if err != nil {
 		return err
 	}

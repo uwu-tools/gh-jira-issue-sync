@@ -3,7 +3,7 @@ package lib
 import "testing"
 
 func TestJiraCommentRegex(t *testing.T) {
-	var fields = jCommentRegex.FindStringSubmatch(`Comment [(ID 484163403)|https://github.com] from GitHub user [bilbo-baggins|https://github.com/bilbo-baggins] (Bilbo Baggins) at 16:27 PM, April 17 2019:
+	fields := jCommentRegex.FindStringSubmatch(`Comment [(ID 484163403)|https://github.com] from GitHub user [bilbo-baggins|https://github.com/bilbo-baggins] (Bilbo Baggins) at 16:27 PM, April 17 2019:
 
 Bla blibidy bloo bla`)
 
