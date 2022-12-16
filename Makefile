@@ -13,7 +13,7 @@ GOARCH=$(shell go env GOARCH)
 SOURCES := $(shell find . -name '*.go')
 LD_FLAGS=-ldflags "-X $(REPO_PATH)/cmd.Version=$(VERSION)"
 
-GOLANGCI_VERSION = 1.49.0
+GOLANGCI_VERSION = 1.50.1
 
 build: bin/$(PROJ)
 
