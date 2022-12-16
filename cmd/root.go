@@ -4,10 +4,11 @@ import (
 	"time"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/coreos/issue-sync/cfg"
-	"github.com/coreos/issue-sync/lib"
-	"github.com/coreos/issue-sync/lib/clients"
 	"github.com/spf13/cobra"
+
+	"github.com/uwu-tools/gh-jira-sync/cfg"
+	"github.com/uwu-tools/gh-jira-sync/lib"
+	"github.com/uwu-tools/gh-jira-sync/lib/clients"
 )
 
 // Execute provides a single function to run the root command and handle errors.

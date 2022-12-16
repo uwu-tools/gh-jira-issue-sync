@@ -7,9 +7,10 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff"
-	"github.com/coreos/issue-sync/cfg"
 	"github.com/google/go-github/github"
 	"golang.org/x/oauth2"
+
+	"github.com/uwu-tools/gh-jira-sync/cfg"
 )
 
 // GitHubClient is a wrapper around the GitHub API Client library we

@@ -5,9 +5,10 @@ import (
 	"time"
 
 	"github.com/andygrunwald/go-jira"
-	"github.com/coreos/issue-sync/cfg"
-	"github.com/coreos/issue-sync/lib/clients"
 	"github.com/google/go-github/github"
+
+	"github.com/uwu-tools/gh-jira-sync/cfg"
+	"github.com/uwu-tools/gh-jira-sync/lib/clients"
 )
 
 // dateFormat is the format used for the Last IS Update field

@@ -6,14 +6,14 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/http"
+	"os"
 	"strings"
 
-	"io/ioutil"
-	"os"
-
-	"github.com/coreos/issue-sync/cfg"
 	"github.com/dghubble/oauth1"
+
+	"github.com/uwu-tools/gh-jira-sync/cfg"
 )
 
 // newJIRAHTTPClient obtains an access token (either from configuration
