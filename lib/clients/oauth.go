@@ -13,7 +13,7 @@ import (
 
 	"github.com/dghubble/oauth1"
 
-	"github.com/uwu-tools/gh-jira-sync/cfg"
+	"github.com/uwu-tools/gh-jira-issue-sync/cfg"
 )
 
 // newJIRAHTTPClient obtains an access token (either from configuration

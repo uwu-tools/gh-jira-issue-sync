@@ -1,4 +1,4 @@
-module github.com/uwu-tools/gh-jira-sync
+module github.com/uwu-tools/gh-jira-issue-sync
 
 go 1.19
 
