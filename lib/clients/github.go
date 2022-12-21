@@ -44,7 +44,7 @@ func (g realGHClient) ListIssues() ([]github.Issue, error) {
 
 	for page := 1; page <= pages; page++ {
 		is, res, err := g.request(func() (interface{}, *github.Response, error) {
-			return g.client.Issues.ListByRepo(ctx, user, repo, &github.IssueListByRepoOptions{
+			return g.client.Issues.ListByRepo(ctx, user, repo, &github.IssueListByRepoOptions{ //nolint:wrapcheck
 				Since:     g.config.GetSinceParam(),
 				State:     "all",
 				Sort:      "created",
@@ -89,7 +89,7 @@ func (g realGHClient) ListComments(issue github.Issue) ([]*github.IssueComment, 
 	ctx := context.Background()
 	user, repo := g.config.GetRepo()
 	c, _, err := g.request(func() (interface{}, *github.Response, error) {
-		return g.client.Issues.ListComments(ctx, user, repo, issue.GetNumber(), &github.IssueListCommentsOptions{
+		return g.client.Issues.ListComments(ctx, user, repo, issue.GetNumber(), &github.IssueListCommentsOptions{ //nolint:wrapcheck
 			Sort:      github.String("created"),
 			Direction: github.String("asc"),
 		})
@@ -112,7 +112,7 @@ func (g realGHClient) GetUser(login string) (github.User, error) {
 	log := g.config.GetLogger()
 
 	u, _, err := g.request(func() (interface{}, *github.Response, error) {
-		return g.client.Users.Get(context.Background(), login)
+		return g.client.Users.Get(context.Background(), login) //nolint:wrapcheck
 	})
 	if err != nil {
 		log.Errorf("Error retrieving GitHub user %s. Error: %v", login, err)
@@ -135,7 +135,7 @@ func (g realGHClient) GetRateLimits() (github.RateLimits, error) {
 	ctx := context.Background()
 
 	rl, _, err := g.request(func() (interface{}, *github.Response, error) {
-		return g.client.RateLimits(ctx)
+		return g.client.RateLimits(ctx) //nolint:wrapcheck
 	})
 	if err != nil {
 		log.Errorf("Error connecting to GitHub; check your token. Error: %w", err)
@@ -180,7 +180,7 @@ func (g realGHClient) request(f func() (interface{}, *github.Response, error)) (
 		log.Errorf("Error performing operation; retrying in %v: %v", duration, err)
 	})
 
-	return ret, res, backoffErr
+	return ret, res, fmt.Errorf("backoff error: %w", backoffErr)
 }
 
 // NewGitHubClient creates a GitHubClient and returns it; which
@@ -209,7 +209,7 @@ func NewGitHubClient(config cfg.Config) (GitHubClient, error) {
 	// Make a request so we can check that we can connect fine.
 	_, err := ret.GetRateLimits()
 	if err != nil {
-		return realGHClient{}, err
+		return realGHClient{}, fmt.Errorf("getting GitHub rate limits: %w", err)
 	}
 	log.Debug("Successfully connected to GitHub.")
 

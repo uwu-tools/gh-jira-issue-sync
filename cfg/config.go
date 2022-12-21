@@ -108,7 +108,7 @@ func (c *Config) LoadJIRAConfig(client jira.Client) error {
 		body, err := io.ReadAll(res.Body)
 		if err != nil {
 			c.log.Errorf("error occurred trying to read error body: %s", err)
-			return err
+			return fmt.Errorf("reading Jira project: %w", err)
 		}
 
 		c.log.Debugf("Error body: %s", body)
@@ -242,23 +242,23 @@ func (c *Config) SaveConfig() error {
 
 	var cf configFile
 	if err := c.cmdConfig.Unmarshal(&cf); err != nil {
-		return err
+		return fmt.Errorf("unmarshalling config: %w", err)
 	}
 
 	b, err := json.MarshalIndent(cf, "", "  ")
 	if err != nil {
-		return err
+		return fmt.Errorf("marshalling config: %w", err)
 	}
 
 	f, err := os.OpenFile(c.cmdConfig.ConfigFileUsed(), os.O_RDWR|os.O_TRUNC|os.O_CREATE, 0o644)
 	if err != nil {
-		return err
+		return fmt.Errorf("opening config file %s: %w", c.cmdConfig.ConfigFileUsed(), err)
 	}
 	defer f.Close()
 
 	_, err = f.WriteString(string(b))
 	if err != nil {
-		return err
+		return fmt.Errorf("writing config: %w", err)
 	}
 
 	return nil
@@ -458,13 +458,13 @@ func (c Config) getFieldIDs(client jira.Client) (fields, error) {
 	c.log.Debug("Collecting field IDs.")
 	req, err := client.NewRequest("GET", "/rest/api/2/field", nil)
 	if err != nil {
-		return fields{}, err
+		return fields{}, fmt.Errorf("getting fields: %w", err)
 	}
 	jFields := new([]jiraField)
 
 	_, err = client.Do(req, jFields)
 	if err != nil {
-		return fields{}, err
+		return fields{}, fmt.Errorf("getting field IDs: %w", err)
 	}
 
 	fieldIDs := fields{}

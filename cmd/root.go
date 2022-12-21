@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -28,18 +29,18 @@ var RootCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		config, err := cfg.NewConfig(cmd)
 		if err != nil {
-			return err
+			return fmt.Errorf("creating new config: %w", err)
 		}
 
 		log := config.GetLogger()
 
 		jiraClient, err := clients.NewJIRAClient(&config)
 		if err != nil {
-			return err
+			return fmt.Errorf("creating Jira client: %w", err)
 		}
 		ghClient, err := clients.NewGitHubClient(config)
 		if err != nil {
-			return err
+			return fmt.Errorf("creating GitHub client: %w", err)
 		}
 
 		for {

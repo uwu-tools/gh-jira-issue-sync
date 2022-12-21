@@ -34,7 +34,7 @@ func getErrorBody(config cfg.Config, res *jira.Response) error {
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		log.Errorf("Error occurred trying to read error body: %w", err)
-		return err
+		return fmt.Errorf("reading error body: %w", err)
 	}
 	log.Debugf("Error body: %s", body)
 	return errors.New(string(body))
@@ -66,7 +66,7 @@ func NewJIRAClient(config *cfg.Config) (JIRAClient, error) {
 		oauth, err = newJIRAHTTPClient(*config)
 		if err != nil {
 			log.Errorf("Error getting OAuth config: %w", err)
-			return dryrunJIRAClient{}, err
+			return dryrunJIRAClient{}, fmt.Errorf("initializing Jira client: %w", err)
 		}
 	}
 
@@ -75,7 +75,7 @@ func NewJIRAClient(config *cfg.Config) (JIRAClient, error) {
 	client, err := jira.NewClient(oauth, config.GetConfigString("jira-uri"))
 	if err != nil {
 		log.Errorf("Error initializing JIRA clients; check your base URI. Error: %w", err)
-		return dryrunJIRAClient{}, err
+		return dryrunJIRAClient{}, fmt.Errorf("initializing Jira client: %w", err)
 	}
 
 	if config.IsBasicAuth() {
@@ -86,7 +86,7 @@ func NewJIRAClient(config *cfg.Config) (JIRAClient, error) {
 
 	err = config.LoadJIRAConfig(*client)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("loading Jira configuration: %w", err)
 	}
 
 	if config.IsDryRun() {
@@ -134,7 +134,7 @@ func (j realJIRAClient) ListIssues(ids []int) ([]jira.Issue, error) {
 	}
 
 	ji, res, err := j.request(func() (interface{}, *jira.Response, error) {
-		return j.client.Issue.Search(jql, nil)
+		return j.client.Issue.Search(jql, nil) //nolint:wrapcheck
 	})
 	if err != nil {
 		log.Errorf("Error retrieving JIRA issues: %w", err)
@@ -173,7 +173,7 @@ func (j realJIRAClient) GetIssue(key string) (jira.Issue, error) {
 	log := j.config.GetLogger()
 
 	i, res, err := j.request(func() (interface{}, *jira.Response, error) {
-		return j.client.Issue.Get(key, nil)
+		return j.client.Issue.Get(key, nil) //nolint:wrapcheck
 	})
 	if err != nil {
 		log.Errorf("Error retrieving JIRA issue: %w", err)
@@ -195,7 +195,7 @@ func (j realJIRAClient) CreateIssue(issue jira.Issue) (jira.Issue, error) {
 	log := j.config.GetLogger()
 
 	i, res, err := j.request(func() (interface{}, *jira.Response, error) {
-		return j.client.Issue.Create(&issue)
+		return j.client.Issue.Create(&issue) //nolint:wrapcheck
 	})
 	if err != nil {
 		log.Errorf("Error creating JIRA issue: %w", err)
@@ -217,7 +217,7 @@ func (j realJIRAClient) UpdateIssue(issue jira.Issue) (jira.Issue, error) {
 	log := j.config.GetLogger()
 
 	i, res, err := j.request(func() (interface{}, *jira.Response, error) {
-		return j.client.Issue.Update(&issue)
+		return j.client.Issue.Update(&issue) //nolint:wrapcheck
 	})
 	if err != nil {
 		log.Errorf("Error updating JIRA issue %s: %v", issue.Key, err)
@@ -243,7 +243,7 @@ func (j realJIRAClient) CreateComment(issue jira.Issue, comment github.IssueComm
 
 	user, err := github.GetUser(comment.User.GetLogin())
 	if err != nil {
-		return jira.Comment{}, err
+		return jira.Comment{}, fmt.Errorf("getting GitHub user: %w", err)
 	}
 
 	body := fmt.Sprintf("Comment [(ID %d)|%s]", comment.GetID(), comment.GetHTMLURL())
@@ -267,7 +267,7 @@ func (j realJIRAClient) CreateComment(issue jira.Issue, comment github.IssueComm
 	}
 
 	com, res, err := j.request(func() (interface{}, *jira.Response, error) {
-		return j.client.Issue.AddComment(issue.ID, &jComment)
+		return j.client.Issue.AddComment(issue.ID, &jComment) //nolint:wrapcheck
 	})
 	if err != nil {
 		log.Errorf("Error creating JIRA comment on issue %s. Error: %v", issue.Key, err)
@@ -289,7 +289,7 @@ func (j realJIRAClient) UpdateComment(issue jira.Issue, id string, comment githu
 
 	user, err := github.GetUser(comment.User.GetLogin())
 	if err != nil {
-		return jira.Comment{}, err
+		return jira.Comment{}, fmt.Errorf("getting GitHub user: %w", err)
 	}
 
 	body := fmt.Sprintf("Comment [(ID %d)|%s]", comment.GetID(), comment.GetHTMLURL())
@@ -319,12 +319,12 @@ func (j realJIRAClient) UpdateComment(issue jira.Issue, id string, comment githu
 	req, err := j.client.NewRequest("PUT", fmt.Sprintf("rest/api/2/issue/%s/comment/%s", issue.Key, id), request)
 	if err != nil {
 		log.Errorf("Error creating comment update request: %s", err)
-		return jira.Comment{}, err
+		return jira.Comment{}, fmt.Errorf("creating comment update request: %w", err)
 	}
 
 	com, res, err := j.request(func() (interface{}, *jira.Response, error) {
 		res, err := j.client.Do(req, nil)
-		return nil, res, err
+		return nil, res, err //nolint:wrapcheck
 	})
 	if err != nil {
 		log.Errorf("Error updating comment: %w", err)
@@ -366,7 +366,7 @@ func (j realJIRAClient) request(f func() (interface{}, *jira.Response, error)) (
 		log.Errorf("Error performing operation; retrying in %v: %v", duration, err)
 	})
 
-	return ret, res, backoffErr
+	return ret, res, fmt.Errorf("backoff error: %w", backoffErr)
 }
 
 // dryrunJIRAClient is an implementation of JIRAClient which performs all
@@ -421,7 +421,7 @@ func (j dryrunJIRAClient) ListIssues(ids []int) ([]jira.Issue, error) {
 	}
 
 	ji, res, err := j.request(func() (interface{}, *jira.Response, error) {
-		return j.client.Issue.Search(jql, nil)
+		return j.client.Issue.Search(jql, nil) //nolint:wrapcheck
 	})
 	if err != nil {
 		log.Errorf("Error retrieving JIRA issues: %w", err)
@@ -462,7 +462,7 @@ func (j dryrunJIRAClient) GetIssue(key string) (jira.Issue, error) {
 	log := j.config.GetLogger()
 
 	i, res, err := j.request(func() (interface{}, *jira.Response, error) {
-		return j.client.Issue.Get(key, nil)
+		return j.client.Issue.Get(key, nil) //nolint:wrapcheck
 	})
 	if err != nil {
 		log.Errorf("Error retrieving JIRA issue: %w", err)
@@ -532,7 +532,7 @@ func (j dryrunJIRAClient) CreateComment(issue jira.Issue, comment github.IssueCo
 
 	user, err := github.GetUser(comment.User.GetLogin())
 	if err != nil {
-		return jira.Comment{}, err
+		return jira.Comment{}, fmt.Errorf("getting GitHub user: %w", err)
 	}
 
 	body := fmt.Sprintf("Comment (ID %d) from GitHub user %s", comment.GetID(), user.GetLogin())
@@ -571,7 +571,7 @@ func (j dryrunJIRAClient) UpdateComment(issue jira.Issue, id string, comment git
 
 	user, err := github.GetUser(comment.User.GetLogin())
 	if err != nil {
-		return jira.Comment{}, err
+		return jira.Comment{}, fmt.Errorf("getting GitHub user: %w", err)
 	}
 
 	body := fmt.Sprintf("Comment (ID %d) from GitHub user %s", comment.GetID(), user.GetLogin())
@@ -633,5 +633,5 @@ func (j dryrunJIRAClient) request(f func() (interface{}, *jira.Response, error))
 		log.Errorf("Error performing operation; retrying in %v: %v", duration, err)
 	})
 
-	return ret, res, backoffErr
+	return ret, res, fmt.Errorf("backoff error: %w", backoffErr)
 }

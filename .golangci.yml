@@ -55,7 +55,7 @@ linters:
     - unconvert
     - unused
     - whitespace
-    #- wrapcheck
+    - wrapcheck
 linters-settings:
   errcheck:
     check-type-assertions: true
