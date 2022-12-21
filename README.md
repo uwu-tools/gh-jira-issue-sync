@@ -123,3 +123,7 @@ URL will be given. The user will need to open the URL in their browser,
 and receive the authorization code provided. Once the code is entered
 into the application, an access token will be generated, and it will be
 added to the configuration for future use.
+
+## Attribution
+
+This project is a fork of https://github.com/coreos/issue-sync at [ea9d009](https://github.com/coreos/issue-sync/tree/ea9d009092f930d7e5e380d0ba534ceddc084439).
