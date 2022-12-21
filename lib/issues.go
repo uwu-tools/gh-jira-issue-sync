@@ -49,7 +49,10 @@ func CompareIssues(config cfg.Config, ghClient clients.GitHubClient, jiraClient 
 	for _, ghIssue := range ghIssues {
 		found := false
 		for _, jIssue := range jiraIssues {
-			id, _ := jIssue.Fields.Unknowns.Int(config.GetFieldKey(cfg.GitHubID))
+			id, err := jIssue.Fields.Unknowns.Int(config.GetFieldKey(cfg.GitHubID))
+			if err != nil {
+				return err
+			}
 			if *ghIssue.ID == id {
 				found = true
 				if err := UpdateIssue(config, ghIssue, jIssue, ghClient, jiraClient); err != nil {

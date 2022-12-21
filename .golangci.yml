@@ -15,11 +15,12 @@ issues:
 linters:
   disable-all: true
   enable:
+    # TODO(lint): Uncomment linters and fix warnings
     - asciicheck
     - deadcode
     - depguard
     - dogsled
-    #- errcheck
+    - errcheck
     - errorlint
     - exhaustive
     - exportloopref

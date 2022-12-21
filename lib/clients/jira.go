@@ -84,7 +84,10 @@ func NewJIRAClient(config *cfg.Config) (JIRAClient, error) {
 
 	log.Debug("JIRA clients initialized")
 
-	config.LoadJIRAConfig(*client)
+	err = config.LoadJIRAConfig(*client)
+	if err != nil {
+		return nil, err
+	}
 
 	if config.IsDryRun() {
 		j = dryrunJIRAClient{

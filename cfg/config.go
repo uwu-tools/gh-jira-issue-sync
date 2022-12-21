@@ -85,7 +85,7 @@ func NewConfig(cmd *cobra.Command) (Config, error) {
 	}
 
 	config.cmdConfig = *newViper("issue-sync", config.cmdFile)
-	config.cmdConfig.BindPFlags(cmd.Flags())
+	config.cmdConfig.BindPFlags(cmd.Flags()) //nolint:errcheck
 
 	config.cmdFile = config.cmdConfig.ConfigFileUsed()
 
@@ -241,7 +241,9 @@ func (c *Config) SaveConfig() error {
 	c.cmdConfig.Set("since", time.Now().Format(dateFormat))
 
 	var cf configFile
-	c.cmdConfig.Unmarshal(&cf)
+	if err := c.cmdConfig.Unmarshal(&cf); err != nil {
+		return err
+	}
 
 	b, err := json.MarshalIndent(cf, "", "  ")
 	if err != nil {
@@ -254,7 +256,10 @@ func (c *Config) SaveConfig() error {
 	}
 	defer f.Close()
 
-	f.WriteString(string(b))
+	_, err = f.WriteString(string(b))
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
