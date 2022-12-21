@@ -17,7 +17,6 @@ linters:
   enable:
     # TODO(lint): Uncomment linters and fix warnings
     - asciicheck
-    - deadcode
     - depguard
     - dogsled
     - errcheck
@@ -55,7 +54,6 @@ linters:
     #- typecheck
     - unconvert
     - unused
-    - varcheck
     - whitespace
     #- wrapcheck
 linters-settings:
