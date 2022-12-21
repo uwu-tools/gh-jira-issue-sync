@@ -10,7 +10,7 @@ import (
 	"github.com/google/go-github/v48/github"
 	"golang.org/x/oauth2"
 
-	"github.com/uwu-tools/gh-jira-sync/cfg"
+	"github.com/uwu-tools/gh-jira-issue-sync/cfg"
 )
 
 // GitHubClient is a wrapper around the GitHub API Client library we

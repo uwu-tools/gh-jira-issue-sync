@@ -3,7 +3,7 @@
 export GO15VENDOREXPERIMENT=1
 export CGO_ENABLED:=0
 
-PROJ=gh-jira-sync
+PROJ=gh-jira-issue-sync
 ORG_PATH=github.com/uwu-tools
 REPO_PATH=$(ORG_PATH)/$(PROJ)
 VERSION=$(shell ./git-version)

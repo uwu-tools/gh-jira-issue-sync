@@ -6,9 +6,9 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	"github.com/uwu-tools/gh-jira-sync/cfg"
-	"github.com/uwu-tools/gh-jira-sync/lib"
-	"github.com/uwu-tools/gh-jira-sync/lib/clients"
+	"github.com/uwu-tools/gh-jira-issue-sync/cfg"
+	"github.com/uwu-tools/gh-jira-issue-sync/lib"
+	"github.com/uwu-tools/gh-jira-issue-sync/lib/clients"
 )
 
 // Execute provides a single function to run the root command and handle errors.
