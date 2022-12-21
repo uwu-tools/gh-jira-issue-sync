@@ -6,7 +6,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"strings"
@@ -50,7 +50,7 @@ func oauthConfig(config cfg.Config) (oauth1.Config, error) {
 		return oauth1.Config{}, fmt.Errorf("unable to open private key file for reading: %w", err)
 	}
 
-	pvtKey, err := ioutil.ReadAll(pvtKeyFile)
+	pvtKey, err := io.ReadAll(pvtKeyFile)
 	if err != nil {
 		return oauth1.Config{}, fmt.Errorf("unable to read contents of private key file: %w", err)
 	}

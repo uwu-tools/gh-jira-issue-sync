@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/url"
 	"os"
 	"strings"
@@ -105,7 +105,7 @@ func (c *Config) LoadJIRAConfig(client jira.Client) error {
 	if err != nil {
 		c.log.Errorf("error retrieving JIRA project; check key and credentials. Error: %s", err)
 		defer res.Body.Close()
-		body, err := ioutil.ReadAll(res.Body)
+		body, err := io.ReadAll(res.Body)
 		if err != nil {
 			c.log.Errorf("error occurred trying to read error body: %s", err)
 			return err

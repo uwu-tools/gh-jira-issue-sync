@@ -144,7 +144,7 @@ func (g realGHClient) GetRateLimits() (github.RateLimits, error) {
 	rate, ok := rl.(*github.RateLimits)
 	if !ok {
 		log.Errorf("Get GitHub rate limits did not return rate limits! Got: %v", rl)
-		return github.RateLimits{}, fmt.Errorf("Get GitHub rate limits failed: expected *github.RateLimits; got %T", rl)
+		return github.RateLimits{}, fmt.Errorf("get GitHub rate limits failed: expected *github.RateLimits; got %T", rl)
 	}
 
 	return *rate, nil
