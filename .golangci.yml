@@ -40,15 +40,15 @@ linters:
     - goprintffuncname
     - gosec
     #- gosimple
-    - govet
-    - ineffassign
+    #- govet
+    #- ineffassign
     #- lll
     - makezero
     - misspell
     - nakedret
     #- nestif
     - predeclared
-    - staticcheck
+    #- staticcheck
     - stylecheck
     - thelper
     #- typecheck

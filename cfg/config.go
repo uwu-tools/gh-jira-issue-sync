@@ -418,7 +418,7 @@ func (c *Config) validateConfig() error {
 
 	since, err := time.Parse(dateFormat, sinceStr)
 	if err != nil {
-		return errors.New("Since date must be in ISO-8601 format")
+		return errors.New("`since` date must be in ISO-8601 format")
 	}
 	c.since = since
 
