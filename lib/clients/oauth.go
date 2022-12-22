@@ -57,10 +57,10 @@ func oauthConfig(config cfg.Config) (oauth1.Config, error) {
 
 	keyDERBlock, _ := pem.Decode(pvtKey)
 	if keyDERBlock == nil {
-		return oauth1.Config{}, errors.New("unable to decode private key PEM block")
+		return oauth1.Config{}, errPEMDecode
 	}
 	if keyDERBlock.Type != "PRIVATE KEY" && !strings.HasSuffix(keyDERBlock.Type, " PRIVATE KEY") {
-		return oauth1.Config{}, fmt.Errorf("unexpected private key DER block type: %s", keyDERBlock.Type)
+		return oauth1.Config{}, errUnexpectedKeyType(keyDERBlock.Type)
 	}
 
 	key, err := x509.ParsePKCS1PrivateKey(keyDERBlock.Bytes)
@@ -133,4 +133,12 @@ func jiraTokenFromWeb(config oauth1.Config) (*oauth1.Token, error) {
 	}
 
 	return oauth1.NewToken(accessToken, accessSecret), nil
+}
+
+// Errors
+
+var errPEMDecode = errors.New("unable to decode private key PEM block")
+
+func errUnexpectedKeyType(keyType string) error {
+	return fmt.Errorf("unexpected private key DER block type: %s", keyType) //nolint:goerr113
 }

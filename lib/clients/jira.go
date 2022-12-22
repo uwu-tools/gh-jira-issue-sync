@@ -1,7 +1,6 @@
 package clients
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -37,7 +36,7 @@ func getErrorBody(config cfg.Config, res *jira.Response) error {
 		return fmt.Errorf("reading error body: %w", err)
 	}
 	log.Debugf("Error body: %s", body)
-	return errors.New(string(body))
+	return fmt.Errorf("reading error body: %s", string(body)) //nolint:goerr113
 }
 
 // JIRAClient is a wrapper around the JIRA API clients library we
@@ -143,7 +142,7 @@ func (j realJIRAClient) ListIssues(ids []int) ([]jira.Issue, error) {
 	jiraIssues, ok := ji.([]jira.Issue)
 	if !ok {
 		log.Errorf("Get JIRA issues did not return issues! Got: %v", ji)
-		return nil, fmt.Errorf("get JIRA issues failed: expected []jira.Issue; got %T", ji)
+		return nil, fmt.Errorf("get JIRA issues failed: expected []jira.Issue; got %T", ji) //nolint:goerr113
 	}
 
 	var issues []jira.Issue
@@ -182,7 +181,7 @@ func (j realJIRAClient) GetIssue(key string) (jira.Issue, error) {
 	issue, ok := i.(*jira.Issue)
 	if !ok {
 		log.Errorf("Get JIRA issue did not return issue! Got %v", i)
-		return jira.Issue{}, fmt.Errorf("get JIRA issue failed: expected *jira.Issue; got %T", i)
+		return jira.Issue{}, fmt.Errorf("get JIRA issue failed: expected *jira.Issue; got %T", i) //nolint:goerr113
 	}
 
 	return *issue, nil
@@ -204,7 +203,7 @@ func (j realJIRAClient) CreateIssue(issue jira.Issue) (jira.Issue, error) {
 	is, ok := i.(*jira.Issue)
 	if !ok {
 		log.Errorf("Create JIRA issue did not return issue! Got: %v", i)
-		return jira.Issue{}, fmt.Errorf("create JIRA issue failed: expected *jira.Issue; got %T", i)
+		return jira.Issue{}, fmt.Errorf("create JIRA issue failed: expected *jira.Issue; got %T", i) //nolint:goerr113
 	}
 
 	return *is, nil
@@ -226,7 +225,7 @@ func (j realJIRAClient) UpdateIssue(issue jira.Issue) (jira.Issue, error) {
 	is, ok := i.(*jira.Issue)
 	if !ok {
 		log.Errorf("Update JIRA issue did not return issue! Got: %v", i)
-		return jira.Issue{}, fmt.Errorf("update JIRA issue failed: expected *jira.Issue; got %T", i)
+		return jira.Issue{}, fmt.Errorf("update JIRA issue failed: expected *jira.Issue; got %T", i) //nolint:goerr113
 	}
 
 	return *is, nil
@@ -276,7 +275,7 @@ func (j realJIRAClient) CreateComment(issue jira.Issue, comment github.IssueComm
 	co, ok := com.(*jira.Comment)
 	if !ok {
 		log.Errorf("Create JIRA comment did not return comment! Got: %v", com)
-		return jira.Comment{}, fmt.Errorf("create JIRA comment failed: expected *jira.Comment; got %T", com)
+		return jira.Comment{}, fmt.Errorf("create JIRA comment failed: expected *jira.Comment; got %T", com) //nolint:goerr113
 	}
 	return *co, nil
 }
@@ -333,7 +332,7 @@ func (j realJIRAClient) UpdateComment(issue jira.Issue, id string, comment githu
 	co, ok := com.(*jira.Comment)
 	if !ok {
 		log.Errorf("Update JIRA comment did not return comment! Got: %v", com)
-		return jira.Comment{}, fmt.Errorf("update JIRA comment failed: expected *jira.Comment; got %T", com)
+		return jira.Comment{}, fmt.Errorf("update JIRA comment failed: expected *jira.Comment; got %T", com) //nolint:goerr113
 	}
 	return *co, nil
 }
@@ -430,7 +429,7 @@ func (j dryrunJIRAClient) ListIssues(ids []int) ([]jira.Issue, error) {
 	jiraIssues, ok := ji.([]jira.Issue)
 	if !ok {
 		log.Errorf("Get JIRA issues did not return issues! Got: %v", ji)
-		return nil, fmt.Errorf("get JIRA issues failed: expected []jira.Issue; got %T", ji)
+		return nil, fmt.Errorf("get JIRA issues failed: expected []jira.Issue; got %T", ji) //nolint:goerr113
 	}
 
 	var issues []jira.Issue
@@ -471,7 +470,7 @@ func (j dryrunJIRAClient) GetIssue(key string) (jira.Issue, error) {
 	issue, ok := i.(*jira.Issue)
 	if !ok {
 		log.Errorf("Get JIRA issue did not return issue! Got %v", i)
-		return jira.Issue{}, fmt.Errorf("get JIRA issue failed: expected *jira.Issue; got %T", i)
+		return jira.Issue{}, fmt.Errorf("get JIRA issue failed: expected *jira.Issue; got %T", i) //nolint:goerr113
 	}
 
 	return *issue, nil
