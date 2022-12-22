@@ -1,3 +1,19 @@
+// Copyright 2017 CoreOS, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+// SPDX-License-Identifier: Apache-2.0
+
 package cmd
 
 import (
@@ -23,9 +39,9 @@ func Execute() {
 
 // RootCmd represents the command itself and configures it.
 var RootCmd = &cobra.Command{
-	Use:   "issue-sync [options]",
+	Use:   "gh-jira-issue-sync [options]",
 	Short: "A tool to synchronize GitHub and JIRA issues",
-	Long:  "Full docs coming later; see https://github.com/coreos/issue-sync",
+	Long:  "Full docs coming later; see https://github.com/uwu-tools/gh-jira-issue-sync",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		config, err := cfg.NewConfig(cmd)
 		if err != nil {
