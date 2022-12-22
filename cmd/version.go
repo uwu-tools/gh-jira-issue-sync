@@ -24,9 +24,9 @@ var Version = "undefined"
 // versionCmd represents the version command.
 var versionCmd = &cobra.Command{
 	Use:   "version",
-	Short: "Returns the current version of issue-sync",
+	Short: "Returns the current version of gh-jira-issue-sync",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("issue-sync version ", Version)
+		fmt.Println("gh-jira-issue-sync version ", Version)
 	},
 }
 

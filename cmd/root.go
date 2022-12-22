@@ -23,9 +23,9 @@ func Execute() {
 
 // RootCmd represents the command itself and configures it.
 var RootCmd = &cobra.Command{
-	Use:   "issue-sync [options]",
+	Use:   "gh-jira-issue-sync [options]",
 	Short: "A tool to synchronize GitHub and JIRA issues",
-	Long:  "Full docs coming later; see https://github.com/coreos/issue-sync",
+	Long:  "Full docs coming later; see https://github.com/uwu-tools/gh-jira-issue-sync",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		config, err := cfg.NewConfig(cmd)
 		if err != nil {

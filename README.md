@@ -1,10 +1,10 @@
-# issue-sync
+# gh-jira-issue-sync
 
 Issue-sync is a tool for mirroring GitHub issues in JIRA. It grew
 out of a desire to maintain a public GitHub repo while tracking private
 issues in a JIRA board; rather than require people to keep up with both
 sources, we decided to make *one* the single source of truth. Note that 
-issue-sync works only one way and will **NOT** mirror issues from JIRA to 
+gh-jira-issue-sync works only one way and will **NOT** mirror issues from JIRA to 
 GitHub.
 
 ## Usage
@@ -32,7 +32,7 @@ in
 ### Application Configuration
 
 Arguments to the program may be passed on the command line or in a
-JSON configuration file. For the command line arguments, run `issue-sync
+JSON configuration file. For the command line arguments, run `gh-jira-issue-sync
 help`. The JSON format is a single, flat object, with the argument long
 names as keys.
 
@@ -72,7 +72,7 @@ used to perform an OAuth connection to JIRA. `jira-consumer-key` and
 `Authentication` for more details.
 
 `repo-name` is the GitHub repo from which issues will be retrieved. It
-must be in the form `owner/repo`, for example `coreos/issue-sync`.
+must be in the form `owner/repo`, for example `uwu-tools/gh-jira-issue-sync`.
 
 `jira-uri` is the base URL of the JIRA instance. If the JIRA instance
 lives at a non-root URL, the path must be included. For example,
@@ -93,7 +93,7 @@ in a number of nanoseconds.
 
 ### Configuration File
 
-By default, issue-sync looks for the configuration file at
+By default, gh-jira-issue-sync looks for the configuration file at
 `$HOME/.issue-sync.json`. To override this location, use the `--config`
 option on the command line.
 
