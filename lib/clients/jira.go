@@ -25,7 +25,7 @@ import (
 	"time"
 
 	"github.com/andygrunwald/go-jira"
-	"github.com/cenkalti/backoff"
+	"github.com/cenkalti/backoff/v4"
 	"github.com/google/go-github/v48/github"
 
 	"github.com/uwu-tools/gh-jira-issue-sync/cfg"
