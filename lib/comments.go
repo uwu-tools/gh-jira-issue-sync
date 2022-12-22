@@ -1,6 +1,7 @@
 package lib
 
 import (
+	"fmt"
 	"regexp"
 	"strconv"
 
@@ -34,7 +35,7 @@ func CompareComments(config cfg.Config, ghIssue github.Issue, jIssue jira.Issue,
 
 	ghComments, err := ghClient.ListComments(ghIssue)
 	if err != nil {
-		return err
+		return fmt.Errorf("listing GitHub comments: %w", err)
 	}
 
 	var jComments []jira.Comment
@@ -57,14 +58,22 @@ func CompareComments(config cfg.Config, ghIssue github.Issue, jIssue jira.Issue,
 			}
 			// matches[0] is the whole string, matches[1] is the ID
 			matches := jCommentIDRegex.FindStringSubmatch(jComment.Body)
-			intId, _ := strconv.Atoi(matches[1])
-			id := int64(intId)
+			intID, err := strconv.Atoi(matches[1])
+			if err != nil {
+				return fmt.Errorf("converting comment ID to int: %w", err)
+			}
+
+			id := int64(intID)
 			if *ghComment.ID != id {
 				continue
 			}
 			found = true
 
-			UpdateComment(config, *ghComment, jComment, jIssue, ghClient, jClient)
+			err = UpdateComment(config, *ghComment, jComment, jIssue, ghClient, jClient)
+			if err != nil {
+				return err
+			}
+
 			break
 		}
 		if found {
@@ -73,7 +82,7 @@ func CompareComments(config cfg.Config, ghIssue github.Issue, jIssue jira.Issue,
 
 		comment, err := jClient.CreateComment(jIssue, *ghComment, ghClient)
 		if err != nil {
-			return err
+			return fmt.Errorf("creating Jira comment: %w", err)
 		}
 
 		log.Debugf("Created JIRA comment %s.", comment.ID)
@@ -98,7 +107,7 @@ func UpdateComment(config cfg.Config, ghComment github.IssueComment, jComment ji
 
 	comment, err := jClient.UpdateComment(jIssue, jComment.ID, ghComment, ghClient)
 	if err != nil {
-		return err
+		return fmt.Errorf("updating Jira comment: %w", err)
 	}
 
 	log.Debug("Updated JIRA comment %s.", comment.ID)

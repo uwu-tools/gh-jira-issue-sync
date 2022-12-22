@@ -1,6 +1,7 @@
 package lib
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -11,7 +12,7 @@ import (
 	"github.com/uwu-tools/gh-jira-issue-sync/lib/clients"
 )
 
-// dateFormat is the format used for the Last IS Update field
+// dateFormat is the format used for the Last IS Update field.
 const dateFormat = "2006-01-02T15:04:05.0-0700"
 
 // CompareIssues gets the list of GitHub issues updated since the `since` date,
@@ -25,7 +26,7 @@ func CompareIssues(config cfg.Config, ghClient clients.GitHubClient, jiraClient 
 
 	ghIssues, err := ghClient.ListIssues()
 	if err != nil {
-		return err
+		return fmt.Errorf("listing GitHub issues: %w", err)
 	}
 
 	if len(ghIssues) == 0 {
@@ -35,13 +36,13 @@ func CompareIssues(config cfg.Config, ghClient clients.GitHubClient, jiraClient 
 
 	ids := make([]int, len(ghIssues))
 	for i, v := range ghIssues {
-		ghId := v.GetID()
-		ids[i] = int(ghId)
+		ghID := v.GetID()
+		ids[i] = int(ghID)
 	}
 
 	jiraIssues, err := jiraClient.ListIssues(ids)
 	if err != nil {
-		return err
+		return fmt.Errorf("listing Jira issues: %w", err)
 	}
 
 	log.Debug("Collected all JIRA issues")
@@ -49,8 +50,11 @@ func CompareIssues(config cfg.Config, ghClient clients.GitHubClient, jiraClient 
 	for _, ghIssue := range ghIssues {
 		found := false
 		for _, jIssue := range jiraIssues {
-			id, _ := jIssue.Fields.Unknowns.Int(config.GetFieldKey(cfg.GitHubID))
-			if int64(*ghIssue.ID) == id {
+			id, err := jIssue.Fields.Unknowns.Int(config.GetFieldKey(cfg.GitHubID))
+			if err != nil {
+				return fmt.Errorf("retrieving field key from GitHub ID: %w", err)
+			}
+			if *ghIssue.ID == id {
 				found = true
 				if err := UpdateIssue(config, ghIssue, jIssue, ghClient, jiraClient); err != nil {
 					log.Errorf("Error updating issue %s. Error: %v", jIssue.Key, err)
@@ -146,7 +150,7 @@ func UpdateIssue(config cfg.Config, ghIssue github.Issue, jIssue jira.Issue, ghC
 		var err error
 		issue, err = jClient.UpdateIssue(issue)
 		if err != nil {
-			return err
+			return fmt.Errorf("updating Jira issue: %w", err)
 		}
 
 		log.Debugf("Successfully updated JIRA issue %s!", jIssue.Key)
@@ -156,8 +160,7 @@ func UpdateIssue(config cfg.Config, ghIssue github.Issue, jIssue jira.Issue, ghC
 
 	issue, err := jClient.GetIssue(jIssue.Key)
 	if err != nil {
-		log.Debugf("Failed to retrieve JIRA issue %s!", jIssue.Key)
-		return err
+		return fmt.Errorf("getting Jira issue %s: %w", jIssue.Key, err)
 	}
 
 	if err := CompareComments(config, ghIssue, issue, ghClient, jClient); err != nil {
@@ -203,12 +206,12 @@ func CreateIssue(config cfg.Config, issue github.Issue, ghClient clients.GitHubC
 
 	jIssue, err := jClient.CreateIssue(jIssue)
 	if err != nil {
-		return err
+		return fmt.Errorf("creating Jira issue: %w", err)
 	}
 
 	jIssue, err = jClient.GetIssue(jIssue.Key)
 	if err != nil {
-		return err
+		return fmt.Errorf("getting Jira issue %s: %w", jIssue.Key, err)
 	}
 
 	log.Debugf("Created JIRA issue %s!", jIssue.Key)

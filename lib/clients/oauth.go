@@ -6,7 +6,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"strings"
@@ -47,25 +47,25 @@ func oauthConfig(config cfg.Config) (oauth1.Config, error) {
 
 	pvtKeyFile, err := os.Open(pvtKeyPath)
 	if err != nil {
-		return oauth1.Config{}, fmt.Errorf("unable to open private key file for reading: %v", err)
+		return oauth1.Config{}, fmt.Errorf("unable to open private key file for reading: %w", err)
 	}
 
-	pvtKey, err := ioutil.ReadAll(pvtKeyFile)
+	pvtKey, err := io.ReadAll(pvtKeyFile)
 	if err != nil {
-		return oauth1.Config{}, fmt.Errorf("unable to read contents of private key file: %v", err)
+		return oauth1.Config{}, fmt.Errorf("unable to read contents of private key file: %w", err)
 	}
 
 	keyDERBlock, _ := pem.Decode(pvtKey)
 	if keyDERBlock == nil {
-		return oauth1.Config{}, errors.New("unable to decode private key PEM block")
+		return oauth1.Config{}, errPEMDecode
 	}
 	if keyDERBlock.Type != "PRIVATE KEY" && !strings.HasSuffix(keyDERBlock.Type, " PRIVATE KEY") {
-		return oauth1.Config{}, fmt.Errorf("unexpected private key DER block type: %s", keyDERBlock.Type)
+		return oauth1.Config{}, errUnexpectedKeyType(keyDERBlock.Type)
 	}
 
 	key, err := x509.ParsePKCS1PrivateKey(keyDERBlock.Bytes)
 	if err != nil {
-		return oauth1.Config{}, fmt.Errorf("unable to parse PKCS1 private key: %v", err)
+		return oauth1.Config{}, fmt.Errorf("unable to parse PKCS1 private key: %w", err)
 	}
 
 	uri := config.GetConfigString("jira-uri")
@@ -109,12 +109,12 @@ func jiraTokenFromConfig(config cfg.Config) (*oauth1.Token, bool) {
 func jiraTokenFromWeb(config oauth1.Config) (*oauth1.Token, error) {
 	requestToken, requestSecret, err := config.RequestToken()
 	if err != nil {
-		return nil, fmt.Errorf("unable to get request token: %v", err)
+		return nil, fmt.Errorf("unable to get request token: %w", err)
 	}
 
 	authURL, err := config.AuthorizationURL(requestToken)
 	if err != nil {
-		return nil, fmt.Errorf("unable to get authorize URL: %v", err)
+		return nil, fmt.Errorf("unable to get authorize URL: %w", err)
 	}
 
 	fmt.Printf("Please go to the following URL in your browser:\n%v\n\n", authURL.String())
@@ -124,13 +124,21 @@ func jiraTokenFromWeb(config oauth1.Config) (*oauth1.Token, error) {
 	_, err = fmt.Scan(&code)
 	fmt.Println()
 	if err != nil {
-		return nil, fmt.Errorf("unable to read auth code: %v", err)
+		return nil, fmt.Errorf("unable to read auth code: %w", err)
 	}
 
 	accessToken, accessSecret, err := config.AccessToken(requestToken, requestSecret, code)
 	if err != nil {
-		return nil, fmt.Errorf("unable to get access token: %v", err)
+		return nil, fmt.Errorf("unable to get access token: %w", err)
 	}
 
 	return oauth1.NewToken(accessToken, accessSecret), nil
+}
+
+// Errors
+
+var errPEMDecode = errors.New("unable to decode private key PEM block")
+
+func errUnexpectedKeyType(keyType string) error {
+	return fmt.Errorf("unexpected private key DER block type: %s", keyType) //nolint:goerr113
 }

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/url"
 	"os"
 	"strings"
@@ -20,13 +20,13 @@ import (
 	"golang.org/x/term"
 )
 
-// dateFormat is the format used for the `since` configuration parameter
+// dateFormat is the format used for the `since` configuration parameter.
 const dateFormat = "2006-01-02T15:04:05-0700"
 
-// defaultLogLevel is the level logrus should default to if the configured option can't be parsed
+// defaultLogLevel is the level logrus should default to if the configured option can't be parsed.
 const defaultLogLevel = logrus.InfoLevel
 
-// fieldKey is an enum-like type to represent the customfield ID keys
+// fieldKey is an enum-like type to represent the customfield ID keys.
 type fieldKey int
 
 const (
@@ -38,7 +38,7 @@ const (
 	LastISUpdate   fieldKey = iota
 )
 
-// fields represents the custom field IDs of the JIRA custom fields we care about
+// fields represents the custom field IDs of the JIRA custom fields we care about.
 type fields struct {
 	githubID       string
 	githubNumber   string
@@ -85,7 +85,7 @@ func NewConfig(cmd *cobra.Command) (Config, error) {
 	}
 
 	config.cmdConfig = *newViper("issue-sync", config.cmdFile)
-	config.cmdConfig.BindPFlags(cmd.Flags())
+	config.cmdConfig.BindPFlags(cmd.Flags()) //nolint:errcheck
 
 	config.cmdFile = config.cmdConfig.ConfigFileUsed()
 
@@ -103,16 +103,16 @@ func NewConfig(cmd *cobra.Command) (Config, error) {
 func (c *Config) LoadJIRAConfig(client jira.Client) error {
 	proj, res, err := client.Project.Get(c.cmdConfig.GetString("jira-project"))
 	if err != nil {
-		c.log.Errorf("Error retrieving JIRA project; check key and credentials. Error: %v", err)
+		c.log.Errorf("error retrieving JIRA project; check key and credentials. Error: %s", err)
 		defer res.Body.Close()
-		body, err := ioutil.ReadAll(res.Body)
+		body, err := io.ReadAll(res.Body)
 		if err != nil {
-			c.log.Errorf("Error occured trying to read error body: %v", err)
-			return err
+			c.log.Errorf("error occurred trying to read error body: %s", err)
+			return fmt.Errorf("reading Jira project: %w", err)
 		}
 
 		c.log.Debugf("Error body: %s", body)
-		return errors.New(string(body))
+		return fmt.Errorf("reading error body: %s", string(body)) //nolint:goerr113
 	}
 	c.project = *proj
 
@@ -155,7 +155,7 @@ func (c Config) IsDryRun() bool {
 	return c.cmdConfig.GetBool("dry-run")
 }
 
-// IsDaemon returns whether the application is running as a daemon
+// IsDaemon returns whether the application is running as a daemon.
 func (c Config) IsDaemon() bool {
 	return c.cmdConfig.GetDuration("period") != 0
 }
@@ -241,20 +241,25 @@ func (c *Config) SaveConfig() error {
 	c.cmdConfig.Set("since", time.Now().Format(dateFormat))
 
 	var cf configFile
-	c.cmdConfig.Unmarshal(&cf)
+	if err := c.cmdConfig.Unmarshal(&cf); err != nil {
+		return fmt.Errorf("unmarshalling config: %w", err)
+	}
 
 	b, err := json.MarshalIndent(cf, "", "  ")
 	if err != nil {
-		return err
+		return fmt.Errorf("marshalling config: %w", err)
 	}
 
-	f, err := os.OpenFile(c.cmdConfig.ConfigFileUsed(), os.O_RDWR|os.O_TRUNC|os.O_CREATE, 0644)
+	f, err := os.OpenFile(c.cmdConfig.ConfigFileUsed(), os.O_RDWR|os.O_TRUNC|os.O_CREATE, 0o644)
 	if err != nil {
-		return err
+		return fmt.Errorf("opening config file %s: %w", c.cmdConfig.ConfigFileUsed(), err)
 	}
 	defer f.Close()
 
-	f.WriteString(string(b))
+	_, err = f.WriteString(string(b))
+	if err != nil {
+		return fmt.Errorf("writing config: %w", err)
+	}
 
 	return nil
 }
@@ -338,7 +343,7 @@ func (c *Config) validateConfig() error {
 	c.log.Debug("Checking config variables...")
 	token := c.cmdConfig.GetString("github-token")
 	if token == "" {
-		return errors.New("GitHub token required")
+		return errGitHubTokenRequired
 	}
 
 	c.basicAuth = (c.cmdConfig.GetString("jira-user") != "") && (c.cmdConfig.GetString("jira-pass") != "")
@@ -348,15 +353,15 @@ func (c *Config) validateConfig() error {
 
 		jUser := c.cmdConfig.GetString("jira-user")
 		if jUser == "" {
-			return errors.New("Jira username required")
+			return errJiraUsernameRequired
 		}
 
 		jPass := c.cmdConfig.GetString("jira-pass")
 		if jPass == "" {
-			fmt.Print("Enter your JIRA password: ")
-			bytePass, err := term.ReadPassword(int(syscall.Stdin))
+			fmt.Print("Enter your Jira password: ")
+			bytePass, err := term.ReadPassword(syscall.Stdin)
 			if err != nil {
-				return errors.New("JIRA password required")
+				return errJiraPasswordRequired
 			}
 			fmt.Println()
 			c.cmdConfig.Set("jira-pass", string(bytePass))
@@ -366,49 +371,49 @@ func (c *Config) validateConfig() error {
 
 		token := c.cmdConfig.GetString("jira-token")
 		if token == "" {
-			return errors.New("JIRA access token required")
+			return errJiraAccessTokenRequired
 		}
 
 		secret := c.cmdConfig.GetString("jira-secret")
 		if secret == "" {
-			return errors.New("JIRA access token secret required")
+			return errJiraAccessTokenSecretRequired
 		}
 
 		consumerKey := c.cmdConfig.GetString("jira-consumer-key")
 		if consumerKey == "" {
-			return errors.New("JIRA consumer key required for OAuth handshake")
+			return errJiraConsumerKeyRequired
 		}
 
 		privateKey := c.cmdConfig.GetString("jira-private-key-path")
 		if privateKey == "" {
-			return errors.New("JIRA private key required for OAuth handshake")
+			return errJiraPrivateKeyRequired
 		}
 
 		_, err := os.Open(privateKey)
 		if err != nil {
-			return errors.New("JIRA private key must point to existing PEM file")
+			return errJiraPEMFileInvalid
 		}
 	}
 
 	repo := c.cmdConfig.GetString("repo-name")
 	if repo == "" {
-		return errors.New("GitHub repository required")
+		return errGitHubRepoRequired
 	}
 	if !strings.Contains(repo, "/") || len(strings.Split(repo, "/")) != 2 {
-		return errors.New("GitHub repository must be of form user/repo")
+		return errGitHubRepoFormatInvalid
 	}
 
 	uri := c.cmdConfig.GetString("jira-uri")
 	if uri == "" {
-		return errors.New("JIRA URI required")
+		return errJiraURIRequired
 	}
 	if _, err := url.ParseRequestURI(uri); err != nil {
-		return errors.New("JIRA URI must be valid URI")
+		return errJiraURIInvalid
 	}
 
 	project := c.cmdConfig.GetString("jira-project")
 	if project == "" {
-		return errors.New("JIRA project required")
+		return errJiraProjectRequired
 	}
 
 	sinceStr := c.cmdConfig.GetString("since")
@@ -418,7 +423,7 @@ func (c *Config) validateConfig() error {
 
 	since, err := time.Parse(dateFormat, sinceStr)
 	if err != nil {
-		return errors.New("Since date must be in ISO-8601 format")
+		return errDateInvalid
 	}
 	c.since = since
 
@@ -453,17 +458,18 @@ func (c Config) getFieldIDs(client jira.Client) (fields, error) {
 	c.log.Debug("Collecting field IDs.")
 	req, err := client.NewRequest("GET", "/rest/api/2/field", nil)
 	if err != nil {
-		return fields{}, err
+		return fields{}, fmt.Errorf("getting fields: %w", err)
 	}
 	jFields := new([]jiraField)
 
 	_, err = client.Do(req, jFields)
 	if err != nil {
-		return fields{}, err
+		return fields{}, fmt.Errorf("getting field IDs: %w", err)
 	}
 
 	fieldIDs := fields{}
 
+	// TODO(config): Use constants for custom field names
 	for _, field := range *jFields {
 		switch field.Name {
 		case "GitHub ID":
@@ -481,21 +487,45 @@ func (c Config) getFieldIDs(client jira.Client) (fields, error) {
 		}
 	}
 
+	// TODO(config): Use constants for custom field names
 	if fieldIDs.githubID == "" {
-		return fieldIDs, errors.New("could not find ID of 'GitHub ID' custom field; check that it is named correctly")
+		return fieldIDs, errCustomFieldIDNotFound("GitHub ID")
 	} else if fieldIDs.githubNumber == "" {
-		return fieldIDs, errors.New("could not find ID of 'GitHub Number' custom field; check that it is named correctly")
+		return fieldIDs, errCustomFieldIDNotFound("GitHub Number")
 	} else if fieldIDs.githubLabels == "" {
-		return fieldIDs, errors.New("could not find ID of 'Github Labels' custom field; check that it is named correctly")
+		return fieldIDs, errCustomFieldIDNotFound("Github Labels")
 	} else if fieldIDs.githubStatus == "" {
-		return fieldIDs, errors.New("could not find ID of 'Github Status' custom field; check that it is named correctly")
+		return fieldIDs, errCustomFieldIDNotFound("Github Status")
 	} else if fieldIDs.githubReporter == "" {
-		return fieldIDs, errors.New("could not find ID of 'Github Reporter' custom field; check that it is named correctly")
+		return fieldIDs, errCustomFieldIDNotFound("Github Reporter")
 	} else if fieldIDs.lastUpdate == "" {
-		return fieldIDs, errors.New("could not find ID of 'Last Issue-Sync Update' custom field; check that it is named correctly")
+		return fieldIDs, errCustomFieldIDNotFound("Last Issue-Sync Update")
 	}
 
 	c.log.Debug("All fields have been checked.")
 
 	return fieldIDs, nil
+}
+
+// Errors
+
+var (
+	errGitHubTokenRequired           = errors.New("github token required")
+	errJiraUsernameRequired          = errors.New("jira username required")
+	errJiraPasswordRequired          = errors.New("jira password required")
+	errJiraAccessTokenRequired       = errors.New("jira access token required")
+	errJiraAccessTokenSecretRequired = errors.New("jira access token secret required")
+	errJiraConsumerKeyRequired       = errors.New("jira consumer key required for OAuth handshake")
+	errJiraPrivateKeyRequired        = errors.New("jira private key required for OAuth handshake")
+	errJiraPEMFileInvalid            = errors.New("jira private key must point to existing PEM file")
+	errGitHubRepoRequired            = errors.New("github repository required")
+	errGitHubRepoFormatInvalid       = errors.New("github repository must be of form user/repo")
+	errJiraURIRequired               = errors.New("jira URI required")
+	errJiraURIInvalid                = errors.New("jira URI must be valid URI")
+	errJiraProjectRequired           = errors.New("jira project required")
+	errDateInvalid                   = errors.New("`since` date must be in ISO-8601 format")
+)
+
+func errCustomFieldIDNotFound(field string) error {
+	return fmt.Errorf("could not find ID custom field '%s'; check that it is named correctly", field) //nolint:goerr113
 }

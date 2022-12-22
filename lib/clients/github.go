@@ -3,7 +3,6 @@ package clients
 import (
 	"context"
 	"fmt"
-
 	"time"
 
 	"github.com/cenkalti/backoff"
@@ -45,7 +44,7 @@ func (g realGHClient) ListIssues() ([]github.Issue, error) {
 
 	for page := 1; page <= pages; page++ {
 		is, res, err := g.request(func() (interface{}, *github.Response, error) {
-			return g.client.Issues.ListByRepo(ctx, user, repo, &github.IssueListByRepoOptions{
+			return g.client.Issues.ListByRepo(ctx, user, repo, &github.IssueListByRepoOptions{ //nolint:wrapcheck
 				Since:     g.config.GetSinceParam(),
 				State:     "all",
 				Sort:      "created",
@@ -62,7 +61,7 @@ func (g realGHClient) ListIssues() ([]github.Issue, error) {
 		issuePointers, ok := is.([]*github.Issue)
 		if !ok {
 			log.Errorf("Get GitHub issues did not return issues! Got: %v", is)
-			return nil, fmt.Errorf("get GitHub issues failed: expected []*github.Issue; got %T", is)
+			return nil, fmt.Errorf("get GitHub issues failed: expected []*github.Issue; got %T", is) //nolint:goerr113
 		}
 
 		var issuePage []github.Issue
@@ -90,7 +89,7 @@ func (g realGHClient) ListComments(issue github.Issue) ([]*github.IssueComment, 
 	ctx := context.Background()
 	user, repo := g.config.GetRepo()
 	c, _, err := g.request(func() (interface{}, *github.Response, error) {
-		return g.client.Issues.ListComments(ctx, user, repo, issue.GetNumber(), &github.IssueListCommentsOptions{
+		return g.client.Issues.ListComments(ctx, user, repo, issue.GetNumber(), &github.IssueListCommentsOptions{ //nolint:wrapcheck
 			Sort:      github.String("created"),
 			Direction: github.String("asc"),
 		})
@@ -102,7 +101,7 @@ func (g realGHClient) ListComments(issue github.Issue) ([]*github.IssueComment, 
 	comments, ok := c.([]*github.IssueComment)
 	if !ok {
 		log.Errorf("Get GitHub comments did not return comments! Got: %v", c)
-		return nil, fmt.Errorf("Get GitHub comments failed: expected []*github.IssueComment; got %T", c)
+		return nil, fmt.Errorf("get GitHub comments failed: expected []*github.IssueComment; got %T", c) //nolint:goerr113
 	}
 
 	return comments, nil
@@ -113,9 +112,8 @@ func (g realGHClient) GetUser(login string) (github.User, error) {
 	log := g.config.GetLogger()
 
 	u, _, err := g.request(func() (interface{}, *github.Response, error) {
-		return g.client.Users.Get(context.Background(), login)
+		return g.client.Users.Get(context.Background(), login) //nolint:wrapcheck
 	})
-
 	if err != nil {
 		log.Errorf("Error retrieving GitHub user %s. Error: %v", login, err)
 	}
@@ -123,7 +121,7 @@ func (g realGHClient) GetUser(login string) (github.User, error) {
 	user, ok := u.(*github.User)
 	if !ok {
 		log.Errorf("Get GitHub user did not return user! Got: %v", u)
-		return github.User{}, fmt.Errorf("Get GitHub user failed: expected *github.User; got %T", u)
+		return github.User{}, fmt.Errorf("get GitHub user failed: expected *github.User; got %T", u) //nolint:goerr113
 	}
 
 	return *user, nil
@@ -137,16 +135,16 @@ func (g realGHClient) GetRateLimits() (github.RateLimits, error) {
 	ctx := context.Background()
 
 	rl, _, err := g.request(func() (interface{}, *github.Response, error) {
-		return g.client.RateLimits(ctx)
+		return g.client.RateLimits(ctx) //nolint:wrapcheck
 	})
 	if err != nil {
-		log.Errorf("Error connecting to GitHub; check your token. Error: %v", err)
+		log.Errorf("Error connecting to GitHub; check your token. Error: %w", err)
 		return github.RateLimits{}, err
 	}
 	rate, ok := rl.(*github.RateLimits)
 	if !ok {
 		log.Errorf("Get GitHub rate limits did not return rate limits! Got: %v", rl)
-		return github.RateLimits{}, fmt.Errorf("Get GitHub rate limits failed: expected *github.RateLimits; got %T", rl)
+		return github.RateLimits{}, fmt.Errorf("get GitHub rate limits failed: expected *github.RateLimits; got %T", rl) //nolint:goerr113
 	}
 
 	return *rate, nil
@@ -182,7 +180,7 @@ func (g realGHClient) request(f func() (interface{}, *github.Response, error)) (
 		log.Errorf("Error performing operation; retrying in %v: %v", duration, err)
 	})
 
-	return ret, res, backoffErr
+	return ret, res, fmt.Errorf("backoff error: %w", backoffErr)
 }
 
 // NewGitHubClient creates a GitHubClient and returns it; which
@@ -211,7 +209,7 @@ func NewGitHubClient(config cfg.Config) (GitHubClient, error) {
 	// Make a request so we can check that we can connect fine.
 	_, err := ret.GetRateLimits()
 	if err != nil {
-		return realGHClient{}, err
+		return realGHClient{}, fmt.Errorf("getting GitHub rate limits: %w", err)
 	}
 	log.Debug("Successfully connected to GitHub.")
 
