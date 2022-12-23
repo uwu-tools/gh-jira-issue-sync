@@ -13,9 +13,11 @@ require (
 	github.com/spf13/viper v1.14.0
 	golang.org/x/oauth2 v0.3.0
 	golang.org/x/term v0.3.0
+	sigs.k8s.io/release-utils v0.7.3
 )
 
 require (
+	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be // indirect
 	github.com/fatih/structs v1.1.0 // indirect
 	github.com/golang-jwt/jwt/v4 v4.4.2 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
