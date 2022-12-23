@@ -22,6 +22,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"sigs.k8s.io/release-utils/version"
 
 	"github.com/uwu-tools/gh-jira-issue-sync/cfg"
 	"github.com/uwu-tools/gh-jira-issue-sync/lib"
@@ -89,4 +90,6 @@ func init() {
 	RootCmd.PersistentFlags().BoolP("dry-run", "d", false, "Print out actions to be taken, but do not execute them")
 	RootCmd.PersistentFlags().DurationP("timeout", "T", time.Minute, "Set the maximum timeout on all API calls")
 	RootCmd.PersistentFlags().Duration("period", 1*time.Hour, "How often to synchronize; set to 0 for one-shot mode")
+
+	RootCmd.AddCommand(version.Version())
 }
