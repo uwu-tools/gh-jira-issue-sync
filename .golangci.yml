@@ -48,7 +48,7 @@ linters:
     - nakedret
     - nestif
     - predeclared
-    #- staticcheck
+    - staticcheck
     - stylecheck
     - thelper
     - typecheck
