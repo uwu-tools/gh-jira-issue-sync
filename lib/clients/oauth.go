@@ -32,10 +32,10 @@ import (
 	"github.com/uwu-tools/gh-jira-issue-sync/cfg"
 )
 
-// newJIRAHTTPClient obtains an access token (either from configuration
+// NewJiraHTTPClient obtains an access token (either from configuration
 // or from an OAuth handshake) and creates an HTTP client that uses the
 // token, which can be used to configure a JIRA client.
-func newJIRAHTTPClient(config cfg.Config) (*http.Client, error) {
+func NewJiraHTTPClient(config cfg.Config) (*http.Client, error) {
 	ctx := context.Background()
 
 	oauthConfig, err := oauthConfig(config)

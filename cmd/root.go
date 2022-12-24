@@ -27,7 +27,7 @@ import (
 	"github.com/uwu-tools/gh-jira-issue-sync/cfg"
 	"github.com/uwu-tools/gh-jira-issue-sync/github"
 	"github.com/uwu-tools/gh-jira-issue-sync/issues"
-	"github.com/uwu-tools/gh-jira-issue-sync/lib/clients"
+	"github.com/uwu-tools/gh-jira-issue-sync/jira"
 )
 
 // Execute provides a single function to run the root command and handle errors.
@@ -52,7 +52,7 @@ var RootCmd = &cobra.Command{
 
 		log := config.GetLogger()
 
-		jiraClient, err := clients.NewJIRAClient(&config)
+		jiraClient, err := jira.New(&config)
 		if err != nil {
 			return fmt.Errorf("creating Jira client: %w", err)
 		}

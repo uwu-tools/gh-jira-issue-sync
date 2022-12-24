@@ -14,7 +14,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package clients
+package jira
 
 import (
 	"fmt"
@@ -30,6 +30,7 @@ import (
 
 	"github.com/uwu-tools/gh-jira-issue-sync/cfg"
 	"github.com/uwu-tools/gh-jira-issue-sync/github"
+	"github.com/uwu-tools/gh-jira-issue-sync/lib/clients"
 )
 
 // commentDateFormat is the format used in the headers of JIRA comments.
@@ -56,11 +57,11 @@ func getErrorBody(config cfg.Config, res *jira.Response) error {
 	return fmt.Errorf("reading error body: %s", string(body)) //nolint:goerr113
 }
 
-// JIRAClient is a wrapper around the JIRA API clients library we
+// Client is a wrapper around the JIRA API clients library we
 // use. It allows us to hide implementation details such as backoff
 // as well as swap in other implementations, such as for dry run
 // or test mocking.
-type JIRAClient interface {
+type Client interface {
 	ListIssues(ids []int) ([]jira.Issue, error)
 	GetIssue(key string) (jira.Issue, error)
 	CreateIssue(issue jira.Issue) (jira.Issue, error)
@@ -69,24 +70,24 @@ type JIRAClient interface {
 	UpdateComment(issue jira.Issue, id string, comment gh.IssueComment, githubClient github.Client) (jira.Comment, error)
 }
 
-// NewJIRAClient creates a new JIRAClient and configures it with
+// New creates a new Client and configures it with
 // the config object provided. The type of clients created depends
 // on the configuration; currently, it creates either a standard
 // clients, or a dry-run clients.
-func NewJIRAClient(config *cfg.Config) (JIRAClient, error) {
+func New(config *cfg.Config) (Client, error) {
 	log := config.GetLogger()
 
 	var oauth *http.Client
 	var err error
 	if !config.IsBasicAuth() {
-		oauth, err = newJIRAHTTPClient(*config)
+		oauth, err = clients.NewJiraHTTPClient(*config)
 		if err != nil {
 			log.Errorf("Error getting OAuth config: %w", err)
 			return dryrunJIRAClient{}, fmt.Errorf("initializing Jira client: %w", err)
 		}
 	}
 
-	var j JIRAClient
+	var j Client
 
 	client, err := jira.NewClient(oauth, config.GetConfigString("jira-uri"))
 	if err != nil {

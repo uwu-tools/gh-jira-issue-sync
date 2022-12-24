@@ -21,12 +21,12 @@ import (
 	"regexp"
 	"strconv"
 
-	"github.com/andygrunwald/go-jira"
+	gojira "github.com/andygrunwald/go-jira"
 	gh "github.com/google/go-github/v48/github"
 
 	"github.com/uwu-tools/gh-jira-issue-sync/cfg"
 	"github.com/uwu-tools/gh-jira-issue-sync/github"
-	"github.com/uwu-tools/gh-jira-issue-sync/lib/clients"
+	"github.com/uwu-tools/gh-jira-issue-sync/jira"
 )
 
 // jCommentRegex matches a generated JIRA comment. It has matching groups to retrieve the
@@ -42,7 +42,7 @@ var jCommentIDRegex = regexp.MustCompile("^Comment \\[\\(ID (\\d+)\\)\\|")
 // Compare takes a GitHub issue, and retrieves all of its comments. It then
 // matches each one to a comment in `existing`. If it finds a match, it calls
 // UpdateComment; if it doesn't, it calls CreateComment.
-func Compare(config cfg.Config, ghIssue gh.Issue, jIssue jira.Issue, ghClient github.Client, jClient clients.JIRAClient) error {
+func Compare(config cfg.Config, ghIssue gh.Issue, jIssue gojira.Issue, ghClient github.Client, jClient jira.Client) error {
 	log := config.GetLogger()
 
 	if ghIssue.GetComments() == 0 {
@@ -55,12 +55,12 @@ func Compare(config cfg.Config, ghIssue gh.Issue, jIssue jira.Issue, ghClient gi
 		return fmt.Errorf("listing GitHub comments: %w", err)
 	}
 
-	var jComments []jira.Comment
+	var jComments []gojira.Comment
 	if jIssue.Fields.Comments == nil {
 		log.Debugf("JIRA issue %s has no comments.", jIssue.Key)
 	} else {
 		commentPtrs := jIssue.Fields.Comments.Comments
-		jComments = make([]jira.Comment, len(commentPtrs))
+		jComments = make([]gojira.Comment, len(commentPtrs))
 		for i, v := range commentPtrs {
 			jComments[i] = *v
 		}
@@ -111,7 +111,7 @@ func Compare(config cfg.Config, ghIssue gh.Issue, jIssue jira.Issue, ghClient gi
 
 // UpdateComment compares the body of a GitHub comment with the body (minus header)
 // of the JIRA comment, and updates the JIRA comment if necessary.
-func UpdateComment(config cfg.Config, ghComment gh.IssueComment, jComment jira.Comment, jIssue jira.Issue, ghClient github.Client, jClient clients.JIRAClient) error {
+func UpdateComment(config cfg.Config, ghComment gh.IssueComment, jComment gojira.Comment, jIssue gojira.Issue, ghClient github.Client, jClient jira.Client) error {
 	log := config.GetLogger()
 
 	// fields[0] is the whole body, 1 is the ID, 2 is the username, 3 is the real name (or "" if none)
