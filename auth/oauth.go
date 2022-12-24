@@ -29,27 +29,27 @@ import (
 
 	"github.com/dghubble/oauth1"
 
-	"github.com/uwu-tools/gh-jira-issue-sync/cfg"
+	"github.com/uwu-tools/gh-jira-issue-sync/config"
 )
 
 // NewJiraHTTPClient obtains an access token (either from configuration
 // or from an OAuth handshake) and creates an HTTP client that uses the
 // token, which can be used to configure a JIRA client.
-func NewJiraHTTPClient(config cfg.Config) (*http.Client, error) {
+func NewJiraHTTPClient(cfg config.Config) (*http.Client, error) {
 	ctx := context.Background()
 
-	oauthConfig, err := oauthConfig(config)
+	oauthConfig, err := oauthConfig(cfg)
 	if err != nil {
 		return nil, err
 	}
 
-	tok, ok := jiraTokenFromConfig(config)
+	tok, ok := jiraTokenFromConfig(cfg)
 	if !ok {
 		tok, err = jiraTokenFromWeb(oauthConfig)
 		if err != nil {
 			return nil, err
 		}
-		config.SetJIRAToken(tok)
+		cfg.SetJIRAToken(tok)
 	}
 
 	return oauthConfig.Client(ctx, tok), nil
@@ -58,8 +58,8 @@ func NewJiraHTTPClient(config cfg.Config) (*http.Client, error) {
 // oauthConfig parses a private key and consumer key from the
 // configuration, and creates an OAuth configuration which can
 // be used to begin a handshake.
-func oauthConfig(config cfg.Config) (oauth1.Config, error) {
-	pvtKeyPath := config.GetConfigString("jira-private-key-path")
+func oauthConfig(cfg config.Config) (oauth1.Config, error) {
+	pvtKeyPath := cfg.GetConfigString("jira-private-key-path")
 
 	pvtKeyFile, err := os.Open(pvtKeyPath)
 	if err != nil {
@@ -84,10 +84,10 @@ func oauthConfig(config cfg.Config) (oauth1.Config, error) {
 		return oauth1.Config{}, fmt.Errorf("unable to parse PKCS1 private key: %w", err)
 	}
 
-	uri := config.GetConfigString("jira-uri")
+	uri := cfg.GetConfigString("jira-uri")
 
 	return oauth1.Config{
-		ConsumerKey: config.GetConfigString("jira-consumer-key"),
+		ConsumerKey: cfg.GetConfigString("jira-consumer-key"),
 		CallbackURL: "oob",
 		Endpoint: oauth1.Endpoint{
 			RequestTokenURL: fmt.Sprintf("%splugins/servlet/oauth/request-token", uri),
@@ -103,13 +103,13 @@ func oauthConfig(config cfg.Config) (oauth1.Config, error) {
 // jiraTokenFromConfig attempts to load an OAuth access token from the
 // application configuration file. It returns the token (or null if not
 // configured) and an "ok" bool to indicate whether the token is provided.
-func jiraTokenFromConfig(config cfg.Config) (*oauth1.Token, bool) {
-	token := config.GetConfigString("jira-token")
+func jiraTokenFromConfig(cfg config.Config) (*oauth1.Token, bool) {
+	token := cfg.GetConfigString("jira-token")
 	if token == "" {
 		return nil, false
 	}
 
-	secret := config.GetConfigString("jira-secret")
+	secret := cfg.GetConfigString("jira-secret")
 	if secret == "" {
 		return nil, false
 	}

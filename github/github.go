@@ -25,7 +25,7 @@ import (
 	"github.com/google/go-github/v48/github"
 	"golang.org/x/oauth2"
 
-	"github.com/uwu-tools/gh-jira-issue-sync/cfg"
+	"github.com/uwu-tools/gh-jira-issue-sync/config"
 )
 
 // Client is a wrapper around the GitHub API Client library we
@@ -42,17 +42,17 @@ type Client interface {
 // requests against the GitHub REST API. It is the canonical implementation
 // of GitHubClient.
 type realGHClient struct {
-	config cfg.Config
+	cfg    config.Config
 	client github.Client
 }
 
 // ListIssues returns the list of GitHub issues since the last run of the tool.
 func (g realGHClient) ListIssues() ([]github.Issue, error) {
-	log := g.config.GetLogger()
+	log := g.cfg.GetLogger()
 
 	ctx := context.Background()
 
-	user, repo := g.config.GetRepo()
+	user, repo := g.cfg.GetRepo()
 
 	// Set it so that it will run the loop once, and it'll be updated in the loop.
 	pages := 1
@@ -61,7 +61,7 @@ func (g realGHClient) ListIssues() ([]github.Issue, error) {
 	for page := 1; page <= pages; page++ {
 		is, res, err := g.request(func() (interface{}, *github.Response, error) {
 			return g.client.Issues.ListByRepo(ctx, user, repo, &github.IssueListByRepoOptions{ //nolint:wrapcheck
-				Since:     g.config.GetSinceParam(),
+				Since:     g.cfg.GetSinceParam(),
 				State:     "all",
 				Sort:      "created",
 				Direction: "asc",
@@ -100,10 +100,10 @@ func (g realGHClient) ListIssues() ([]github.Issue, error) {
 // ListComments returns the list of all comments on a GitHub issue in
 // ascending order of creation.
 func (g realGHClient) ListComments(issue github.Issue) ([]*github.IssueComment, error) {
-	log := g.config.GetLogger()
+	log := g.cfg.GetLogger()
 
 	ctx := context.Background()
-	user, repo := g.config.GetRepo()
+	user, repo := g.cfg.GetRepo()
 	c, _, err := g.request(func() (interface{}, *github.Response, error) {
 		return g.client.Issues.ListComments(ctx, user, repo, issue.GetNumber(), &github.IssueListCommentsOptions{ //nolint:wrapcheck
 			Sort:      github.String("created"),
@@ -125,7 +125,7 @@ func (g realGHClient) ListComments(issue github.Issue) ([]*github.IssueComment, 
 
 // GetUser returns a GitHub user from its login.
 func (g realGHClient) GetUser(login string) (github.User, error) {
-	log := g.config.GetLogger()
+	log := g.cfg.GetLogger()
 
 	u, _, err := g.request(func() (interface{}, *github.Response, error) {
 		return g.client.Users.Get(context.Background(), login) //nolint:wrapcheck
@@ -146,7 +146,7 @@ func (g realGHClient) GetUser(login string) (github.User, error) {
 // GetRateLimits returns the current rate limits on the GitHub API. This is a
 // simple and lightweight request that can also be used simply for testing the API.
 func (g realGHClient) GetRateLimits() (github.RateLimits, error) {
-	log := g.config.GetLogger()
+	log := g.cfg.GetLogger()
 
 	ctx := context.Background()
 
@@ -174,7 +174,7 @@ const RetryBackoffRoundRatio = time.Millisecond / time.Nanosecond
 // error. If it continues to fail until a maximum time is reached, it returns
 // a nil result as well as the returned HTTP response and a timeout error.
 func (g realGHClient) request(f func() (interface{}, *github.Response, error)) (interface{}, *github.Response, error) {
-	log := g.config.GetLogger()
+	log := g.cfg.GetLogger()
 
 	var ret interface{}
 	var res *github.Response
@@ -186,7 +186,7 @@ func (g realGHClient) request(f func() (interface{}, *github.Response, error)) (
 	}
 
 	b := backoff.NewExponentialBackOff()
-	b.MaxElapsedTime = g.config.GetTimeout()
+	b.MaxElapsedTime = g.cfg.GetTimeout()
 
 	backoffErr := backoff.RetryNotify(op, b, func(err error, duration time.Duration) {
 		// Round to a whole number of milliseconds
@@ -204,21 +204,21 @@ func (g realGHClient) request(f func() (interface{}, *github.Response, error)) (
 // run. For example, a dry-run clients may be created which does
 // not make any requests that would change anything on the server,
 // but instead simply prints out the actions that it's asked to take.
-func New(config cfg.Config) (Client, error) {
+func New(cfg config.Config) (Client, error) {
 	var ret Client
 
-	log := config.GetLogger()
+	log := cfg.GetLogger()
 
 	ctx := context.Background()
 	ts := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: config.GetConfigString("github-token")},
+		&oauth2.Token{AccessToken: cfg.GetConfigString("github-token")},
 	)
 	tc := oauth2.NewClient(ctx, ts)
 
 	client := github.NewClient(tc)
 
 	ret = realGHClient{
-		config: config,
+		cfg:    cfg,
 		client: *client,
 	}
 

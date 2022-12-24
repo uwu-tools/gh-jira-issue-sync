@@ -24,7 +24,7 @@ import (
 	"github.com/spf13/cobra"
 	"sigs.k8s.io/release-utils/version"
 
-	"github.com/uwu-tools/gh-jira-issue-sync/cfg"
+	"github.com/uwu-tools/gh-jira-issue-sync/config"
 	"github.com/uwu-tools/gh-jira-issue-sync/github"
 	"github.com/uwu-tools/gh-jira-issue-sync/issues"
 	"github.com/uwu-tools/gh-jira-issue-sync/jira"
@@ -45,35 +45,35 @@ var RootCmd = &cobra.Command{
 	Short: "A tool to synchronize GitHub and JIRA issues",
 	Long:  "Full docs coming later; see https://github.com/uwu-tools/gh-jira-issue-sync",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		config, err := cfg.NewConfig(cmd)
+		cfg, err := config.New(cmd)
 		if err != nil {
 			return fmt.Errorf("creating new config: %w", err)
 		}
 
-		log := config.GetLogger()
+		log := cfg.GetLogger()
 
-		jiraClient, err := jira.New(&config)
+		jiraClient, err := jira.New(&cfg)
 		if err != nil {
 			return fmt.Errorf("creating Jira client: %w", err)
 		}
-		ghClient, err := github.New(config)
+		ghClient, err := github.New(cfg)
 		if err != nil {
 			return fmt.Errorf("creating GitHub client: %w", err)
 		}
 
 		for {
-			if err := issues.Compare(config, ghClient, jiraClient); err != nil {
+			if err := issues.Compare(cfg, ghClient, jiraClient); err != nil {
 				log.Error(err)
 			}
-			if !config.IsDryRun() {
-				if err := config.SaveConfig(); err != nil {
+			if !cfg.IsDryRun() {
+				if err := cfg.SaveConfig(); err != nil {
 					log.Error(err)
 				}
 			}
-			if !config.IsDaemon() {
+			if !cfg.IsDaemon() {
 				return nil
 			}
-			<-time.After(config.GetDaemonPeriod())
+			<-time.After(cfg.GetDaemonPeriod())
 		}
 	},
 }

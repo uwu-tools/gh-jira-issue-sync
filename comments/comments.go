@@ -24,7 +24,7 @@ import (
 	gojira "github.com/andygrunwald/go-jira"
 	gh "github.com/google/go-github/v48/github"
 
-	"github.com/uwu-tools/gh-jira-issue-sync/cfg"
+	"github.com/uwu-tools/gh-jira-issue-sync/config"
 	"github.com/uwu-tools/gh-jira-issue-sync/github"
 	"github.com/uwu-tools/gh-jira-issue-sync/jira"
 )
@@ -42,8 +42,8 @@ var jCommentIDRegex = regexp.MustCompile("^Comment \\[\\(ID (\\d+)\\)\\|")
 // Compare takes a GitHub issue, and retrieves all of its comments. It then
 // matches each one to a comment in `existing`. If it finds a match, it calls
 // UpdateComment; if it doesn't, it calls CreateComment.
-func Compare(config cfg.Config, ghIssue gh.Issue, jIssue gojira.Issue, ghClient github.Client, jClient jira.Client) error {
-	log := config.GetLogger()
+func Compare(cfg config.Config, ghIssue gh.Issue, jIssue gojira.Issue, ghClient github.Client, jClient jira.Client) error {
+	log := cfg.GetLogger()
 
 	if ghIssue.GetComments() == 0 {
 		log.Debugf("Issue #%d has no comments, skipping.", *ghIssue.Number)
@@ -86,7 +86,7 @@ func Compare(config cfg.Config, ghIssue gh.Issue, jIssue gojira.Issue, ghClient 
 			}
 			found = true
 
-			err = UpdateComment(config, *ghComment, jComment, jIssue, ghClient, jClient)
+			err = UpdateComment(cfg, *ghComment, jComment, jIssue, ghClient, jClient)
 			if err != nil {
 				return err
 			}
@@ -111,8 +111,8 @@ func Compare(config cfg.Config, ghIssue gh.Issue, jIssue gojira.Issue, ghClient 
 
 // UpdateComment compares the body of a GitHub comment with the body (minus header)
 // of the JIRA comment, and updates the JIRA comment if necessary.
-func UpdateComment(config cfg.Config, ghComment gh.IssueComment, jComment gojira.Comment, jIssue gojira.Issue, ghClient github.Client, jClient jira.Client) error {
-	log := config.GetLogger()
+func UpdateComment(cfg config.Config, ghComment gh.IssueComment, jComment gojira.Comment, jIssue gojira.Issue, ghClient github.Client, jClient jira.Client) error {
+	log := cfg.GetLogger()
 
 	// fields[0] is the whole body, 1 is the ID, 2 is the username, 3 is the real name (or "" if none)
 	// 4 is the date, and 5 is the real body
