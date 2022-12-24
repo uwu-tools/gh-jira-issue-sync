@@ -77,26 +77,31 @@ type Client interface {
 func New(cfg *config.Config) (Client, error) {
 	log := cfg.GetLogger()
 
-	var oauth *http.Client
+	var j Client
+	var tp http.Client
 	var err error
+
 	if !cfg.IsBasicAuth() {
-		oauth, err = auth.NewJiraHTTPClient(*cfg)
+		oauth, err := auth.NewJiraHTTPClient(*cfg)
 		if err != nil {
 			log.Errorf("Error getting OAuth config: %+v", err)
-			return dryrunJIRAClient{}, fmt.Errorf("initializing Jira client: %w", err)
+			return nil, fmt.Errorf("initializing Jira client: %w", err)
 		}
+
+		tp = *oauth
+	} else {
+		basicAuth := jira.BasicAuthTransport{
+			Username: strings.TrimSpace(cfg.GetConfigString("jira-user")),
+			Password: strings.TrimSpace(cfg.GetConfigString("jira-pass")),
+		}
+
+		tp.Transport = &basicAuth
 	}
 
-	var j Client
-
-	client, err := jira.NewClient(oauth, cfg.GetConfigString("jira-uri"))
+	client, err := jira.NewClient(&tp, strings.TrimSpace(cfg.GetConfigString("jira-uri")))
 	if err != nil {
 		log.Errorf("Error initializing JIRA clients; check your base URI. Error: %+v", err)
-		return dryrunJIRAClient{}, fmt.Errorf("initializing Jira client: %w", err)
-	}
-
-	if cfg.IsBasicAuth() {
-		client.Authentication.SetBasicAuth(cfg.GetConfigString("jira-user"), cfg.GetConfigString("jira-pass"))
+		return nil, fmt.Errorf("initializing Jira client: %w", err)
 	}
 
 	log.Debug("JIRA clients initialized")

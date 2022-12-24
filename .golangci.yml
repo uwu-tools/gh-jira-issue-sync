@@ -39,16 +39,16 @@ linters:
     - gomodguard
     - goprintffuncname
     - gosec
-    #- gosimple
+    - gosimple
     #- govet
     #- ineffassign
     #- lll
     - makezero
     - misspell
     - nakedret
-    #- nestif
+    - nestif
     - predeclared
-    #- staticcheck
+    - staticcheck
     - stylecheck
     - thelper
     - typecheck
