@@ -25,6 +25,7 @@ import (
 	"sigs.k8s.io/release-utils/version"
 
 	"github.com/uwu-tools/gh-jira-issue-sync/cfg"
+	"github.com/uwu-tools/gh-jira-issue-sync/github"
 	"github.com/uwu-tools/gh-jira-issue-sync/issues"
 	"github.com/uwu-tools/gh-jira-issue-sync/lib/clients"
 )
@@ -55,7 +56,7 @@ var RootCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("creating Jira client: %w", err)
 		}
-		ghClient, err := clients.NewGitHubClient(config)
+		ghClient, err := github.New(config)
 		if err != nil {
 			return fmt.Errorf("creating GitHub client: %w", err)
 		}

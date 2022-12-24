@@ -14,7 +14,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package clients
+package github
 
 import (
 	"context"
@@ -28,10 +28,10 @@ import (
 	"github.com/uwu-tools/gh-jira-issue-sync/cfg"
 )
 
-// GitHubClient is a wrapper around the GitHub API Client library we
+// Client is a wrapper around the GitHub API Client library we
 // use. It allows us to swap in other implementations, such as a dry run
 // clients, or mock clients for testing.
-type GitHubClient interface {
+type Client interface {
 	ListIssues() ([]github.Issue, error)
 	ListComments(issue github.Issue) ([]*github.IssueComment, error)
 	GetUser(login string) (github.User, error)
@@ -166,7 +166,7 @@ func (g realGHClient) GetRateLimits() (github.RateLimits, error) {
 	return *rate, nil
 }
 
-const retryBackoffRoundRatio = time.Millisecond / time.Nanosecond
+const RetryBackoffRoundRatio = time.Millisecond / time.Nanosecond
 
 // request takes an API function from the GitHub library
 // and calls it with exponential backoff. If the function succeeds, it
@@ -190,8 +190,8 @@ func (g realGHClient) request(f func() (interface{}, *github.Response, error)) (
 
 	backoffErr := backoff.RetryNotify(op, b, func(err error, duration time.Duration) {
 		// Round to a whole number of milliseconds
-		duration /= retryBackoffRoundRatio // Convert nanoseconds to milliseconds
-		duration *= retryBackoffRoundRatio // Convert back so it appears correct
+		duration /= RetryBackoffRoundRatio // Convert nanoseconds to milliseconds
+		duration *= RetryBackoffRoundRatio // Convert back so it appears correct
 
 		log.Errorf("Error performing operation; retrying in %v: %v", duration, err)
 	})
@@ -199,13 +199,13 @@ func (g realGHClient) request(f func() (interface{}, *github.Response, error)) (
 	return ret, res, fmt.Errorf("backoff error: %w", backoffErr)
 }
 
-// NewGitHubClient creates a GitHubClient and returns it; which
+// New creates a GitHubClient and returns it; which
 // implementation it uses depends on the configuration of this
 // run. For example, a dry-run clients may be created which does
 // not make any requests that would change anything on the server,
 // but instead simply prints out the actions that it's asked to take.
-func NewGitHubClient(config cfg.Config) (GitHubClient, error) {
-	var ret GitHubClient
+func New(config cfg.Config) (Client, error) {
+	var ret Client
 
 	log := config.GetLogger()
 

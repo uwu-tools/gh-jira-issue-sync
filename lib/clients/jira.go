@@ -26,9 +26,10 @@ import (
 
 	"github.com/andygrunwald/go-jira"
 	"github.com/cenkalti/backoff/v4"
-	"github.com/google/go-github/v48/github"
+	gh "github.com/google/go-github/v48/github"
 
 	"github.com/uwu-tools/gh-jira-issue-sync/cfg"
+	"github.com/uwu-tools/gh-jira-issue-sync/github"
 )
 
 // commentDateFormat is the format used in the headers of JIRA comments.
@@ -64,8 +65,8 @@ type JIRAClient interface {
 	GetIssue(key string) (jira.Issue, error)
 	CreateIssue(issue jira.Issue) (jira.Issue, error)
 	UpdateIssue(issue jira.Issue) (jira.Issue, error)
-	CreateComment(issue jira.Issue, comment github.IssueComment, github GitHubClient) (jira.Comment, error)
-	UpdateComment(issue jira.Issue, id string, comment github.IssueComment, github GitHubClient) (jira.Comment, error)
+	CreateComment(issue jira.Issue, comment gh.IssueComment, githubClient github.Client) (jira.Comment, error)
+	UpdateComment(issue jira.Issue, id string, comment gh.IssueComment, githubClient github.Client) (jira.Comment, error)
 }
 
 // NewJIRAClient creates a new JIRAClient and configures it with
@@ -253,10 +254,10 @@ const maxBodyLength = 1 << 15
 
 // CreateComment adds a comment to the provided JIRA issue using the fields from
 // the provided GitHub comment. It then returns the created comment.
-func (j realJIRAClient) CreateComment(issue jira.Issue, comment github.IssueComment, github GitHubClient) (jira.Comment, error) {
+func (j realJIRAClient) CreateComment(issue jira.Issue, comment gh.IssueComment, githubClient github.Client) (jira.Comment, error) {
 	log := j.config.GetLogger()
 
-	user, err := github.GetUser(comment.User.GetLogin())
+	user, err := githubClient.GetUser(comment.User.GetLogin())
 	if err != nil {
 		return jira.Comment{}, fmt.Errorf("getting GitHub user: %w", err)
 	}
@@ -299,10 +300,10 @@ func (j realJIRAClient) CreateComment(issue jira.Issue, comment github.IssueComm
 // UpdateComment updates a comment (identified by the `id` parameter) on a given
 // JIRA with a new body from the fields of the given GitHub comment. It returns
 // the updated comment.
-func (j realJIRAClient) UpdateComment(issue jira.Issue, id string, comment github.IssueComment, github GitHubClient) (jira.Comment, error) {
+func (j realJIRAClient) UpdateComment(issue jira.Issue, id string, comment gh.IssueComment, githubClient github.Client) (jira.Comment, error) {
 	log := j.config.GetLogger()
 
-	user, err := github.GetUser(comment.User.GetLogin())
+	user, err := githubClient.GetUser(comment.User.GetLogin())
 	if err != nil {
 		return jira.Comment{}, fmt.Errorf("getting GitHub user: %w", err)
 	}
@@ -375,8 +376,8 @@ func (j realJIRAClient) request(f func() (interface{}, *jira.Response, error)) (
 
 	backoffErr := backoff.RetryNotify(op, b, func(err error, duration time.Duration) {
 		// Round to a whole number of milliseconds
-		duration /= retryBackoffRoundRatio // Convert nanoseconds to milliseconds
-		duration *= retryBackoffRoundRatio // Convert back so it appears correct
+		duration /= github.RetryBackoffRoundRatio // Convert nanoseconds to milliseconds
+		duration *= github.RetryBackoffRoundRatio // Convert back so it appears correct
 
 		log.Errorf("Error performing operation; retrying in %v: %v", duration, err)
 	})
@@ -542,10 +543,10 @@ func (j dryrunJIRAClient) UpdateIssue(issue jira.Issue) (jira.Issue, error) {
 // CreateComment prints the body that would be set on a new comment if it were
 // to be created according to the fields of the provided GitHub comment. It then
 // returns a comment object containing the body that would be used.
-func (j dryrunJIRAClient) CreateComment(issue jira.Issue, comment github.IssueComment, github GitHubClient) (jira.Comment, error) {
+func (j dryrunJIRAClient) CreateComment(issue jira.Issue, comment gh.IssueComment, githubClient github.Client) (jira.Comment, error) {
 	log := j.config.GetLogger()
 
-	user, err := github.GetUser(comment.User.GetLogin())
+	user, err := githubClient.GetUser(comment.User.GetLogin())
 	if err != nil {
 		return jira.Comment{}, fmt.Errorf("getting GitHub user: %w", err)
 	}
@@ -581,10 +582,10 @@ func (j dryrunJIRAClient) CreateComment(issue jira.Issue, comment github.IssueCo
 // UpdateComment prints the body that would be set on a comment were it to be
 // updated according to the provided GitHub comment. It then returns a comment
 // object containing the body that would be used.
-func (j dryrunJIRAClient) UpdateComment(issue jira.Issue, id string, comment github.IssueComment, github GitHubClient) (jira.Comment, error) {
+func (j dryrunJIRAClient) UpdateComment(issue jira.Issue, id string, comment gh.IssueComment, githubClient github.Client) (jira.Comment, error) {
 	log := j.config.GetLogger()
 
-	user, err := github.GetUser(comment.User.GetLogin())
+	user, err := githubClient.GetUser(comment.User.GetLogin())
 	if err != nil {
 		return jira.Comment{}, fmt.Errorf("getting GitHub user: %w", err)
 	}
@@ -642,8 +643,8 @@ func (j dryrunJIRAClient) request(f func() (interface{}, *jira.Response, error))
 
 	backoffErr := backoff.RetryNotify(op, b, func(err error, duration time.Duration) {
 		// Round to a whole number of milliseconds
-		duration /= retryBackoffRoundRatio // Convert nanoseconds to milliseconds
-		duration *= retryBackoffRoundRatio // Convert back so it appears correct
+		duration /= github.RetryBackoffRoundRatio // Convert nanoseconds to milliseconds
+		duration *= github.RetryBackoffRoundRatio // Convert back so it appears correct
 
 		log.Errorf("Error performing operation; retrying in %v: %v", duration, err)
 	})

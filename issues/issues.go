@@ -22,10 +22,11 @@ import (
 	"time"
 
 	"github.com/andygrunwald/go-jira"
-	"github.com/google/go-github/v48/github"
+	gh "github.com/google/go-github/v48/github"
 
 	"github.com/uwu-tools/gh-jira-issue-sync/cfg"
 	"github.com/uwu-tools/gh-jira-issue-sync/comments"
+	"github.com/uwu-tools/gh-jira-issue-sync/github"
 	"github.com/uwu-tools/gh-jira-issue-sync/lib/clients"
 )
 
@@ -36,7 +37,7 @@ const dateFormat = "2006-01-02T15:04:05.0-0700"
 // gets the list of JIRA issues which have GitHub ID custom fields in that list,
 // then matches each one. If a JIRA issue already exists for a given GitHub issue,
 // it calls UpdateIssue; if no JIRA issue already exists, it calls CreateIssue.
-func Compare(config cfg.Config, ghClient clients.GitHubClient, jiraClient clients.JIRAClient) error {
+func Compare(config cfg.Config, ghClient github.Client, jiraClient clients.JIRAClient) error {
 	log := config.GetLogger()
 
 	log.Debug("Collecting issues")
@@ -91,7 +92,7 @@ func Compare(config cfg.Config, ghClient clients.GitHubClient, jiraClient client
 
 // DidIssueChange tests each of the relevant fields on the provided JIRA and GitHub issue
 // and returns whether or not they differ.
-func DidIssueChange(config cfg.Config, ghIssue github.Issue, jIssue jira.Issue) bool {
+func DidIssueChange(config cfg.Config, ghIssue gh.Issue, jIssue jira.Issue) bool {
 	log := config.GetLogger()
 
 	log.Debugf("Comparing GitHub issue #%d and JIRA issue %s", ghIssue.GetNumber(), jIssue.Key)
@@ -132,7 +133,7 @@ func DidIssueChange(config cfg.Config, ghIssue github.Issue, jIssue jira.Issue) 
 // UpdateIssue compares each field of a GitHub issue to a JIRA issue; if any of them
 // differ, the differing fields of the JIRA issue are updated to match the GitHub
 // issue.
-func UpdateIssue(config cfg.Config, ghIssue github.Issue, jIssue jira.Issue, ghClient clients.GitHubClient, jClient clients.JIRAClient) error {
+func UpdateIssue(config cfg.Config, ghIssue gh.Issue, jIssue jira.Issue, ghClient github.Client, jClient clients.JIRAClient) error {
 	log := config.GetLogger()
 
 	log.Debugf("Updating JIRA %s with GitHub #%d", jIssue.Key, *ghIssue.Number)
@@ -189,7 +190,7 @@ func UpdateIssue(config cfg.Config, ghIssue github.Issue, jIssue jira.Issue, ghC
 
 // CreateIssue generates a JIRA issue from the various fields on the given GitHub issue, then
 // sends it to the JIRA API.
-func CreateIssue(config cfg.Config, issue github.Issue, ghClient clients.GitHubClient, jClient clients.JIRAClient) error {
+func CreateIssue(config cfg.Config, issue gh.Issue, ghClient github.Client, jClient clients.JIRAClient) error {
 	log := config.GetLogger()
 
 	log.Debugf("Creating JIRA issue based on GitHub issue #%d", *issue.Number)
