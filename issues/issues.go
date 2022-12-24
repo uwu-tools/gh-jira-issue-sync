@@ -181,7 +181,7 @@ func UpdateIssue(config cfg.Config, ghIssue github.Issue, jIssue jira.Issue, ghC
 	}
 
 	if err := comments.Compare(config, ghIssue, issue, ghClient, jClient); err != nil {
-		return err
+		return fmt.Errorf("comparing comments for issue %s: %w", jIssue.Key, err)
 	}
 
 	return nil
@@ -234,7 +234,7 @@ func CreateIssue(config cfg.Config, issue github.Issue, ghClient clients.GitHubC
 	log.Debugf("Created JIRA issue %s!", jIssue.Key)
 
 	if err := comments.Compare(config, issue, jIssue, ghClient, jClient); err != nil {
-		return err
+		return fmt.Errorf("comparing comments for issue %s: %w", jIssue.Key, err)
 	}
 
 	return nil
