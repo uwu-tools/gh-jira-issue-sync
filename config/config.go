@@ -364,7 +364,7 @@ func (c *Config) validateConfig() error {
 
 	c.basicAuth = (c.cmdConfig.GetString("jira-user") != "") && (c.cmdConfig.GetString("jira-pass") != "")
 
-	if c.basicAuth {
+	if c.basicAuth { //nolint:nestif // TODO(lint)
 		c.log.Debug("Using HTTP Basic Authentication")
 
 		jUser := c.cmdConfig.GetString("jira-user")
@@ -506,15 +506,20 @@ func (c Config) getFieldIDs(client jira.Client) (fields, error) {
 	// TODO(config): Use constants for custom field names
 	if fieldIDs.githubID == "" {
 		return fieldIDs, errCustomFieldIDNotFound("GitHub ID")
-	} else if fieldIDs.githubNumber == "" {
+	}
+	if fieldIDs.githubNumber == "" {
 		return fieldIDs, errCustomFieldIDNotFound("GitHub Number")
-	} else if fieldIDs.githubLabels == "" {
+	}
+	if fieldIDs.githubLabels == "" {
 		return fieldIDs, errCustomFieldIDNotFound("Github Labels")
-	} else if fieldIDs.githubStatus == "" {
+	}
+	if fieldIDs.githubStatus == "" {
 		return fieldIDs, errCustomFieldIDNotFound("Github Status")
-	} else if fieldIDs.githubReporter == "" {
+	}
+	if fieldIDs.githubReporter == "" {
 		return fieldIDs, errCustomFieldIDNotFound("Github Reporter")
-	} else if fieldIDs.lastUpdate == "" {
+	}
+	if fieldIDs.lastUpdate == "" {
 		return fieldIDs, errCustomFieldIDNotFound("Last Issue-Sync Update")
 	}
 
