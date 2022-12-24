@@ -18,11 +18,13 @@ package issues
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
 	gojira "github.com/andygrunwald/go-jira"
 	gh "github.com/google/go-github/v48/github"
+	"github.com/trivago/tgo/tcontainer"
 
 	"github.com/uwu-tools/gh-jira-issue-sync/comments"
 	"github.com/uwu-tools/gh-jira-issue-sync/config"
@@ -68,17 +70,25 @@ func Compare(cfg config.Config, ghClient github.Client, jiraClient jira.Client) 
 
 	for _, ghIssue := range ghIssues {
 		found := false
-		for _, jIssue := range jiraIssues {
-			fieldKey := cfg.GetFieldKey(config.GitHubID)
-			log.Debugf("GitHub ID custom field key: %s", fieldKey)
 
+		fieldKey := cfg.GetFieldKey(config.GitHubID)
+		log.Debugf("GitHub ID custom field key: %s", fieldKey)
+		for _, jIssue := range jiraIssues {
 			// TODO: Getting a field with Unknowns will generate a nil pointer
 			//       exception if the custom field is not defined in JIRA.
 			//       ref: https://github.com/andygrunwald/go-jira/issues/322
-			id, err := jIssue.Fields.Unknowns.Int(fieldKey)
-			if err != nil {
-				return fmt.Errorf("retrieving field key from GitHub ID: %w", err)
+			/*
+				id, err := jIssue.Fields.Unknowns.Int(fieldKey)
+				if err != nil {
+					return fmt.Errorf("retrieving field key from GitHub ID: %w", err)
+				}
+			*/
+			unknowns := jIssue.Fields.Unknowns
+			id, exists := unknowns.Value(fieldKey)
+			if !exists {
+				log.Infof("GitHub ID custom field (%s) does not exist", fieldKey)
 			}
+
 			if *ghIssue.ID == id {
 				found = true
 				if err := UpdateIssue(cfg, ghIssue, jIssue, ghClient, jiraClient); err != nil {
@@ -148,21 +158,23 @@ func UpdateIssue(cfg config.Config, ghIssue gh.Issue, jIssue gojira.Issue, ghCli
 	var issue gojira.Issue
 
 	if DidIssueChange(cfg, ghIssue, jIssue) {
-		fields := gojira.IssueFields{}
-		fields.Unknowns = map[string]interface{}{}
+		fields := *jIssue.Fields
 
 		fields.Summary = ghIssue.GetTitle()
 		fields.Description = ghIssue.GetBody()
-		fields.Unknowns[cfg.GetFieldKey(config.GitHubStatus)] = ghIssue.GetState()
-		fields.Unknowns[cfg.GetFieldKey(config.GitHubReporter)] = ghIssue.User.GetLogin()
+		fields.Unknowns.Set(cfg.GetFieldKey(config.GitHubStatus), ghIssue.GetState())
+
+		// TODO: Do we actually need to update this? It's not possible to change a
+		//       GitHub issue's reporter.
+		fields.Unknowns.Set(cfg.GetFieldKey(config.GitHubReporter), ghIssue.User.GetLogin())
 
 		labels := make([]string, len(ghIssue.Labels))
 		for i, l := range ghIssue.Labels {
 			labels[i] = l.GetName()
 		}
-		fields.Unknowns[cfg.GetFieldKey(config.GitHubLabels)] = strings.Join(labels, ",")
+		fields.Unknowns.Set(cfg.GetFieldKey(config.GitHubLabels), strings.Join(labels, ","))
 
-		fields.Unknowns[cfg.GetFieldKey(config.LastISUpdate)] = time.Now().Format(dateFormat)
+		fields.Unknowns.Set(cfg.GetFieldKey(config.LastISUpdate), time.Now().Format(dateFormat))
 
 		fields.Type = jIssue.Fields.Type
 
@@ -202,6 +214,22 @@ func CreateIssue(cfg config.Config, issue gh.Issue, ghClient github.Client, jCli
 
 	log.Debugf("Creating JIRA issue based on GitHub issue #%d", *issue.Number)
 
+	unknowns := tcontainer.NewMarshalMap()
+
+	unknowns.Set(cfg.GetFieldKey(config.GitHubID), strconv.FormatInt(issue.GetID(), 10))
+	unknowns.Set(cfg.GetFieldKey(config.GitHubNumber), strconv.Itoa(issue.GetNumber()))
+	unknowns.Set(cfg.GetFieldKey(config.GitHubStatus), issue.GetState())
+	unknowns.Set(cfg.GetFieldKey(config.GitHubReporter), issue.User.GetLogin())
+
+	// TODO: Is there a way to represent this as an array of labels in Jira?
+	strs := make([]string, len(issue.Labels))
+	for i, v := range issue.Labels {
+		strs[i] = *v.Name
+	}
+	unknowns.Set(cfg.GetFieldKey(config.GitHubLabels), strings.Join(strs, ","))
+
+	unknowns.Set(cfg.GetFieldKey(config.LastISUpdate), time.Now().Format(dateFormat))
+
 	fields := gojira.IssueFields{
 		Type: gojira.IssueType{
 			Name: "Task", // TODO: Determine issue type
@@ -209,21 +237,8 @@ func CreateIssue(cfg config.Config, issue gh.Issue, ghClient github.Client, jCli
 		Project:     cfg.GetProject(),
 		Summary:     issue.GetTitle(),
 		Description: issue.GetBody(),
-		Unknowns:    map[string]interface{}{},
+		Unknowns:    unknowns,
 	}
-
-	fields.Unknowns[cfg.GetFieldKey(config.GitHubID)] = issue.GetID()
-	fields.Unknowns[cfg.GetFieldKey(config.GitHubNumber)] = issue.GetNumber()
-	fields.Unknowns[cfg.GetFieldKey(config.GitHubStatus)] = issue.GetState()
-	fields.Unknowns[cfg.GetFieldKey(config.GitHubReporter)] = issue.User.GetLogin()
-
-	strs := make([]string, len(issue.Labels))
-	for i, v := range issue.Labels {
-		strs[i] = *v.Name
-	}
-	fields.Unknowns[cfg.GetFieldKey(config.GitHubLabels)] = strings.Join(strs, ",")
-
-	fields.Unknowns[cfg.GetFieldKey(config.LastISUpdate)] = time.Now().Format(dateFormat)
 
 	jIssue := gojira.Issue{
 		Fields: &fields,
