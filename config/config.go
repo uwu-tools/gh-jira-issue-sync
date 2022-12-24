@@ -14,7 +14,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package cfg
+package config
 
 import (
 	"encoding/json"
@@ -88,10 +88,10 @@ type Config struct {
 	since time.Time
 }
 
-// NewConfig creates a new, immutable configuration object. This object
+// New creates a new, immutable configuration object. This object
 // holds the Viper configuration and the logger, and is validated. The
 // JIRA configuration is not yet initialized.
-func NewConfig(cmd *cobra.Command) (Config, error) {
+func New(cmd *cobra.Command) (Config, error) {
 	config := Config{}
 
 	var err error
@@ -225,7 +225,7 @@ func (c Config) GetProjectKey() string {
 func (c Config) GetRepo() (string, string) {
 	fullName := c.cmdConfig.GetString("repo-name")
 	parts := strings.Split(fullName, "/")
-	// We check that repo-name is two parts separated by a slash in NewConfig, so this is safe
+	// We check that repo-name is two parts separated by a slash in New, so this is safe
 	return parts[0], parts[1]
 }
 
