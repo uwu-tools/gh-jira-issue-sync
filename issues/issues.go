@@ -63,12 +63,19 @@ func Compare(cfg config.Config, ghClient github.Client, jiraClient jira.Client) 
 		return fmt.Errorf("listing Jira issues: %w", err)
 	}
 
+	log.Debugf("Jira issues found: %v", len(jiraIssues))
 	log.Debug("Collected all JIRA issues")
 
 	for _, ghIssue := range ghIssues {
 		found := false
 		for _, jIssue := range jiraIssues {
-			id, err := jIssue.Fields.Unknowns.Int(cfg.GetFieldKey(config.GitHubID))
+			fieldKey := cfg.GetFieldKey(config.GitHubID)
+			log.Debugf("GitHub ID custom field key: %s", fieldKey)
+
+			// TODO: Getting a field with Unknowns will generate a nil pointer
+			//       exception if the custom field is not defined in JIRA.
+			//       ref: https://github.com/andygrunwald/go-jira/issues/322
+			id, err := jIssue.Fields.Unknowns.Int(fieldKey)
 			if err != nil {
 				return fmt.Errorf("retrieving field key from GitHub ID: %w", err)
 			}
