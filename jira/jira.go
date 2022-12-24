@@ -148,24 +148,28 @@ func (j realJIRAClient) ListIssues(ids []int) ([]jira.Issue, error) {
 	var jql string
 	// If the list of IDs is too long, we get a 414 Request-URI Too Large, so in that case,
 	// we'll need to do the filtering ourselves.
-	if len(ids) < maxJQLIssueLength {
-		jql = fmt.Sprintf("project='%s' AND cf[%s] in (%s)",
-			j.cfg.GetProjectKey(), j.cfg.GetFieldID(config.GitHubID), strings.Join(idStrs, ","))
-	} else {
-		jql = fmt.Sprintf("project='%s'", j.cfg.GetProjectKey())
-	}
+	// TODO: Re-enable manual filtering, if required
+	/*
+		if len(ids) < maxJQLIssueLength {
+			jql = fmt.Sprintf(
+				// TODO(jira): Fix "The operator 'in' is not supported by the 'cf[#####]' field."
+				"project='%s' AND cf[%s] in (%s)",
+				j.cfg.GetProjectKey(),
+				j.cfg.GetFieldID(config.GitHubID),
+				strings.Join(idStrs, ","),
+			)
+		} else {
+			jql = fmt.Sprintf("project='%s'", j.cfg.GetProjectKey())
+		}
+	*/
+	jql = fmt.Sprintf("project='%s'", j.cfg.GetProjectKey())
+	log.Debugf("JQL query used: %s", jql)
 
-	ji, res, err := j.request(func() (interface{}, *jira.Response, error) {
-		return j.client.Issue.Search(jql, nil) //nolint:wrapcheck
-	})
+	// TODO(backoff): Considering restoring backoff logic here
+	jiraIssues, res, err := j.client.Issue.Search(jql, nil)
 	if err != nil {
 		log.Errorf("Error retrieving JIRA issues: %+v", err)
 		return nil, getErrorBody(j.cfg, res)
-	}
-	jiraIssues, ok := ji.([]jira.Issue)
-	if !ok {
-		log.Errorf("Get JIRA issues did not return issues! Got: %v", ji)
-		return nil, fmt.Errorf("get JIRA issues failed: expected []jira.Issue; got %T", ji) //nolint:goerr113
 	}
 
 	var issues []jira.Issue
