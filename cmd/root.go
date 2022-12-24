@@ -25,7 +25,7 @@ import (
 	"sigs.k8s.io/release-utils/version"
 
 	"github.com/uwu-tools/gh-jira-issue-sync/cfg"
-	"github.com/uwu-tools/gh-jira-issue-sync/lib"
+	"github.com/uwu-tools/gh-jira-issue-sync/issues"
 	"github.com/uwu-tools/gh-jira-issue-sync/lib/clients"
 )
 
@@ -61,7 +61,7 @@ var RootCmd = &cobra.Command{
 		}
 
 		for {
-			if err := lib.CompareIssues(config, ghClient, jiraClient); err != nil {
+			if err := issues.Compare(config, ghClient, jiraClient); err != nil {
 				log.Error(err)
 			}
 			if !config.IsDryRun() {

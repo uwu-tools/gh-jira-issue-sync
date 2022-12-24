@@ -14,7 +14,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package lib
+package issues
 
 import (
 	"fmt"
@@ -25,17 +25,18 @@ import (
 	"github.com/google/go-github/v48/github"
 
 	"github.com/uwu-tools/gh-jira-issue-sync/cfg"
+	"github.com/uwu-tools/gh-jira-issue-sync/comments"
 	"github.com/uwu-tools/gh-jira-issue-sync/lib/clients"
 )
 
 // dateFormat is the format used for the Last IS Update field.
 const dateFormat = "2006-01-02T15:04:05.0-0700"
 
-// CompareIssues gets the list of GitHub issues updated since the `since` date,
+// Compare gets the list of GitHub issues updated since the `since` date,
 // gets the list of JIRA issues which have GitHub ID custom fields in that list,
 // then matches each one. If a JIRA issue already exists for a given GitHub issue,
 // it calls UpdateIssue; if no JIRA issue already exists, it calls CreateIssue.
-func CompareIssues(config cfg.Config, ghClient clients.GitHubClient, jiraClient clients.JIRAClient) error {
+func Compare(config cfg.Config, ghClient clients.GitHubClient, jiraClient clients.JIRAClient) error {
 	log := config.GetLogger()
 
 	log.Debug("Collecting issues")
@@ -179,7 +180,7 @@ func UpdateIssue(config cfg.Config, ghIssue github.Issue, jIssue jira.Issue, ghC
 		return fmt.Errorf("getting Jira issue %s: %w", jIssue.Key, err)
 	}
 
-	if err := CompareComments(config, ghIssue, issue, ghClient, jClient); err != nil {
+	if err := comments.Compare(config, ghIssue, issue, ghClient, jClient); err != nil {
 		return err
 	}
 
@@ -232,7 +233,7 @@ func CreateIssue(config cfg.Config, issue github.Issue, ghClient clients.GitHubC
 
 	log.Debugf("Created JIRA issue %s!", jIssue.Key)
 
-	if err := CompareComments(config, issue, jIssue, ghClient, jClient); err != nil {
+	if err := comments.Compare(config, issue, jIssue, ghClient, jClient); err != nil {
 		return err
 	}
 

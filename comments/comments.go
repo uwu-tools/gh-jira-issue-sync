@@ -14,7 +14,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package lib
+package comments
 
 import (
 	"fmt"
@@ -38,10 +38,10 @@ var jCommentRegex = regexp.MustCompile("^Comment \\[\\(ID (\\d+)\\)\\|.*?] from 
 // just their GitHub ID for matching.
 var jCommentIDRegex = regexp.MustCompile("^Comment \\[\\(ID (\\d+)\\)\\|")
 
-// CompareComments takes a GitHub issue, and retrieves all of its comments. It then
+// Compare takes a GitHub issue, and retrieves all of its comments. It then
 // matches each one to a comment in `existing`. If it finds a match, it calls
 // UpdateComment; if it doesn't, it calls CreateComment.
-func CompareComments(config cfg.Config, ghIssue github.Issue, jIssue jira.Issue, ghClient clients.GitHubClient, jClient clients.JIRAClient) error {
+func Compare(config cfg.Config, ghIssue github.Issue, jIssue jira.Issue, ghClient clients.GitHubClient, jClient clients.JIRAClient) error {
 	log := config.GetLogger()
 
 	if ghIssue.GetComments() == 0 {
