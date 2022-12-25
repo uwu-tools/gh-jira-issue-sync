@@ -21,7 +21,7 @@ import (
 	"regexp"
 	"strconv"
 
-	gojira "github.com/andygrunwald/go-jira"
+	gojira "github.com/andygrunwald/go-jira/v2/cloud"
 	gh "github.com/google/go-github/v48/github"
 
 	"github.com/uwu-tools/gh-jira-issue-sync/config"

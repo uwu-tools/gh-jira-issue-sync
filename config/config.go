@@ -27,7 +27,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/andygrunwald/go-jira"
+	jira "github.com/andygrunwald/go-jira/v2/cloud"
 	"github.com/dghubble/oauth1"
 	"github.com/fsnotify/fsnotify"
 	"github.com/sirupsen/logrus"

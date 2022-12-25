@@ -22,7 +22,7 @@ import (
 	"strings"
 	"time"
 
-	gojira "github.com/andygrunwald/go-jira"
+	gojira "github.com/andygrunwald/go-jira/v2/cloud"
 	gh "github.com/google/go-github/v48/github"
 	"github.com/trivago/tgo/tcontainer"
 
