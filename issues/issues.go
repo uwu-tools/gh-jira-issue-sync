@@ -89,8 +89,17 @@ func Compare(cfg config.Config, ghClient github.Client, jiraClient jira.Client) 
 				log.Infof("GitHub ID custom field (%s) does not exist", fieldKey)
 			}
 
-			if *ghIssue.ID == id {
+			ghIDStr := strconv.FormatInt(*ghIssue.ID, 10)
+			jiraID, ok := id.(string)
+			if !ok {
+				log.Debugf("GitHub ID custom field is not a string; got %T", id)
+				break
+			}
+
+			if ghIDStr == jiraID {
 				found = true
+
+				log.Infof("updating issue %s", jIssue.ID)
 				if err := UpdateIssue(cfg, ghIssue, jIssue, ghClient, jiraClient); err != nil {
 					log.Errorf("Error updating issue %s. Error: %v", jIssue.Key, err)
 				}
