@@ -17,6 +17,7 @@
 package config
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -117,7 +118,8 @@ func New(cmd *cobra.Command) (Config, error) {
 // LoadJIRAConfig loads the JIRA configuration (project key,
 // custom field IDs) from a remote JIRA server.
 func (c *Config) LoadJIRAConfig(client jira.Client) error {
-	proj, res, err := client.Project.Get(c.cmdConfig.GetString("jira-project"))
+	// TODO(j-v2): Pull context from config
+	proj, res, err := client.Project.Get(context.Background(), c.cmdConfig.GetString("jira-project"))
 	if err != nil {
 		c.log.Errorf("error retrieving JIRA project; check key and credentials. Error: %s", err)
 		defer res.Body.Close()
@@ -472,7 +474,8 @@ type jiraField struct {
 // project, and saves the IDs of the custom fields used by issue-sync.
 func (c Config) getFieldIDs(client jira.Client) (fields, error) {
 	c.log.Debug("Collecting field IDs.")
-	req, err := client.NewRequest("GET", "/rest/api/2/field", nil)
+	// TODO(j-v2): Pull context from config
+	req, err := client.NewRequest(context.Background(), "GET", "/rest/api/2/field", nil)
 	if err != nil {
 		return fields{}, fmt.Errorf("getting fields: %w", err)
 	}
