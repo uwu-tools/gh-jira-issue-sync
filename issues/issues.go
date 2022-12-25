@@ -22,7 +22,7 @@ import (
 	"strings"
 	"time"
 
-	gojira "github.com/andygrunwald/go-jira"
+	gojira "github.com/andygrunwald/go-jira/v2/cloud"
 	gh "github.com/google/go-github/v48/github"
 	"github.com/trivago/tgo/tcontainer"
 
@@ -77,12 +77,6 @@ func Compare(cfg config.Config, ghClient github.Client, jiraClient jira.Client) 
 			// TODO: Getting a field with Unknowns will generate a nil pointer
 			//       exception if the custom field is not defined in JIRA.
 			//       ref: https://github.com/andygrunwald/go-jira/issues/322
-			/*
-				id, err := jIssue.Fields.Unknowns.Int(fieldKey)
-				if err != nil {
-					return fmt.Errorf("retrieving field key from GitHub ID: %w", err)
-				}
-			*/
 			unknowns := jIssue.Fields.Unknowns
 			id, exists := unknowns.Value(fieldKey)
 			if !exists {
