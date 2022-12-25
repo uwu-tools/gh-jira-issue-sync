@@ -188,7 +188,7 @@ func (g realGHClient) request(f func() (interface{}, *github.Response, error)) (
 	b := backoff.NewExponentialBackOff()
 	b.MaxElapsedTime = g.cfg.GetTimeout()
 
-	backoffErr := backoff.RetryNotify(op, b, func(err error, duration time.Duration) {
+	_ = backoff.RetryNotify(op, b, func(err error, duration time.Duration) { //nolint:errcheck
 		// Round to a whole number of milliseconds
 		duration /= RetryBackoffRoundRatio // Convert nanoseconds to milliseconds
 		duration *= RetryBackoffRoundRatio // Convert back so it appears correct
@@ -196,7 +196,7 @@ func (g realGHClient) request(f func() (interface{}, *github.Response, error)) (
 		log.Errorf("Error performing operation; retrying in %v: %v", duration, err)
 	})
 
-	return ret, res, fmt.Errorf("backoff error: %w", backoffErr)
+	return ret, res, nil
 }
 
 // New creates a GitHubClient and returns it; which
