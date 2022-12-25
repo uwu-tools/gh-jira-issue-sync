@@ -145,7 +145,6 @@ func (j realJIRAClient) ListIssues(ids []int) ([]jira.Issue, error) {
 		idStrs[i] = fmt.Sprint(v)
 	}
 
-	var jql string
 	// If the list of IDs is too long, we get a 414 Request-URI Too Large, so in that case,
 	// we'll need to do the filtering ourselves.
 	// TODO: Re-enable manual filtering, if required
@@ -162,7 +161,7 @@ func (j realJIRAClient) ListIssues(ids []int) ([]jira.Issue, error) {
 			jql = fmt.Sprintf("project='%s'", j.cfg.GetProjectKey())
 		}
 	*/
-	jql = fmt.Sprintf("project='%s'", j.cfg.GetProjectKey())
+	jql := fmt.Sprintf("project='%s'", j.cfg.GetProjectKey())
 	log.Debugf("JQL query used: %s", jql)
 
 	// TODO(backoff): Considering restoring backoff logic here
