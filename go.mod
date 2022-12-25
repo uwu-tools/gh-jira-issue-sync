@@ -3,7 +3,7 @@ module github.com/uwu-tools/gh-jira-issue-sync
 go 1.19
 
 require (
-	github.com/andygrunwald/go-jira v1.16.0
+	github.com/andygrunwald/go-jira/v2 v2.0.0-20221123211055-094697715517
 	github.com/cenkalti/backoff/v4 v4.2.0
 	github.com/dghubble/oauth1 v0.7.2
 	github.com/fsnotify/fsnotify v1.6.0
@@ -18,7 +18,6 @@ require (
 )
 
 require (
-	github.com/andygrunwald/go-jira/v2 v2.0.0-20221123211055-094697715517 // indirect
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be // indirect
 	github.com/fatih/structs v1.1.0 // indirect
 	github.com/golang-jwt/jwt/v4 v4.4.2 // indirect
@@ -30,7 +29,6 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/pelletier/go-toml v1.9.5 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.6 // indirect
-	github.com/pkg/errors v0.9.1 // indirect
 	github.com/spf13/afero v1.9.3 // indirect
 	github.com/spf13/cast v1.5.0 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
