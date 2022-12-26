@@ -45,9 +45,9 @@ var jCommentIDRegex = regexp.MustCompile(`^Comment \[\(ID (\d+)\)\|`)
 // matches each one to a comment in `existing`. If it finds a match, it calls
 // UpdateComment; if it doesn't, it calls CreateComment.
 func Compare(
-	cfg config.Config,
-	ghIssue gh.Issue,
-	jIssue gojira.Issue,
+	cfg *config.Config,
+	ghIssue *gh.Issue,
+	jIssue *gojira.Issue,
 	ghClient github.Client,
 	jClient jira.Client,
 ) error {
@@ -63,15 +63,11 @@ func Compare(
 		return fmt.Errorf("listing GitHub comments: %w", err)
 	}
 
-	var jComments []gojira.Comment
+	var jComments []*gojira.Comment
 	if jIssue.Fields.Comments == nil {
 		log.Debugf("JIRA issue %s has no comments.", jIssue.Key)
 	} else {
-		commentPtrs := jIssue.Fields.Comments.Comments
-		jComments = make([]gojira.Comment, len(commentPtrs))
-		for i, v := range commentPtrs {
-			jComments[i] = *v
-		}
+		jComments = jIssue.Fields.Comments.Comments
 		log.Debugf("JIRA issue %s has %d comments", jIssue.Key, len(jComments))
 	}
 
@@ -94,7 +90,7 @@ func Compare(
 			}
 			found = true
 
-			err = UpdateComment(cfg, *ghComment, jComment, jIssue, ghClient, jClient)
+			err = UpdateComment(cfg, ghComment, jComment, jIssue, ghClient, jClient)
 			if err != nil {
 				return err
 			}
@@ -105,7 +101,7 @@ func Compare(
 			continue
 		}
 
-		comment, err := jClient.CreateComment(jIssue, *ghComment, ghClient)
+		comment, err := jClient.CreateComment(jIssue, ghComment, ghClient)
 		if err != nil {
 			return fmt.Errorf("creating Jira comment: %w", err)
 		}
@@ -120,10 +116,10 @@ func Compare(
 // UpdateComment compares the body of a GitHub comment with the body (minus header)
 // of the JIRA comment, and updates the JIRA comment if necessary.
 func UpdateComment(
-	cfg config.Config,
-	ghComment gh.IssueComment,
-	jComment gojira.Comment,
-	jIssue gojira.Issue,
+	cfg *config.Config,
+	ghComment *gh.IssueComment,
+	jComment *gojira.Comment,
+	jIssue *gojira.Issue,
 	ghClient github.Client,
 	jClient jira.Client,
 ) error {

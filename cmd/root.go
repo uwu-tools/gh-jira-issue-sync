@@ -52,7 +52,7 @@ var RootCmd = &cobra.Command{
 
 		log := cfg.GetLogger()
 
-		jiraClient, err := jira.New(&cfg)
+		jiraClient, err := jira.New(cfg)
 		if err != nil {
 			return fmt.Errorf("creating Jira client: %w", err)
 		}
