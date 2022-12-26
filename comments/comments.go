@@ -138,7 +138,7 @@ func UpdateComment(
 		return fmt.Errorf("updating Jira comment: %w", err)
 	}
 
-	log.Debug("Updated JIRA comment %s.", comment.ID)
+	log.Debugf("Updated JIRA comment %s", comment.ID)
 
 	return nil
 }

@@ -162,7 +162,7 @@ func (g *realGHClient) GetRateLimits() (github.RateLimits, error) {
 		return g.client.RateLimits(ctx) //nolint:wrapcheck
 	})
 	if err != nil {
-		log.Errorf("Error connecting to GitHub; check your token. Error: %w", err)
+		log.Errorf("Error connecting to GitHub; check your token. Error: %v", err)
 		return github.RateLimits{}, err
 	}
 	rate, ok := rl.(*github.RateLimits)
