@@ -450,29 +450,6 @@ func (c *Config) validateConfig() error {
 	return nil
 }
 
-// jiraField represents field metadata in JIRA. For an example of its
-// structure, make a request to `${jira-uri}/rest/api/2/field`.
-// TODO(jira): Check if type is already represented in go-jira and remove this definition.
-//
-//nolint:govet
-type jiraField struct {
-	ID          string   `json:"id"`
-	Key         string   `json:"key"`
-	Name        string   `json:"name"`
-	Custom      bool     `json:"custom"`
-	Orderable   bool     `json:"orderable"`
-	Navigable   bool     `json:"navigable"`
-	Searchable  bool     `json:"searchable"`
-	ClauseNames []string `json:"clauseNames"`
-	Schema      struct {
-		Type     string `json:"type"`
-		System   string `json:"system,omitempty"`
-		Items    string `json:"items,omitempty"`
-		Custom   string `json:"custom,omitempty"`
-		CustomID int    `json:"customId,omitempty"`
-	} `json:"schema,omitempty"`
-}
-
 // getFieldIDs requests the metadata of every issue field in the JIRA
 // project, and saves the IDs of the custom fields used by issue-sync.
 func (c *Config) getFieldIDs(client *jira.Client) (*fields, error) {
@@ -483,7 +460,7 @@ func (c *Config) getFieldIDs(client *jira.Client) (*fields, error) {
 		return nil, fmt.Errorf("getting fields: %w", err)
 	}
 
-	jFieldsPtr := new([]jiraField)
+	jFieldsPtr := new([]jira.Field)
 	_, err = client.Do(req, jFieldsPtr)
 	if err != nil {
 		return nil, fmt.Errorf("getting field IDs: %w", err)
