@@ -104,12 +104,20 @@ func (g realGHClient) ListComments(issue github.Issue) ([]*github.IssueComment, 
 
 	ctx := context.Background()
 	user, repo := g.cfg.GetRepo()
-	c, _, err := g.request(func() (interface{}, *github.Response, error) {
-		return g.client.Issues.ListComments(ctx, user, repo, issue.GetNumber(), &github.IssueListCommentsOptions{ //nolint:wrapcheck
-			Sort:      github.String("created"),
-			Direction: github.String("asc"),
-		})
-	})
+	c, _, err := g.request(
+		func() (interface{}, *github.Response, error) {
+			return g.client.Issues.ListComments( //nolint:wrapcheck
+				ctx,
+				user,
+				repo,
+				issue.GetNumber(),
+				&github.IssueListCommentsOptions{
+					Sort:      github.String("created"),
+					Direction: github.String("asc"),
+				},
+			)
+		},
+	)
 	if err != nil {
 		log.Errorf("Error retrieving GitHub comments for issue #%d. Error: %v.", issue.GetNumber(), err)
 		return nil, err
@@ -160,7 +168,11 @@ func (g realGHClient) GetRateLimits() (github.RateLimits, error) {
 	rate, ok := rl.(*github.RateLimits)
 	if !ok {
 		log.Errorf("Get GitHub rate limits did not return rate limits! Got: %v", rl)
-		return github.RateLimits{}, fmt.Errorf("get GitHub rate limits failed: expected *github.RateLimits; got %T", rl) //nolint:goerr113
+		return github.RateLimits{},
+			fmt.Errorf( //nolint:goerr113
+				"get GitHub rate limits failed: expected *github.RateLimits; got %T",
+				rl,
+			)
 	}
 
 	return *rate, nil

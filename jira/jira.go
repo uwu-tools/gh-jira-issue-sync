@@ -273,7 +273,11 @@ const maxBodyLength = 1 << 15
 
 // CreateComment adds a comment to the provided JIRA issue using the fields from
 // the provided GitHub comment. It then returns the created comment.
-func (j realJIRAClient) CreateComment(issue jira.Issue, comment gh.IssueComment, githubClient github.Client) (jira.Comment, error) {
+func (j realJIRAClient) CreateComment(
+	issue jira.Issue,
+	comment gh.IssueComment,
+	githubClient github.Client,
+) (jira.Comment, error) {
 	log := j.cfg.GetLogger()
 
 	user, err := githubClient.GetUser(comment.User.GetLogin())
@@ -320,7 +324,12 @@ func (j realJIRAClient) CreateComment(issue jira.Issue, comment gh.IssueComment,
 // UpdateComment updates a comment (identified by the `id` parameter) on a given
 // JIRA with a new body from the fields of the given GitHub comment. It returns
 // the updated comment.
-func (j realJIRAClient) UpdateComment(issue jira.Issue, id string, comment gh.IssueComment, githubClient github.Client) (jira.Comment, error) {
+func (j realJIRAClient) UpdateComment(
+	issue jira.Issue,
+	id string,
+	comment gh.IssueComment,
+	githubClient github.Client,
+) (jira.Comment, error) {
 	log := j.cfg.GetLogger()
 
 	user, err := githubClient.GetUser(comment.User.GetLogin())
@@ -573,7 +582,11 @@ func (j dryrunJIRAClient) UpdateIssue(issue jira.Issue) (jira.Issue, error) {
 // CreateComment prints the body that would be set on a new comment if it were
 // to be created according to the fields of the provided GitHub comment. It then
 // returns a comment object containing the body that would be used.
-func (j dryrunJIRAClient) CreateComment(issue jira.Issue, comment gh.IssueComment, githubClient github.Client) (jira.Comment, error) {
+func (j dryrunJIRAClient) CreateComment(
+	issue jira.Issue,
+	comment gh.IssueComment,
+	githubClient github.Client,
+) (jira.Comment, error) {
 	log := j.cfg.GetLogger()
 
 	user, err := githubClient.GetUser(comment.User.GetLogin())
@@ -612,7 +625,12 @@ func (j dryrunJIRAClient) CreateComment(issue jira.Issue, comment gh.IssueCommen
 // UpdateComment prints the body that would be set on a comment were it to be
 // updated according to the provided GitHub comment. It then returns a comment
 // object containing the body that would be used.
-func (j dryrunJIRAClient) UpdateComment(issue jira.Issue, id string, comment gh.IssueComment, githubClient github.Client) (jira.Comment, error) {
+func (j dryrunJIRAClient) UpdateComment(
+	issue jira.Issue,
+	id string,
+	comment gh.IssueComment,
+	githubClient github.Client,
+) (jira.Comment, error) {
 	log := j.cfg.GetLogger()
 
 	user, err := githubClient.GetUser(comment.User.GetLogin())

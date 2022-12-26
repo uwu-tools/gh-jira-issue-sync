@@ -153,7 +153,13 @@ func DidIssueChange(cfg config.Config, ghIssue gh.Issue, jIssue gojira.Issue) bo
 // UpdateIssue compares each field of a GitHub issue to a JIRA issue; if any of them
 // differ, the differing fields of the JIRA issue are updated to match the GitHub
 // issue.
-func UpdateIssue(cfg config.Config, ghIssue gh.Issue, jIssue gojira.Issue, ghClient github.Client, jClient jira.Client) error {
+func UpdateIssue(
+	cfg config.Config,
+	ghIssue gh.Issue,
+	jIssue gojira.Issue,
+	ghClient github.Client,
+	jClient jira.Client,
+) error {
 	log := cfg.GetLogger()
 
 	log.Debugf("Updating JIRA %s with GitHub #%d", jIssue.Key, *ghIssue.Number)

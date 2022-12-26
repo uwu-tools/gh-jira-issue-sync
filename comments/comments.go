@@ -44,7 +44,13 @@ var jCommentIDRegex = regexp.MustCompile(`^Comment \[\(ID (\d+)\)\|`)
 // Compare takes a GitHub issue, and retrieves all of its comments. It then
 // matches each one to a comment in `existing`. If it finds a match, it calls
 // UpdateComment; if it doesn't, it calls CreateComment.
-func Compare(cfg config.Config, ghIssue gh.Issue, jIssue gojira.Issue, ghClient github.Client, jClient jira.Client) error {
+func Compare(
+	cfg config.Config,
+	ghIssue gh.Issue,
+	jIssue gojira.Issue,
+	ghClient github.Client,
+	jClient jira.Client,
+) error {
 	log := cfg.GetLogger()
 
 	if ghIssue.GetComments() == 0 {
@@ -113,7 +119,14 @@ func Compare(cfg config.Config, ghIssue gh.Issue, jIssue gojira.Issue, ghClient 
 
 // UpdateComment compares the body of a GitHub comment with the body (minus header)
 // of the JIRA comment, and updates the JIRA comment if necessary.
-func UpdateComment(cfg config.Config, ghComment gh.IssueComment, jComment gojira.Comment, jIssue gojira.Issue, ghClient github.Client, jClient jira.Client) error {
+func UpdateComment(
+	cfg config.Config,
+	ghComment gh.IssueComment,
+	jComment gojira.Comment,
+	jIssue gojira.Issue,
+	ghClient github.Client,
+	jClient jira.Client,
+) error {
 	log := cfg.GetLogger()
 
 	// fields[0] is the whole body, 1 is the ID, 2 is the username, 3 is the real name (or "" if none)
