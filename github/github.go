@@ -42,8 +42,8 @@ type Client interface {
 // requests against the GitHub REST API. It is the canonical implementation
 // of GitHubClient.
 type realGHClient struct {
-	cfg    config.Config
-	client github.Client
+	cfg    *config.Config
+	client *github.Client
 }
 
 // ListIssues returns the list of GitHub issues since the last run of the tool.
@@ -228,8 +228,8 @@ func New(cfg *config.Config) (Client, error) {
 	client := github.NewClient(tc)
 
 	ret := &realGHClient{
-		cfg:    *cfg,
-		client: *client,
+		cfg:    cfg,
+		client: client,
 	}
 
 	// Make a request so we can check that we can connect fine.

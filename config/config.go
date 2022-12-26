@@ -66,6 +66,8 @@ type fields struct {
 }
 
 // Config is the root configuration object the application creates.
+//
+//nolint:govet
 type Config struct {
 	// cmdFile is the file Viper is using for its configuration (default $HOME/.issue-sync.json).
 	cmdFile string
@@ -451,6 +453,8 @@ func (c *Config) validateConfig() error {
 // jiraField represents field metadata in JIRA. For an example of its
 // structure, make a request to `${jira-uri}/rest/api/2/field`.
 // TODO(jira): Check if type is already represented in go-jira and remove this definition.
+//
+//nolint:govet
 type jiraField struct {
 	ID          string   `json:"id"`
 	Key         string   `json:"key"`
