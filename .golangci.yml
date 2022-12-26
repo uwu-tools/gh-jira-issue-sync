@@ -41,7 +41,7 @@ linters:
     - gosec
     - gosimple
     #- govet
-    #- ineffassign
+    - ineffassign
     - lll
     - makezero
     - misspell

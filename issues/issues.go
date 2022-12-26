@@ -193,8 +193,7 @@ func UpdateIssue(
 			ID:     jIssue.ID,
 		}
 
-		var err error
-		issue, err = jClient.UpdateIssue(issue)
+		_, err := jClient.UpdateIssue(issue)
 		if err != nil {
 			return fmt.Errorf("updating Jira issue: %w", err)
 		}
