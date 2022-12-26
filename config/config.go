@@ -79,10 +79,10 @@ type Config struct {
 	basicAuth bool
 
 	// fieldIDs is the list of custom fields we pulled from the `fields` JIRA endpoint.
-	fieldIDs fields
+	fieldIDs *fields
 
 	// project represents the JIRA project the user has requested.
-	project jira.Project
+	project *jira.Project
 
 	// since is the parsed value of the `since` configuration parameter, which is the earliest that
 	// a GitHub issue can have been updated to be retrieved.
@@ -132,7 +132,7 @@ func (c *Config) LoadJIRAConfig(client *jira.Client) error {
 		c.log.Debugf("Error body: %s", body)
 		return fmt.Errorf("reading error body: %s", string(body)) //nolint:goerr113
 	}
-	c.project = *proj
+	c.project = proj
 
 	c.fieldIDs, err = c.getFieldIDs(client)
 	if err != nil {
@@ -214,7 +214,7 @@ func (c *Config) GetFieldKey(key fieldKey) string {
 }
 
 // GetProject returns the JIRA project the user has configured.
-func (c *Config) GetProject() jira.Project {
+func (c *Config) GetProject() *jira.Project {
 	return c.project
 }
 
@@ -450,6 +450,7 @@ func (c *Config) validateConfig() error {
 
 // jiraField represents field metadata in JIRA. For an example of its
 // structure, make a request to `${jira-uri}/rest/api/2/field`.
+// TODO(jira): Check if type is already represented in go-jira and remove this definition.
 type jiraField struct {
 	ID          string   `json:"id"`
 	Key         string   `json:"key"`
@@ -470,24 +471,26 @@ type jiraField struct {
 
 // getFieldIDs requests the metadata of every issue field in the JIRA
 // project, and saves the IDs of the custom fields used by issue-sync.
-func (c *Config) getFieldIDs(client *jira.Client) (fields, error) {
+func (c *Config) getFieldIDs(client *jira.Client) (*fields, error) {
 	c.log.Debug("Collecting field IDs.")
 	// TODO(j-v2): Pull context from config
 	req, err := client.NewRequest(context.Background(), "GET", "/rest/api/2/field", nil)
 	if err != nil {
-		return fields{}, fmt.Errorf("getting fields: %w", err)
+		return nil, fmt.Errorf("getting fields: %w", err)
 	}
-	jFields := new([]jiraField)
 
-	_, err = client.Do(req, jFields)
+	jFieldsPtr := new([]jiraField)
+	_, err = client.Do(req, jFieldsPtr)
 	if err != nil {
-		return fields{}, fmt.Errorf("getting field IDs: %w", err)
+		return nil, fmt.Errorf("getting field IDs: %w", err)
 	}
 
-	fieldIDs := fields{}
+	jFields := *jFieldsPtr
+	var fieldIDs fields
 
 	// TODO(config): Use constants for custom field names
-	for _, field := range *jFields {
+	for i := range jFields {
+		field := jFields[i]
 		switch field.Name {
 		case "GitHub ID":
 			fieldIDs.githubID = fmt.Sprint(field.Schema.CustomID)
@@ -506,27 +509,27 @@ func (c *Config) getFieldIDs(client *jira.Client) (fields, error) {
 
 	// TODO(config): Use constants for custom field names
 	if fieldIDs.githubID == "" {
-		return fieldIDs, errCustomFieldIDNotFound("GitHub ID")
+		return nil, errCustomFieldIDNotFound("GitHub ID")
 	}
 	if fieldIDs.githubNumber == "" {
-		return fieldIDs, errCustomFieldIDNotFound("GitHub Number")
+		return nil, errCustomFieldIDNotFound("GitHub Number")
 	}
 	if fieldIDs.githubLabels == "" {
-		return fieldIDs, errCustomFieldIDNotFound("Github Labels")
+		return nil, errCustomFieldIDNotFound("Github Labels")
 	}
 	if fieldIDs.githubStatus == "" {
-		return fieldIDs, errCustomFieldIDNotFound("Github Status")
+		return nil, errCustomFieldIDNotFound("Github Status")
 	}
 	if fieldIDs.githubReporter == "" {
-		return fieldIDs, errCustomFieldIDNotFound("Github Reporter")
+		return nil, errCustomFieldIDNotFound("Github Reporter")
 	}
 	if fieldIDs.lastUpdate == "" {
-		return fieldIDs, errCustomFieldIDNotFound("Last Issue-Sync Update")
+		return nil, errCustomFieldIDNotFound("Last Issue-Sync Update")
 	}
 
 	c.log.Debug("All fields have been checked.")
 
-	return fieldIDs, nil
+	return &fieldIDs, nil
 }
 
 // Errors

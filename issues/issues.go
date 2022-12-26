@@ -242,7 +242,7 @@ func CreateIssue(cfg *config.Config, issue *gh.Issue, ghClient github.Client, jC
 		Type: gojira.IssueType{
 			Name: "Task", // TODO: Determine issue type
 		},
-		Project:     cfg.GetProject(),
+		Project:     *cfg.GetProject(),
 		Summary:     issue.GetTitle(),
 		Description: issue.GetBody(),
 		Unknowns:    unknowns,
