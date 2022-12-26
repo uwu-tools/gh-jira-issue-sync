@@ -308,10 +308,8 @@ func newViper(appName, cfgFile string) *viper.Viper {
 		v.OnConfigChange(func(e fsnotify.Event) {
 			log.WithField("file", e.Name).Info("config file changed")
 		})
-	} else {
-		if cfgFile != "" {
-			log.WithError(err).Warningf("Error reading config file: %v", cfgFile)
-		}
+	} else if cfgFile != "" {
+		log.WithError(err).Warningf("Error reading config file: %v", cfgFile)
 	}
 
 	if log.Level == logrus.DebugLevel {
