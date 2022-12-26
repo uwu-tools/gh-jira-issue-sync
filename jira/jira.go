@@ -29,9 +29,9 @@ import (
 	"github.com/cenkalti/backoff/v4"
 	gh "github.com/google/go-github/v48/github"
 
-	"github.com/uwu-tools/gh-jira-issue-sync/auth"
 	"github.com/uwu-tools/gh-jira-issue-sync/config"
 	"github.com/uwu-tools/gh-jira-issue-sync/github"
+	"github.com/uwu-tools/gh-jira-issue-sync/jira/auth"
 )
 
 // commentDateFormat is the format used in the headers of JIRA comments.
