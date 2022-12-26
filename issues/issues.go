@@ -39,7 +39,7 @@ const dateFormat = "2006-01-02T15:04:05.0-0700"
 // gets the list of JIRA issues which have GitHub ID custom fields in that list,
 // then matches each one. If a JIRA issue already exists for a given GitHub issue,
 // it calls UpdateIssue; if no JIRA issue already exists, it calls CreateIssue.
-func Compare(cfg config.Config, ghClient github.Client, jiraClient jira.Client) error {
+func Compare(cfg *config.Config, ghClient github.Client, jiraClient jira.Client) error {
 	log := cfg.GetLogger()
 
 	log.Debug("Collecting issues")
@@ -73,7 +73,9 @@ func Compare(cfg config.Config, ghClient github.Client, jiraClient jira.Client) 
 
 		fieldKey := cfg.GetFieldKey(config.GitHubID)
 		log.Debugf("GitHub ID custom field key: %s", fieldKey)
-		for _, jIssue := range jiraIssues {
+		for i := range jiraIssues {
+			jIssue := jiraIssues[i]
+
 			// TODO: Getting a field with Unknowns will generate a nil pointer
 			//       exception if the custom field is not defined in JIRA.
 			//       ref: https://github.com/andygrunwald/go-jira/issues/322
@@ -94,7 +96,7 @@ func Compare(cfg config.Config, ghClient github.Client, jiraClient jira.Client) 
 				found = true
 
 				log.Infof("updating issue %s", jIssue.ID)
-				if err := UpdateIssue(cfg, ghIssue, jIssue, ghClient, jiraClient); err != nil {
+				if err := UpdateIssue(cfg, ghIssue, &jIssue, ghClient, jiraClient); err != nil {
 					log.Errorf("Error updating issue %s. Error: %v", jIssue.Key, err)
 				}
 				break
@@ -112,7 +114,7 @@ func Compare(cfg config.Config, ghClient github.Client, jiraClient jira.Client) 
 
 // DidIssueChange tests each of the relevant fields on the provided JIRA and GitHub issue
 // and returns whether or not they differ.
-func DidIssueChange(cfg config.Config, ghIssue gh.Issue, jIssue gojira.Issue) bool {
+func DidIssueChange(cfg *config.Config, ghIssue *gh.Issue, jIssue *gojira.Issue) bool {
 	log := cfg.GetLogger()
 
 	log.Debugf("Comparing GitHub issue #%d and JIRA issue %s", ghIssue.GetNumber(), jIssue.Key)
@@ -153,15 +155,19 @@ func DidIssueChange(cfg config.Config, ghIssue gh.Issue, jIssue gojira.Issue) bo
 // UpdateIssue compares each field of a GitHub issue to a JIRA issue; if any of them
 // differ, the differing fields of the JIRA issue are updated to match the GitHub
 // issue.
-func UpdateIssue(cfg config.Config, ghIssue gh.Issue, jIssue gojira.Issue, ghClient github.Client, jClient jira.Client) error {
+func UpdateIssue(
+	cfg *config.Config,
+	ghIssue *gh.Issue,
+	jIssue *gojira.Issue,
+	ghClient github.Client,
+	jClient jira.Client,
+) error {
 	log := cfg.GetLogger()
 
 	log.Debugf("Updating JIRA %s with GitHub #%d", jIssue.Key, *ghIssue.Number)
 
-	var issue gojira.Issue
-
 	if DidIssueChange(cfg, ghIssue, jIssue) {
-		fields := *jIssue.Fields
+		fields := jIssue.Fields
 
 		fields.Summary = ghIssue.GetTitle()
 		fields.Description = ghIssue.GetBody()
@@ -181,14 +187,13 @@ func UpdateIssue(cfg config.Config, ghIssue gh.Issue, jIssue gojira.Issue, ghCli
 
 		fields.Type = jIssue.Fields.Type
 
-		issue = gojira.Issue{
-			Fields: &fields,
+		issue := &gojira.Issue{
+			Fields: fields,
 			Key:    jIssue.Key,
 			ID:     jIssue.ID,
 		}
 
-		var err error
-		issue, err = jClient.UpdateIssue(issue)
+		_, err := jClient.UpdateIssue(issue)
 		if err != nil {
 			return fmt.Errorf("updating Jira issue: %w", err)
 		}
@@ -198,12 +203,12 @@ func UpdateIssue(cfg config.Config, ghIssue gh.Issue, jIssue gojira.Issue, ghCli
 		log.Debugf("JIRA issue %s is already up to date!", jIssue.Key)
 	}
 
-	issue, err := jClient.GetIssue(jIssue.Key)
+	foundIssue, err := jClient.GetIssue(jIssue.Key)
 	if err != nil {
 		return fmt.Errorf("getting Jira issue %s: %w", jIssue.Key, err)
 	}
 
-	if err := comments.Compare(cfg, ghIssue, issue, ghClient, jClient); err != nil {
+	if err := comments.Compare(cfg, ghIssue, foundIssue, ghClient, jClient); err != nil {
 		return fmt.Errorf("comparing comments for issue %s: %w", jIssue.Key, err)
 	}
 
@@ -212,7 +217,7 @@ func UpdateIssue(cfg config.Config, ghIssue gh.Issue, jIssue gojira.Issue, ghCli
 
 // CreateIssue generates a JIRA issue from the various fields on the given GitHub issue, then
 // sends it to the JIRA API.
-func CreateIssue(cfg config.Config, issue gh.Issue, ghClient github.Client, jClient jira.Client) error {
+func CreateIssue(cfg *config.Config, issue *gh.Issue, ghClient github.Client, jClient jira.Client) error {
 	log := cfg.GetLogger()
 
 	log.Debugf("Creating JIRA issue based on GitHub issue #%d", *issue.Number)
@@ -233,33 +238,33 @@ func CreateIssue(cfg config.Config, issue gh.Issue, ghClient github.Client, jCli
 
 	unknowns.Set(cfg.GetFieldKey(config.LastISUpdate), time.Now().Format(dateFormat))
 
-	fields := gojira.IssueFields{
+	fields := &gojira.IssueFields{
 		Type: gojira.IssueType{
 			Name: "Task", // TODO: Determine issue type
 		},
-		Project:     cfg.GetProject(),
+		Project:     *cfg.GetProject(),
 		Summary:     issue.GetTitle(),
 		Description: issue.GetBody(),
 		Unknowns:    unknowns,
 	}
 
-	jIssue := gojira.Issue{
-		Fields: &fields,
+	jIssue := &gojira.Issue{
+		Fields: fields,
 	}
 
-	jIssue, err := jClient.CreateIssue(jIssue)
+	newIssue, err := jClient.CreateIssue(jIssue)
 	if err != nil {
 		return fmt.Errorf("creating Jira issue: %w", err)
 	}
 
-	jIssue, err = jClient.GetIssue(jIssue.Key)
+	foundIssue, err := jClient.GetIssue(newIssue.Key)
 	if err != nil {
-		return fmt.Errorf("getting Jira issue %s: %w", jIssue.Key, err)
+		return fmt.Errorf("getting Jira issue %s: %w", newIssue.Key, err)
 	}
 
-	log.Debugf("Created JIRA issue %s!", jIssue.Key)
+	log.Debugf("Created JIRA issue %s!", newIssue.Key)
 
-	if err := comments.Compare(cfg, issue, jIssue, ghClient, jClient); err != nil {
+	if err := comments.Compare(cfg, issue, foundIssue, ghClient, jClient); err != nil {
 		return fmt.Errorf("comparing comments for issue %s: %w", jIssue.Key, err)
 	}
 

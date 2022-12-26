@@ -66,6 +66,8 @@ type fields struct {
 }
 
 // Config is the root configuration object the application creates.
+//
+//nolint:govet
 type Config struct {
 	// cmdFile is the file Viper is using for its configuration (default $HOME/.issue-sync.json).
 	cmdFile string
@@ -79,10 +81,10 @@ type Config struct {
 	basicAuth bool
 
 	// fieldIDs is the list of custom fields we pulled from the `fields` JIRA endpoint.
-	fieldIDs fields
+	fieldIDs *fields
 
 	// project represents the JIRA project the user has requested.
-	project jira.Project
+	project *jira.Project
 
 	// since is the parsed value of the `since` configuration parameter, which is the earliest that
 	// a GitHub issue can have been updated to be retrieved.
@@ -92,32 +94,32 @@ type Config struct {
 // New creates a new, immutable configuration object. This object
 // holds the Viper configuration and the logger, and is validated. The
 // JIRA configuration is not yet initialized.
-func New(cmd *cobra.Command) (Config, error) {
-	config := Config{}
+func New(cmd *cobra.Command) (*Config, error) {
+	var cfg Config
 
 	var err error
-	config.cmdFile, err = cmd.Flags().GetString("config")
+	cfg.cmdFile, err = cmd.Flags().GetString("config")
 	if err != nil {
-		config.cmdFile = ""
+		cfg.cmdFile = ""
 	}
 
-	config.cmdConfig = *newViper("issue-sync", config.cmdFile)
-	config.cmdConfig.BindPFlags(cmd.Flags()) //nolint:errcheck
+	cfg.cmdConfig = *newViper("issue-sync", cfg.cmdFile)
+	cfg.cmdConfig.BindPFlags(cmd.Flags()) //nolint:errcheck
 
-	config.cmdFile = config.cmdConfig.ConfigFileUsed()
+	cfg.cmdFile = cfg.cmdConfig.ConfigFileUsed()
 
-	config.log = *newLogger("issue-sync", config.cmdConfig.GetString("log-level"))
+	cfg.log = *newLogger("issue-sync", cfg.cmdConfig.GetString("log-level"))
 
-	if err := config.validateConfig(); err != nil {
-		return Config{}, err
+	if err := cfg.validateConfig(); err != nil {
+		return nil, err
 	}
 
-	return config, nil
+	return &cfg, nil
 }
 
 // LoadJIRAConfig loads the JIRA configuration (project key,
 // custom field IDs) from a remote JIRA server.
-func (c *Config) LoadJIRAConfig(client jira.Client) error {
+func (c *Config) LoadJIRAConfig(client *jira.Client) error {
 	// TODO(j-v2): Pull context from config
 	proj, res, err := client.Project.Get(context.Background(), c.cmdConfig.GetString("jira-project"))
 	if err != nil {
@@ -132,7 +134,7 @@ func (c *Config) LoadJIRAConfig(client jira.Client) error {
 		c.log.Debugf("Error body: %s", body)
 		return fmt.Errorf("reading error body: %s", string(body)) //nolint:goerr113
 	}
-	c.project = *proj
+	c.project = proj
 
 	c.fieldIDs, err = c.getFieldIDs(client)
 	if err != nil {
@@ -143,53 +145,53 @@ func (c *Config) LoadJIRAConfig(client jira.Client) error {
 }
 
 // GetConfigFile returns the file that Viper loaded the configuration from.
-func (c Config) GetConfigFile() string {
+func (c *Config) GetConfigFile() string {
 	return c.cmdFile
 }
 
 // GetConfigString returns a string value from the Viper configuration.
-func (c Config) GetConfigString(key string) string {
+func (c *Config) GetConfigString(key string) string {
 	return c.cmdConfig.GetString(key)
 }
 
 // IsBasicAuth is true if we're using HTTP Basic Authentication, and false if
 // we're using OAuth.
-func (c Config) IsBasicAuth() bool {
+func (c *Config) IsBasicAuth() bool {
 	return c.basicAuth
 }
 
 // GetSinceParam returns the `since` configuration parameter, parsed as a time.Time.
-func (c Config) GetSinceParam() time.Time {
+func (c *Config) GetSinceParam() time.Time {
 	return c.since
 }
 
 // GetLogger returns the configured application logger.
-func (c Config) GetLogger() logrus.Entry {
+func (c *Config) GetLogger() logrus.Entry {
 	return c.log
 }
 
 // IsDryRun returns whether the application is running in dry-run mode or not.
-func (c Config) IsDryRun() bool {
+func (c *Config) IsDryRun() bool {
 	return c.cmdConfig.GetBool("dry-run")
 }
 
 // IsDaemon returns whether the application is running as a daemon.
-func (c Config) IsDaemon() bool {
+func (c *Config) IsDaemon() bool {
 	return c.cmdConfig.GetDuration("period") != 0
 }
 
 // GetDaemonPeriod returns the period on which the tool runs if in daemon mode.
-func (c Config) GetDaemonPeriod() time.Duration {
+func (c *Config) GetDaemonPeriod() time.Duration {
 	return c.cmdConfig.GetDuration("period")
 }
 
 // GetTimeout returns the configured timeout on all API calls, parsed as a time.Duration.
-func (c Config) GetTimeout() time.Duration {
+func (c *Config) GetTimeout() time.Duration {
 	return c.cmdConfig.GetDuration("timeout")
 }
 
 // GetFieldID returns the customfield ID of a JIRA custom field.
-func (c Config) GetFieldID(key fieldKey) string {
+func (c *Config) GetFieldID(key fieldKey) string {
 	switch key {
 	case GitHubID:
 		return c.fieldIDs.githubID
@@ -209,22 +211,22 @@ func (c Config) GetFieldID(key fieldKey) string {
 }
 
 // GetFieldKey returns customfield_XXXXX, where XXXXX is the custom field ID (see GetFieldID).
-func (c Config) GetFieldKey(key fieldKey) string {
+func (c *Config) GetFieldKey(key fieldKey) string {
 	return fmt.Sprintf("customfield_%s", c.GetFieldID(key))
 }
 
 // GetProject returns the JIRA project the user has configured.
-func (c Config) GetProject() jira.Project {
+func (c *Config) GetProject() *jira.Project {
 	return c.project
 }
 
 // GetProjectKey returns the JIRA key of the configured project.
-func (c Config) GetProjectKey() string {
+func (c *Config) GetProjectKey() string {
 	return c.project.Key
 }
 
 // GetRepo returns the user/org name and the repo name of the configured GitHub repository.
-func (c Config) GetRepo() (string, string) {
+func (c *Config) GetRepo() (string, string) {
 	fullName := c.cmdConfig.GetString("repo-name")
 	parts := strings.Split(fullName, "/")
 	// We check that repo-name is two parts separated by a slash in New, so this is safe
@@ -233,7 +235,7 @@ func (c Config) GetRepo() (string, string) {
 
 // SetJIRAToken adds the JIRA OAuth tokens in the Viper configuration, ensuring that they
 // are saved for future runs.
-func (c Config) SetJIRAToken(token *oauth1.Token) {
+func (c *Config) SetJIRAToken(token *oauth1.Token) {
 	c.cmdConfig.Set("jira-token", token.Token)
 	c.cmdConfig.Set("jira-secret", token.TokenSecret)
 }
@@ -308,10 +310,8 @@ func newViper(appName, cfgFile string) *viper.Viper {
 		v.OnConfigChange(func(e fsnotify.Event) {
 			log.WithField("file", e.Name).Info("config file changed")
 		})
-	} else {
-		if cfgFile != "" {
-			log.WithError(err).Warningf("Error reading config file: %v", cfgFile)
-		}
+	} else if cfgFile != "" {
+		log.WithError(err).Warningf("Error reading config file: %v", cfgFile)
 	}
 
 	if log.Level == logrus.DebugLevel {
@@ -452,6 +452,9 @@ func (c *Config) validateConfig() error {
 
 // jiraField represents field metadata in JIRA. For an example of its
 // structure, make a request to `${jira-uri}/rest/api/2/field`.
+// TODO(jira): Check if type is already represented in go-jira and remove this definition.
+//
+//nolint:govet
 type jiraField struct {
 	ID          string   `json:"id"`
 	Key         string   `json:"key"`
@@ -472,24 +475,26 @@ type jiraField struct {
 
 // getFieldIDs requests the metadata of every issue field in the JIRA
 // project, and saves the IDs of the custom fields used by issue-sync.
-func (c Config) getFieldIDs(client jira.Client) (fields, error) {
+func (c *Config) getFieldIDs(client *jira.Client) (*fields, error) {
 	c.log.Debug("Collecting field IDs.")
 	// TODO(j-v2): Pull context from config
 	req, err := client.NewRequest(context.Background(), "GET", "/rest/api/2/field", nil)
 	if err != nil {
-		return fields{}, fmt.Errorf("getting fields: %w", err)
+		return nil, fmt.Errorf("getting fields: %w", err)
 	}
-	jFields := new([]jiraField)
 
-	_, err = client.Do(req, jFields)
+	jFieldsPtr := new([]jiraField)
+	_, err = client.Do(req, jFieldsPtr)
 	if err != nil {
-		return fields{}, fmt.Errorf("getting field IDs: %w", err)
+		return nil, fmt.Errorf("getting field IDs: %w", err)
 	}
 
-	fieldIDs := fields{}
+	jFields := *jFieldsPtr
+	var fieldIDs fields
 
 	// TODO(config): Use constants for custom field names
-	for _, field := range *jFields {
+	for i := range jFields {
+		field := jFields[i]
 		switch field.Name {
 		case "GitHub ID":
 			fieldIDs.githubID = fmt.Sprint(field.Schema.CustomID)
@@ -508,27 +513,27 @@ func (c Config) getFieldIDs(client jira.Client) (fields, error) {
 
 	// TODO(config): Use constants for custom field names
 	if fieldIDs.githubID == "" {
-		return fieldIDs, errCustomFieldIDNotFound("GitHub ID")
+		return nil, errCustomFieldIDNotFound("GitHub ID")
 	}
 	if fieldIDs.githubNumber == "" {
-		return fieldIDs, errCustomFieldIDNotFound("GitHub Number")
+		return nil, errCustomFieldIDNotFound("GitHub Number")
 	}
 	if fieldIDs.githubLabels == "" {
-		return fieldIDs, errCustomFieldIDNotFound("Github Labels")
+		return nil, errCustomFieldIDNotFound("Github Labels")
 	}
 	if fieldIDs.githubStatus == "" {
-		return fieldIDs, errCustomFieldIDNotFound("Github Status")
+		return nil, errCustomFieldIDNotFound("Github Status")
 	}
 	if fieldIDs.githubReporter == "" {
-		return fieldIDs, errCustomFieldIDNotFound("Github Reporter")
+		return nil, errCustomFieldIDNotFound("Github Reporter")
 	}
 	if fieldIDs.lastUpdate == "" {
-		return fieldIDs, errCustomFieldIDNotFound("Last Issue-Sync Update")
+		return nil, errCustomFieldIDNotFound("Last Issue-Sync Update")
 	}
 
 	c.log.Debug("All fields have been checked.")
 
-	return fieldIDs, nil
+	return &fieldIDs, nil
 }
 
 // Errors

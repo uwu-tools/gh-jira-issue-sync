@@ -44,7 +44,13 @@ var jCommentIDRegex = regexp.MustCompile(`^Comment \[\(ID (\d+)\)\|`)
 // Compare takes a GitHub issue, and retrieves all of its comments. It then
 // matches each one to a comment in `existing`. If it finds a match, it calls
 // UpdateComment; if it doesn't, it calls CreateComment.
-func Compare(cfg config.Config, ghIssue gh.Issue, jIssue gojira.Issue, ghClient github.Client, jClient jira.Client) error {
+func Compare(
+	cfg *config.Config,
+	ghIssue *gh.Issue,
+	jIssue *gojira.Issue,
+	ghClient github.Client,
+	jClient jira.Client,
+) error {
 	log := cfg.GetLogger()
 
 	if ghIssue.GetComments() == 0 {
@@ -57,15 +63,11 @@ func Compare(cfg config.Config, ghIssue gh.Issue, jIssue gojira.Issue, ghClient 
 		return fmt.Errorf("listing GitHub comments: %w", err)
 	}
 
-	var jComments []gojira.Comment
+	var jComments []*gojira.Comment
 	if jIssue.Fields.Comments == nil {
 		log.Debugf("JIRA issue %s has no comments.", jIssue.Key)
 	} else {
-		commentPtrs := jIssue.Fields.Comments.Comments
-		jComments = make([]gojira.Comment, len(commentPtrs))
-		for i, v := range commentPtrs {
-			jComments[i] = *v
-		}
+		jComments = jIssue.Fields.Comments.Comments
 		log.Debugf("JIRA issue %s has %d comments", jIssue.Key, len(jComments))
 	}
 
@@ -88,7 +90,7 @@ func Compare(cfg config.Config, ghIssue gh.Issue, jIssue gojira.Issue, ghClient 
 			}
 			found = true
 
-			err = UpdateComment(cfg, *ghComment, jComment, jIssue, ghClient, jClient)
+			err = UpdateComment(cfg, ghComment, jComment, jIssue, ghClient, jClient)
 			if err != nil {
 				return err
 			}
@@ -99,7 +101,7 @@ func Compare(cfg config.Config, ghIssue gh.Issue, jIssue gojira.Issue, ghClient 
 			continue
 		}
 
-		comment, err := jClient.CreateComment(jIssue, *ghComment, ghClient)
+		comment, err := jClient.CreateComment(jIssue, ghComment, ghClient)
 		if err != nil {
 			return fmt.Errorf("creating Jira comment: %w", err)
 		}
@@ -113,7 +115,14 @@ func Compare(cfg config.Config, ghIssue gh.Issue, jIssue gojira.Issue, ghClient 
 
 // UpdateComment compares the body of a GitHub comment with the body (minus header)
 // of the JIRA comment, and updates the JIRA comment if necessary.
-func UpdateComment(cfg config.Config, ghComment gh.IssueComment, jComment gojira.Comment, jIssue gojira.Issue, ghClient github.Client, jClient jira.Client) error {
+func UpdateComment(
+	cfg *config.Config,
+	ghComment *gh.IssueComment,
+	jComment *gojira.Comment,
+	jIssue *gojira.Issue,
+	ghClient github.Client,
+	jClient jira.Client,
+) error {
 	log := cfg.GetLogger()
 
 	// fields[0] is the whole body, 1 is the ID, 2 is the username, 3 is the real name (or "" if none)
@@ -129,7 +138,7 @@ func UpdateComment(cfg config.Config, ghComment gh.IssueComment, jComment gojira
 		return fmt.Errorf("updating Jira comment: %w", err)
 	}
 
-	log.Debug("Updated JIRA comment %s.", comment.ID)
+	log.Debugf("Updated JIRA comment %s", comment.ID)
 
 	return nil
 }

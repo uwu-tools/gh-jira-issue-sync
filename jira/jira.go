@@ -46,7 +46,7 @@ const maxJQLIssueLength = 100
 // of the body. If an error occurs during reading, that error is
 // instead printed and returned. This function closes the body for
 // further reading.
-func getErrorBody(cfg config.Config, res *jira.Response) error {
+func getErrorBody(cfg *config.Config, res *jira.Response) error {
 	log := cfg.GetLogger()
 	defer res.Body.Close()
 	body, err := io.ReadAll(res.Body)
@@ -64,11 +64,16 @@ func getErrorBody(cfg config.Config, res *jira.Response) error {
 // or test mocking.
 type Client interface {
 	ListIssues(ids []int) ([]jira.Issue, error)
-	GetIssue(key string) (jira.Issue, error)
-	CreateIssue(issue jira.Issue) (jira.Issue, error)
-	UpdateIssue(issue jira.Issue) (jira.Issue, error)
-	CreateComment(issue jira.Issue, comment gh.IssueComment, githubClient github.Client) (jira.Comment, error)
-	UpdateComment(issue jira.Issue, id string, comment gh.IssueComment, githubClient github.Client) (jira.Comment, error)
+	GetIssue(key string) (*jira.Issue, error)
+	// TODO: Remove unnecessary return values; consider only returning error
+	CreateIssue(issue *jira.Issue) (jira.Issue, error)
+	// TODO: Remove unnecessary return values; consider only returning error
+	UpdateIssue(issue *jira.Issue) (jira.Issue, error)
+	// TODO: Remove unnecessary return values; consider only returning error
+	CreateComment(issue *jira.Issue, comment *gh.IssueComment, githubClient github.Client) (jira.Comment, error)
+	// TODO: Remove unnecessary return values; consider only returning error
+	// TODO: Re-arrange arguments
+	UpdateComment(issue *jira.Issue, id string, comment *gh.IssueComment, githubClient github.Client) (jira.Comment, error)
 }
 
 // New creates a new Client and configures it with
@@ -83,7 +88,7 @@ func New(cfg *config.Config) (Client, error) {
 	var err error
 
 	if !cfg.IsBasicAuth() {
-		oauth, err := auth.NewJiraHTTPClient(*cfg)
+		oauth, err := auth.NewJiraHTTPClient(cfg)
 		if err != nil {
 			log.Errorf("Error getting OAuth config: %+v", err)
 			return nil, fmt.Errorf("initializing Jira client: %w", err)
@@ -109,20 +114,20 @@ func New(cfg *config.Config) (Client, error) {
 
 	log.Debug("JIRA clients initialized")
 
-	err = cfg.LoadJIRAConfig(*client)
+	err = cfg.LoadJIRAConfig(client)
 	if err != nil {
 		return nil, fmt.Errorf("loading Jira configuration: %w", err)
 	}
 
 	if cfg.IsDryRun() {
-		j = dryrunJIRAClient{
-			cfg:    *cfg,
-			client: *client,
+		j = &dryrunJIRAClient{
+			cfg:    cfg,
+			client: client,
 		}
 	} else {
-		j = realJIRAClient{
-			cfg:    *cfg,
-			client: *client,
+		j = &realJIRAClient{
+			cfg:    cfg,
+			client: client,
 		}
 	}
 
@@ -133,14 +138,14 @@ func New(cfg *config.Config) (Client, error) {
 // of the requests against the JIRA REST API. It is the canonical
 // implementation of JIRAClient.
 type realJIRAClient struct {
-	cfg    config.Config
-	client jira.Client
+	cfg    *config.Config
+	client *jira.Client
 }
 
 // ListIssues returns a list of JIRA issues on the configured project which
 // have GitHub IDs in the provided list. `ids` should be a comma-separated
 // list of GitHub IDs.
-func (j realJIRAClient) ListIssues(ids []int) ([]jira.Issue, error) {
+func (j *realJIRAClient) ListIssues(ids []int) ([]jira.Issue, error) {
 	log := j.cfg.GetLogger()
 
 	idStrs := make([]string, len(ids))
@@ -199,7 +204,7 @@ func (j realJIRAClient) ListIssues(ids []int) ([]jira.Issue, error) {
 
 // GetIssue returns a single JIRA issue within the configured project
 // according to the issue key (e.g. "PROJ-13").
-func (j realJIRAClient) GetIssue(key string) (jira.Issue, error) {
+func (j *realJIRAClient) GetIssue(key string) (*jira.Issue, error) {
 	log := j.cfg.GetLogger()
 
 	i, res, err := j.request(func() (interface{}, *jira.Response, error) {
@@ -209,26 +214,26 @@ func (j realJIRAClient) GetIssue(key string) (jira.Issue, error) {
 	})
 	if err != nil {
 		log.Errorf("Error retrieving JIRA issue: %+v", err)
-		return jira.Issue{}, getErrorBody(j.cfg, res)
+		return nil, getErrorBody(j.cfg, res)
 	}
 	issue, ok := i.(*jira.Issue)
 	if !ok {
 		log.Errorf("Get JIRA issue did not return issue! Got %v", i)
-		return jira.Issue{}, fmt.Errorf("get JIRA issue failed: expected *jira.Issue; got %T", i) //nolint:goerr113
+		return nil, fmt.Errorf("get JIRA issue failed: expected *jira.Issue; got %T", i) //nolint:goerr113
 	}
 
-	return *issue, nil
+	return issue, nil
 }
 
 // CreateIssue creates a new JIRA issue according to the fields provided in
 // the provided issue object. It returns the created issue, with all the
 // fields provided (including e.g. ID and Key).
-func (j realJIRAClient) CreateIssue(issue jira.Issue) (jira.Issue, error) {
+func (j *realJIRAClient) CreateIssue(issue *jira.Issue) (jira.Issue, error) {
 	log := j.cfg.GetLogger()
 
 	i, res, err := j.request(func() (interface{}, *jira.Response, error) {
 		// TODO(j-v2): Pull context from config
-		return j.client.Issue.Create(context.Background(), &issue) //nolint:wrapcheck
+		return j.client.Issue.Create(context.Background(), issue) //nolint:wrapcheck
 	})
 	if err != nil {
 		log.Errorf("Error creating JIRA issue: %+v", err)
@@ -246,13 +251,13 @@ func (j realJIRAClient) CreateIssue(issue jira.Issue) (jira.Issue, error) {
 // UpdateIssue updates a given issue (identified by the Key field of the provided
 // issue object) with the fields on the provided issue. It returns the updated
 // issue as it exists on JIRA.
-func (j realJIRAClient) UpdateIssue(issue jira.Issue) (jira.Issue, error) {
+func (j *realJIRAClient) UpdateIssue(issue *jira.Issue) (jira.Issue, error) {
 	log := j.cfg.GetLogger()
 
 	i, res, err := j.request(func() (interface{}, *jira.Response, error) {
 		// TODO(j-v2): Pull context from config
 		// TODO(j-v2): Add query options
-		return j.client.Issue.Update(context.Background(), &issue, nil) //nolint:wrapcheck
+		return j.client.Issue.Update(context.Background(), issue, nil) //nolint:wrapcheck
 	})
 	if err != nil {
 		log.Errorf("Error updating JIRA issue %s: %v", issue.Key, err)
@@ -273,7 +278,11 @@ const maxBodyLength = 1 << 15
 
 // CreateComment adds a comment to the provided JIRA issue using the fields from
 // the provided GitHub comment. It then returns the created comment.
-func (j realJIRAClient) CreateComment(issue jira.Issue, comment gh.IssueComment, githubClient github.Client) (jira.Comment, error) {
+func (j *realJIRAClient) CreateComment(
+	issue *jira.Issue,
+	comment *gh.IssueComment,
+	githubClient github.Client,
+) (jira.Comment, error) {
 	log := j.cfg.GetLogger()
 
 	user, err := githubClient.GetUser(comment.User.GetLogin())
@@ -320,7 +329,12 @@ func (j realJIRAClient) CreateComment(issue jira.Issue, comment gh.IssueComment,
 // UpdateComment updates a comment (identified by the `id` parameter) on a given
 // JIRA with a new body from the fields of the given GitHub comment. It returns
 // the updated comment.
-func (j realJIRAClient) UpdateComment(issue jira.Issue, id string, comment gh.IssueComment, githubClient github.Client) (jira.Comment, error) {
+func (j *realJIRAClient) UpdateComment(
+	issue *jira.Issue,
+	id string,
+	comment *gh.IssueComment,
+	githubClient github.Client,
+) (jira.Comment, error) {
 	log := j.cfg.GetLogger()
 
 	user, err := githubClient.GetUser(comment.User.GetLogin())
@@ -385,7 +399,7 @@ func (j realJIRAClient) UpdateComment(issue jira.Issue, id string, comment gh.Is
 // returns the expected value and the JIRA API response, as well as a nil
 // error. If it continues to fail until a maximum time is reached, it returns
 // a nil result as well as the returned HTTP response and a timeout error.
-func (j realJIRAClient) request(f func() (interface{}, *jira.Response, error)) (interface{}, *jira.Response, error) {
+func (j *realJIRAClient) request(f func() (interface{}, *jira.Response, error)) (interface{}, *jira.Response, error) {
 	log := j.cfg.GetLogger()
 
 	var ret interface{}
@@ -416,8 +430,8 @@ func (j realJIRAClient) request(f func() (interface{}, *jira.Response, error)) (
 // unsafe requests which may modify server data, instead printing out the
 // actions it is asked to perform without making the request.
 type dryrunJIRAClient struct {
-	cfg    config.Config
-	client jira.Client
+	cfg    *config.Config
+	client *jira.Client
 }
 
 // newlineReplaceRegex is a regex to match both "\r\n" and just "\n" newline styles,
@@ -444,7 +458,7 @@ func truncate(s string, length int) string {
 // list of GitHub IDs.
 //
 // This function is identical to that in realJIRAClient.
-func (j dryrunJIRAClient) ListIssues(ids []int) ([]jira.Issue, error) {
+func (j *dryrunJIRAClient) ListIssues(ids []int) ([]jira.Issue, error) {
 	log := j.cfg.GetLogger()
 
 	idStrs := make([]string, len(ids))
@@ -502,7 +516,7 @@ func (j dryrunJIRAClient) ListIssues(ids []int) ([]jira.Issue, error) {
 // according to the issue key (e.g. "PROJ-13").
 //
 // This function is identical to that in realJIRAClient.
-func (j dryrunJIRAClient) GetIssue(key string) (jira.Issue, error) {
+func (j *dryrunJIRAClient) GetIssue(key string) (*jira.Issue, error) {
 	log := j.cfg.GetLogger()
 
 	i, res, err := j.request(func() (interface{}, *jira.Response, error) {
@@ -512,21 +526,21 @@ func (j dryrunJIRAClient) GetIssue(key string) (jira.Issue, error) {
 	})
 	if err != nil {
 		log.Errorf("Error retrieving JIRA issue: %+v", err)
-		return jira.Issue{}, getErrorBody(j.cfg, res)
+		return nil, getErrorBody(j.cfg, res)
 	}
 	issue, ok := i.(*jira.Issue)
 	if !ok {
 		log.Errorf("Get JIRA issue did not return issue! Got %v", i)
-		return jira.Issue{}, fmt.Errorf("get JIRA issue failed: expected *jira.Issue; got %T", i) //nolint:goerr113
+		return nil, fmt.Errorf("get JIRA issue failed: expected *jira.Issue; got %T", i) //nolint:goerr113
 	}
 
-	return *issue, nil
+	return issue, nil
 }
 
 // CreateIssue prints out the fields that would be set on a new issue were
 // it to be created according to the provided issue object. It returns the
 // provided issue object as-is.
-func (j dryrunJIRAClient) CreateIssue(issue jira.Issue) (jira.Issue, error) {
+func (j *dryrunJIRAClient) CreateIssue(issue *jira.Issue) (jira.Issue, error) {
 	log := j.cfg.GetLogger()
 
 	fields := issue.Fields
@@ -542,13 +556,13 @@ func (j dryrunJIRAClient) CreateIssue(issue jira.Issue) (jira.Issue, error) {
 	log.Infof("  Reporter: %s", fields.Unknowns[j.cfg.GetFieldKey(config.GitHubReporter)])
 	log.Info("")
 
-	return issue, nil
+	return *issue, nil
 }
 
 // UpdateIssue prints out the fields that would be set on a JIRA issue
 // (identified by issue.Key) were it to be updated according to the issue
 // object. It then returns the provided issue object as-is.
-func (j dryrunJIRAClient) UpdateIssue(issue jira.Issue) (jira.Issue, error) {
+func (j *dryrunJIRAClient) UpdateIssue(issue *jira.Issue) (jira.Issue, error) {
 	log := j.cfg.GetLogger()
 
 	fields := issue.Fields
@@ -567,13 +581,17 @@ func (j dryrunJIRAClient) UpdateIssue(issue jira.Issue) (jira.Issue, error) {
 	}
 	log.Info("")
 
-	return issue, nil
+	return *issue, nil
 }
 
 // CreateComment prints the body that would be set on a new comment if it were
 // to be created according to the fields of the provided GitHub comment. It then
 // returns a comment object containing the body that would be used.
-func (j dryrunJIRAClient) CreateComment(issue jira.Issue, comment gh.IssueComment, githubClient github.Client) (jira.Comment, error) {
+func (j *dryrunJIRAClient) CreateComment(
+	issue *jira.Issue,
+	comment *gh.IssueComment,
+	githubClient github.Client,
+) (jira.Comment, error) {
 	log := j.cfg.GetLogger()
 
 	user, err := githubClient.GetUser(comment.User.GetLogin())
@@ -612,7 +630,12 @@ func (j dryrunJIRAClient) CreateComment(issue jira.Issue, comment gh.IssueCommen
 // UpdateComment prints the body that would be set on a comment were it to be
 // updated according to the provided GitHub comment. It then returns a comment
 // object containing the body that would be used.
-func (j dryrunJIRAClient) UpdateComment(issue jira.Issue, id string, comment gh.IssueComment, githubClient github.Client) (jira.Comment, error) {
+func (j *dryrunJIRAClient) UpdateComment(
+	issue *jira.Issue,
+	id string,
+	comment *gh.IssueComment,
+	githubClient github.Client,
+) (jira.Comment, error) {
 	log := j.cfg.GetLogger()
 
 	user, err := githubClient.GetUser(comment.User.GetLogin())
@@ -656,7 +679,7 @@ func (j dryrunJIRAClient) UpdateComment(issue jira.Issue, id string, comment gh.
 // a nil result as well as the returned HTTP response and a timeout error.
 //
 // This function is identical to that in realJIRAClient.
-func (j dryrunJIRAClient) request(f func() (interface{}, *jira.Response, error)) (interface{}, *jira.Response, error) {
+func (j *dryrunJIRAClient) request(f func() (interface{}, *jira.Response, error)) (interface{}, *jira.Response, error) {
 	log := j.cfg.GetLogger()
 
 	var ret interface{}

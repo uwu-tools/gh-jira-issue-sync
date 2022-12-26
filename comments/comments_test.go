@@ -18,10 +18,13 @@ package comments
 
 import "testing"
 
-func TestJiraCommentRegex(t *testing.T) {
-	fields := jCommentRegex.FindStringSubmatch(`Comment [(ID 484163403)|https://github.com] from GitHub user [bilbo-baggins|https://github.com/bilbo-baggins] (Bilbo Baggins) at 16:27 PM, April 17 2019:
+//nolint:lll
+const testComment = `Comment [(ID 484163403)|https://github.com] from GitHub user [bilbo-baggins|https://github.com/bilbo-baggins] (Bilbo Baggins) at 16:27 PM, April 17 2019:
 
-Bla blibidy bloo bla`)
+Bla blibidy bloo bla`
+
+func TestJiraCommentRegex(t *testing.T) {
+	fields := jCommentRegex.FindStringSubmatch(testComment)
 
 	if len(fields) != 6 {
 		t.Fatalf("Regex failed to parse fields %v", fields)

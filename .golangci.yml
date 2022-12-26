@@ -27,7 +27,7 @@ linters:
     #- gochecknoinits
     - gocognit
     - goconst
-    #- gocritic
+    - gocritic
     - gocyclo
     - godot
     - godox
@@ -40,9 +40,9 @@ linters:
     - goprintffuncname
     - gosec
     - gosimple
-    #- govet
-    #- ineffassign
-    #- lll
+    - govet
+    - ineffassign
+    - lll
     - makezero
     - misspell
     - nakedret
