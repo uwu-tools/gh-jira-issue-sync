@@ -66,6 +66,7 @@ func Compare(cfg *config.Config, ghClient github.Client, jiraClient jira.Client)
 	log.Debugf("Jira issues found: %v", len(jiraIssues))
 	log.Debug("Collected all JIRA issues")
 
+	// TODO(compare): Consider move ID comparison logic into separate function
 	for _, ghIssue := range ghIssues {
 		found := false
 
@@ -85,13 +86,14 @@ func Compare(cfg *config.Config, ghClient github.Client, jiraClient jira.Client)
 				log.Infof("GitHub ID custom field (%s) does not exist", fieldKey)
 			}
 
-			jiraID, ok := id.(int64)
+			jiraID, ok := id.(float64)
 			if !ok {
-				log.Debugf("GitHub ID custom field is not an int64; got %T", id)
+				log.Debugf("GitHub ID custom field is not an float64; got %T", id)
 				break
 			}
 
-			if jiraID == ghID {
+			ghIDFloat64 := float64(ghID)
+			if jiraID == ghIDFloat64 {
 				found = true
 
 				log.Infof("updating issue %s", jIssue.ID)
