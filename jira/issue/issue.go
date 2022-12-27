@@ -18,7 +18,6 @@ package issue
 
 import (
 	"fmt"
-	"strconv"
 	"time"
 
 	gojira "github.com/andygrunwald/go-jira/v2/cloud"
@@ -70,6 +69,8 @@ func Compare(cfg *config.Config, ghClient github.Client, jiraClient jira.Client)
 	for _, ghIssue := range ghIssues {
 		found := false
 
+		ghID := *ghIssue.ID
+
 		fieldKey := cfg.GetFieldKey(config.GitHubID)
 		log.Debugf("GitHub ID custom field key: %s", fieldKey)
 		for i := range jiraIssues {
@@ -84,14 +85,13 @@ func Compare(cfg *config.Config, ghClient github.Client, jiraClient jira.Client)
 				log.Infof("GitHub ID custom field (%s) does not exist", fieldKey)
 			}
 
-			ghIDStr := strconv.FormatInt(*ghIssue.ID, 10)
-			jiraID, ok := id.(string)
+			jiraID, ok := id.(int64)
 			if !ok {
-				log.Debugf("GitHub ID custom field is not a string; got %T", id)
+				log.Debugf("GitHub ID custom field is not an int64; got %T", id)
 				break
 			}
 
-			if ghIDStr == jiraID {
+			if jiraID == ghID {
 				found = true
 
 				log.Infof("updating issue %s", jIssue.ID)
@@ -236,8 +236,8 @@ func CreateIssue(cfg *config.Config, issue *gh.Issue, ghClient github.Client, jC
 
 	unknowns := tcontainer.NewMarshalMap()
 
-	unknowns.Set(cfg.GetFieldKey(config.GitHubID), strconv.FormatInt(issue.GetID(), 10))
-	unknowns.Set(cfg.GetFieldKey(config.GitHubNumber), strconv.Itoa(issue.GetNumber()))
+	unknowns.Set(cfg.GetFieldKey(config.GitHubID), issue.GetID())
+	unknowns.Set(cfg.GetFieldKey(config.GitHubNumber), issue.GetNumber())
 	unknowns.Set(cfg.GetFieldKey(config.GitHubStatus), issue.GetState())
 	unknowns.Set(cfg.GetFieldKey(config.GitHubReporter), issue.User.GetLogin())
 
