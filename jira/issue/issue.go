@@ -140,26 +140,30 @@ func DidIssueChange(cfg *config.Config, ghIssue *gh.Issue, jIssue *gojira.Issue)
 		anyDifferent = true
 	}
 
-	ghLabels := githubLabelsToStrSlice(ghIssue.Labels)
+	if len(ghIssue.Labels) > 0 { //nolint:nestif // TODO(lint)
+		ghLabels := githubLabelsToStrSlice(ghIssue.Labels)
 
-	key = cfg.GetFieldKey(config.GitHubLabels)
-	jiraLabels, err := jIssue.Fields.Unknowns.StringSlice(key)
-	if err != nil {
-		log.Errorf("collecting GitHub labels defined on Jira issue: %v", err)
-	}
+		key = cfg.GetFieldKey(config.GitHubLabels)
+		labelsField, exists := jIssue.Fields.Unknowns.Value(key)
+		if !exists {
+			log.Debug("`GitHub Labels` field is not populated")
+		}
 
-	for _, label := range ghLabels {
-		if !anyDifferent {
-			found := false
-			for i, jiraLabel := range jiraLabels {
-				if i < len(jiraLabels) && !found {
-					if label == jiraLabel {
-						found = true
+		jiraLabels, _ := labelsField.([]string) //nolint:errcheck // TODO(lint)
+
+		for _, label := range ghLabels {
+			if !anyDifferent {
+				found := false
+				for i, jiraLabel := range jiraLabels {
+					if i < len(jiraLabels) && !found {
+						if label == jiraLabel {
+							found = true
+							break
+						}
+					} else {
+						anyDifferent = true
 						break
 					}
-				} else {
-					anyDifferent = true
-					break
 				}
 			}
 		}
