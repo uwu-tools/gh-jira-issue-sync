@@ -189,7 +189,8 @@ func UpdateIssue(
 	log.Debugf("Updating JIRA %s with GitHub #%d", jIssue.Key, *ghIssue.Number)
 
 	if DidIssueChange(cfg, ghIssue, jIssue) {
-		fields := jIssue.Fields
+		fields := &gojira.IssueFields{}
+		fields.Unknowns = tcontainer.NewMarshalMap()
 
 		fields.Summary = ghIssue.GetTitle()
 		fields.Description = ghIssue.GetBody()
