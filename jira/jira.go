@@ -17,7 +17,6 @@
 package jira
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -172,9 +171,8 @@ func (j *realJIRAClient) ListIssues(ids []int) ([]jira.Issue, error) {
 	log.Debugf("JQL query used: %s", jql)
 
 	// TODO(backoff): Consider restoring backoff logic here
-	// TODO(j-v2): Pull context from config
 	// TODO(j-v2): Add query options
-	jiraIssues, res, err := j.client.Issue.Search(context.Background(), jql, nil)
+	jiraIssues, res, err := j.client.Issue.Search(j.cfg.Context(), jql, nil)
 	if err != nil {
 		log.Errorf("Error retrieving JIRA issues: %+v", err)
 		return nil, getErrorBody(j.cfg, res)
@@ -207,9 +205,8 @@ func (j *realJIRAClient) GetIssue(key string) (*jira.Issue, error) {
 	log := j.cfg.GetLogger()
 
 	i, res, err := j.request(func() (interface{}, *jira.Response, error) {
-		// TODO(j-v2): Pull context from config
 		// TODO(j-v2): Add query options
-		return j.client.Issue.Get(context.Background(), key, nil) //nolint:wrapcheck
+		return j.client.Issue.Get(j.cfg.Context(), key, nil) //nolint:wrapcheck
 	})
 	if err != nil {
 		log.Errorf("Error retrieving JIRA issue: %+v", err)
@@ -231,8 +228,7 @@ func (j *realJIRAClient) CreateIssue(issue *jira.Issue) (jira.Issue, error) {
 	log := j.cfg.GetLogger()
 
 	i, res, err := j.request(func() (interface{}, *jira.Response, error) {
-		// TODO(j-v2): Pull context from config
-		return j.client.Issue.Create(context.Background(), issue) //nolint:wrapcheck
+		return j.client.Issue.Create(j.cfg.Context(), issue) //nolint:wrapcheck
 	})
 	if err != nil {
 		log.Errorf("Error creating JIRA issue: %+v", err)
@@ -254,9 +250,8 @@ func (j *realJIRAClient) UpdateIssue(issue *jira.Issue) (jira.Issue, error) {
 	log := j.cfg.GetLogger()
 
 	i, res, err := j.request(func() (interface{}, *jira.Response, error) {
-		// TODO(j-v2): Pull context from config
 		// TODO(j-v2): Add query options
-		return j.client.Issue.Update(context.Background(), issue, nil) //nolint:wrapcheck
+		return j.client.Issue.Update(j.cfg.Context(), issue, nil) //nolint:wrapcheck
 	})
 	if err != nil {
 		log.Errorf("Error updating JIRA issue %s: %v", issue.Key, err)
@@ -310,8 +305,7 @@ func (j *realJIRAClient) CreateComment(
 	}
 
 	com, res, err := j.request(func() (interface{}, *jira.Response, error) {
-		// TODO(j-v2): Pull context from config
-		return j.client.Issue.AddComment(context.Background(), issue.ID, &jComment) //nolint:wrapcheck
+		return j.client.Issue.AddComment(j.cfg.Context(), issue.ID, &jComment) //nolint:wrapcheck
 	})
 	if err != nil {
 		log.Errorf("Error creating JIRA comment on issue %s. Error: %v", issue.Key, err)
@@ -365,9 +359,8 @@ func (j *realJIRAClient) UpdateComment(
 		Body: body,
 	}
 
-	// TODO(j-v2): Pull context from config
 	req, err := j.client.NewRequest(
-		context.Background(),
+		j.cfg.Context(),
 		"PUT",
 		fmt.Sprintf("rest/api/2/issue/%s/comment/%s", issue.Key, id),
 		request,
@@ -476,9 +469,8 @@ func (j *dryrunJIRAClient) ListIssues(ids []int) ([]jira.Issue, error) {
 	}
 
 	ji, res, err := j.request(func() (interface{}, *jira.Response, error) {
-		// TODO(j-v2): Pull context from config
 		// TODO(j-v2): Add query options
-		return j.client.Issue.Search(context.Background(), jql, nil) //nolint:wrapcheck
+		return j.client.Issue.Search(j.cfg.Context(), jql, nil) //nolint:wrapcheck
 	})
 	if err != nil {
 		log.Errorf("Error retrieving JIRA issues: %+v", err)
@@ -519,9 +511,8 @@ func (j *dryrunJIRAClient) GetIssue(key string) (*jira.Issue, error) {
 	log := j.cfg.GetLogger()
 
 	i, res, err := j.request(func() (interface{}, *jira.Response, error) {
-		// TODO(j-v2): Pull context from config
 		// TODO(j-v2): Add query options
-		return j.client.Issue.Get(context.Background(), key, nil) //nolint:wrapcheck
+		return j.client.Issue.Get(j.cfg.Context(), key, nil) //nolint:wrapcheck
 	})
 	if err != nil {
 		log.Errorf("Error retrieving JIRA issue: %+v", err)
