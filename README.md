@@ -17,12 +17,17 @@ sure you have a user account that can access the project and create
 issues on it; it's recommended that you create an account specifically
 for the issue-sync tool.
 
-Add the following custom fields to the project: `GitHub ID`, `GitHub
-Number`, `GitHub Labels`, `GitHub Status`, `GitHub Reporter`, and `Last
-Issue-Sync Update`. These fields are required and the names must match
-exactly. In addition,  `GitHub ID` and `GitHub Number` must be number
-fields, `Last Issue-Sync Update` must be a date time field, and the
-remainder must be text fields.
+The following custom fields must be configured AND associated to the
+appropriate project's screens:
+
+| Custom Field Name | Type |
+| --- | --- |
+| `GitHub ID` | Short text (plain text only) |
+| `GitHub Number` | Short text (plain text only) |
+| `GitHub Status` | Short text (plain text only) |
+| `GitHub Reporter` | Short text (plain text only) |
+| `GitHub Labels` | Labels |
+| `Last Issue-Sync Update` | Date Time Picker |
 
 If you intend to use OAuth with JIRA, you must create an inbound
 application connection and add a public key. Instructions can be found
