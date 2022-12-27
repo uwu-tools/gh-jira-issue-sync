@@ -26,6 +26,7 @@ import (
 	"golang.org/x/oauth2"
 
 	"github.com/uwu-tools/gh-jira-issue-sync/config"
+	"github.com/uwu-tools/gh-jira-issue-sync/options"
 )
 
 // Client is a wrapper around the GitHub API Client library we
@@ -221,7 +222,9 @@ func New(cfg *config.Config) (Client, error) {
 
 	ctx := context.Background()
 	ts := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: cfg.GetConfigString("github-token")},
+		&oauth2.Token{
+			AccessToken: cfg.GetConfigString(options.ConfigKeyGitHubToken),
+		},
 	)
 	tc := oauth2.NewClient(ctx, ts)
 

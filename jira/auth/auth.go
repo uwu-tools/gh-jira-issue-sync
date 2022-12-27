@@ -30,6 +30,7 @@ import (
 	"github.com/dghubble/oauth1"
 
 	"github.com/uwu-tools/gh-jira-issue-sync/config"
+	"github.com/uwu-tools/gh-jira-issue-sync/options"
 )
 
 // NewJiraHTTPClient obtains an access token (either from configuration
@@ -59,7 +60,7 @@ func NewJiraHTTPClient(cfg *config.Config) (*http.Client, error) {
 // configuration, and creates an OAuth configuration which can
 // be used to begin a handshake.
 func oauthConfig(cfg *config.Config) (*oauth1.Config, error) {
-	pvtKeyPath := cfg.GetConfigString("jira-private-key-path")
+	pvtKeyPath := cfg.GetConfigString(options.ConfigKeyJiraPrivateKeyPath)
 
 	pvtKeyFile, err := os.Open(pvtKeyPath)
 	if err != nil {
@@ -84,10 +85,10 @@ func oauthConfig(cfg *config.Config) (*oauth1.Config, error) {
 		return nil, fmt.Errorf("unable to parse PKCS1 private key: %w", err)
 	}
 
-	uri := cfg.GetConfigString("jira-uri")
+	uri := cfg.GetConfigString(options.ConfigKeyJiraURI)
 
 	return &oauth1.Config{
-		ConsumerKey: cfg.GetConfigString("jira-consumer-key"),
+		ConsumerKey: cfg.GetConfigString(options.ConfigKeyJiraConsumerKey),
 		CallbackURL: "oob",
 		Endpoint: oauth1.Endpoint{
 			RequestTokenURL: fmt.Sprintf("%splugins/servlet/oauth/request-token", uri),
@@ -104,12 +105,12 @@ func oauthConfig(cfg *config.Config) (*oauth1.Config, error) {
 // application configuration file. It returns the token (or null if not
 // configured) and an "ok" bool to indicate whether the token is provided.
 func jiraTokenFromConfig(cfg *config.Config) (*oauth1.Token, bool) {
-	token := cfg.GetConfigString("jira-token")
+	token := cfg.GetConfigString(options.ConfigKeyJiraToken)
 	if token == "" {
 		return nil, false
 	}
 
-	secret := cfg.GetConfigString("jira-secret")
+	secret := cfg.GetConfigString(options.ConfigKeyJiraSecret)
 	if secret == "" {
 		return nil, false
 	}

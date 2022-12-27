@@ -22,28 +22,31 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"sigs.k8s.io/release-utils/log"
 	"sigs.k8s.io/release-utils/version"
 
 	"github.com/uwu-tools/gh-jira-issue-sync/config"
 	"github.com/uwu-tools/gh-jira-issue-sync/github"
-	"github.com/uwu-tools/gh-jira-issue-sync/issues"
 	"github.com/uwu-tools/gh-jira-issue-sync/jira"
+	"github.com/uwu-tools/gh-jira-issue-sync/jira/issue"
+	"github.com/uwu-tools/gh-jira-issue-sync/options"
 )
+
+var opts = &options.Options{}
 
 // Execute provides a single function to run the root command and handle errors.
 func Execute() {
-	// Create a temporary logger that we can use if an error occurs before the real one is instantiated.
-	log := logrus.New()
 	if err := RootCmd.Execute(); err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
 }
 
 // RootCmd represents the command itself and configures it.
 var RootCmd = &cobra.Command{
-	Use:   "gh-jira-issue-sync [options]",
-	Short: "A tool to synchronize GitHub and JIRA issues",
-	Long:  "Full docs coming later; see https://github.com/uwu-tools/gh-jira-issue-sync",
+	Use:               fmt.Sprintf("%s [options]", options.AppName),
+	Short:             "A tool to synchronize GitHub and JIRA issues",
+	Long:              "Full docs coming later; see https://github.com/uwu-tools/gh-jira-issue-sync",
+	PersistentPreRunE: initLogging,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		cfg, err := config.New(cmd)
 		if err != nil {
@@ -62,7 +65,7 @@ var RootCmd = &cobra.Command{
 		}
 
 		for {
-			if err := issues.Compare(cfg, ghClient, jiraClient); err != nil {
+			if err := issue.Compare(cfg, ghClient, jiraClient); err != nil {
 				log.Error(err)
 			}
 			if !cfg.IsDryRun() {
@@ -79,87 +82,106 @@ var RootCmd = &cobra.Command{
 }
 
 func init() {
-	// TODO(cmd): Parameterize default values
-	RootCmd.PersistentFlags().String(
-		"log-level",
-		logrus.InfoLevel.String(),
-		"Set the global log level",
+	RootCmd.PersistentFlags().StringVar(
+		&opts.LogLevel,
+		options.ConfigKeyLogLevel,
+		options.DefaultLogLevelStr,
+		fmt.Sprintf("the logging verbosity, either %s", log.LevelNames()),
 	)
 
-	RootCmd.PersistentFlags().String(
-		"config",
-		"",
-		"Config file (default is $HOME/.issue-sync.json)",
+	RootCmd.PersistentFlags().StringVar(
+		&opts.ConfigFile,
+		options.ConfigKeyConfigFile,
+		options.DefaultConfigFile,
+		"viper config file location",
 	)
 
-	RootCmd.PersistentFlags().StringP(
-		"github-token",
+	RootCmd.PersistentFlags().StringVarP(
+		&opts.GitHubToken,
+		options.ConfigKeyGitHubToken,
 		"t",
 		"",
-		"Set the API Token used to access the GitHub repo",
+		"set the API token used to access the GitHub repo",
 	)
 
-	RootCmd.PersistentFlags().StringP(
-		"jira-user",
+	RootCmd.PersistentFlags().StringVarP(
+		&opts.JiraUser,
+		options.ConfigKeyJiraUser,
 		"u",
 		"",
-		"Set the JIRA username to authenticate with",
+		"set the Jira username to authenticate with",
 	)
 
-	RootCmd.PersistentFlags().StringP(
-		"jira-pass",
+	RootCmd.PersistentFlags().StringVarP(
+		&opts.JiraPassword,
+		options.ConfigKeyJiraPassword,
 		"p",
 		"",
-		"Set the JIRA password to authenticate with",
+		"set the Jira password to authenticate with",
 	)
 
-	RootCmd.PersistentFlags().StringP(
-		"repo-name",
+	RootCmd.PersistentFlags().StringVarP(
+		&opts.RepoName,
+		options.ConfigKeyRepoName,
 		"r",
 		"",
-		"Set the repository path (should be form owner/repo)",
+		"set the repository path (should be form owner/repo)",
 	)
 
-	RootCmd.PersistentFlags().StringP(
-		"jira-uri",
+	RootCmd.PersistentFlags().StringVarP(
+		&opts.JiraURI,
+		options.ConfigKeyJiraURI,
 		"U",
 		"",
-		"Set the base uri of the JIRA instance",
+		"set the base URI of the Jira instance",
 	)
 
-	RootCmd.PersistentFlags().StringP(
-		"jira-project",
+	RootCmd.PersistentFlags().StringVarP(
+		&opts.JiraProject,
+		options.ConfigKeyJiraProject,
 		"P",
 		"",
-		"Set the key of the JIRA project",
+		"set the key of the Jira project",
 	)
 
-	RootCmd.PersistentFlags().StringP(
-		"since",
+	RootCmd.PersistentFlags().StringVarP(
+		&opts.Since,
+		options.ConfigKeySince,
 		"s",
-		"1970-01-01T00:00:00+0000",
-		"Set the day that the update should run forward from",
+		options.DefaultSince,
+		"set the day that the update should run forward from",
 	)
 
-	RootCmd.PersistentFlags().BoolP(
-		"dry-run",
+	RootCmd.PersistentFlags().BoolVarP(
+		&opts.DryRun,
+		options.ConfigKeyDryRun,
 		"d",
-		false,
-		"Print out actions to be taken, but do not execute them",
+		options.DefaultDryRun,
+		"print out actions to be taken, but do not execute them",
 	)
 
-	RootCmd.PersistentFlags().DurationP(
-		"timeout",
+	RootCmd.PersistentFlags().DurationVarP(
+		&opts.Timeout,
+		options.ConfigKeyTimeout,
 		"T",
-		time.Minute,
-		"Set the maximum timeout on all API calls",
+		options.DefaultTimeout,
+		"set the maximum timeout on all API calls",
 	)
 
-	RootCmd.PersistentFlags().Duration(
-		"period",
-		1*time.Hour,
-		"How often to synchronize; set to 0 for one-shot mode",
+	RootCmd.PersistentFlags().DurationVar(
+		&opts.Period,
+		options.ConfigKeyPeriod,
+		options.DefaultPeriod,
+		"how often to synchronize; set to 0 for one-shot mode",
 	)
 
 	RootCmd.AddCommand(version.Version())
+}
+
+func initLogging(*cobra.Command, []string) error {
+	err := log.SetupGlobalLogger(opts.LogLevel)
+	if err != nil {
+		return fmt.Errorf("setting up global logger: %w", err)
+	}
+	return nil
 }

@@ -14,7 +14,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package issues
+package issue
 
 import (
 	"fmt"
@@ -26,10 +26,10 @@ import (
 	gh "github.com/google/go-github/v48/github"
 	"github.com/trivago/tgo/tcontainer"
 
-	"github.com/uwu-tools/gh-jira-issue-sync/comments"
 	"github.com/uwu-tools/gh-jira-issue-sync/config"
 	"github.com/uwu-tools/gh-jira-issue-sync/github"
 	"github.com/uwu-tools/gh-jira-issue-sync/jira"
+	"github.com/uwu-tools/gh-jira-issue-sync/jira/comment"
 )
 
 // dateFormat is the format used for the Last IS Update field.
@@ -208,7 +208,7 @@ func UpdateIssue(
 		return fmt.Errorf("getting Jira issue %s: %w", jIssue.Key, err)
 	}
 
-	if err := comments.Compare(cfg, ghIssue, foundIssue, ghClient, jClient); err != nil {
+	if err := comment.Compare(cfg, ghIssue, foundIssue, ghClient, jClient); err != nil {
 		return fmt.Errorf("comparing comments for issue %s: %w", jIssue.Key, err)
 	}
 
@@ -264,7 +264,7 @@ func CreateIssue(cfg *config.Config, issue *gh.Issue, ghClient github.Client, jC
 
 	log.Debugf("Created JIRA issue %s!", newIssue.Key)
 
-	if err := comments.Compare(cfg, issue, foundIssue, ghClient, jClient); err != nil {
+	if err := comment.Compare(cfg, issue, foundIssue, ghClient, jClient); err != nil {
 		return fmt.Errorf("comparing comments for issue %s: %w", jIssue.Key, err)
 	}
 

@@ -35,13 +35,9 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"golang.org/x/term"
+
+	"github.com/uwu-tools/gh-jira-issue-sync/options"
 )
-
-// dateFormat is the format used for the `since` configuration parameter.
-const dateFormat = "2006-01-02T15:04:05-0700"
-
-// defaultLogLevel is the level logrus should default to if the configured option can't be parsed.
-const defaultLogLevel = logrus.InfoLevel
 
 // fieldKey is an enum-like type to represent the customfield ID keys.
 type fieldKey int
@@ -98,17 +94,20 @@ func New(cmd *cobra.Command) (*Config, error) {
 	var cfg Config
 
 	var err error
-	cfg.cmdFile, err = cmd.Flags().GetString("config")
+	cfg.cmdFile, err = cmd.Flags().GetString(options.ConfigKeyConfigFile)
 	if err != nil {
 		cfg.cmdFile = ""
 	}
 
-	cfg.cmdConfig = *newViper("issue-sync", cfg.cmdFile)
+	cfg.cmdConfig = *newViper(options.AppName, cfg.cmdFile)
 	cfg.cmdConfig.BindPFlags(cmd.Flags()) //nolint:errcheck
 
 	cfg.cmdFile = cfg.cmdConfig.ConfigFileUsed()
 
-	cfg.log = *newLogger("issue-sync", cfg.cmdConfig.GetString("log-level"))
+	cfg.log = *newLogger(
+		options.AppName,
+		cfg.cmdConfig.GetString(options.ConfigKeyLogLevel),
+	)
 
 	if err := cfg.validateConfig(); err != nil {
 		return nil, err
@@ -121,7 +120,10 @@ func New(cmd *cobra.Command) (*Config, error) {
 // custom field IDs) from a remote JIRA server.
 func (c *Config) LoadJIRAConfig(client *jira.Client) error {
 	// TODO(j-v2): Pull context from config
-	proj, res, err := client.Project.Get(context.Background(), c.cmdConfig.GetString("jira-project"))
+	proj, res, err := client.Project.Get(
+		context.Background(),
+		c.cmdConfig.GetString(options.ConfigKeyJiraProject),
+	)
 	if err != nil {
 		c.log.Errorf("error retrieving JIRA project; check key and credentials. Error: %s", err)
 		defer res.Body.Close()
@@ -172,22 +174,22 @@ func (c *Config) GetLogger() logrus.Entry {
 
 // IsDryRun returns whether the application is running in dry-run mode or not.
 func (c *Config) IsDryRun() bool {
-	return c.cmdConfig.GetBool("dry-run")
+	return c.cmdConfig.GetBool(options.ConfigKeyDryRun)
 }
 
 // IsDaemon returns whether the application is running as a daemon.
 func (c *Config) IsDaemon() bool {
-	return c.cmdConfig.GetDuration("period") != 0
+	return c.cmdConfig.GetDuration(options.ConfigKeyPeriod) != 0
 }
 
 // GetDaemonPeriod returns the period on which the tool runs if in daemon mode.
 func (c *Config) GetDaemonPeriod() time.Duration {
-	return c.cmdConfig.GetDuration("period")
+	return c.cmdConfig.GetDuration(options.ConfigKeyPeriod)
 }
 
 // GetTimeout returns the configured timeout on all API calls, parsed as a time.Duration.
 func (c *Config) GetTimeout() time.Duration {
-	return c.cmdConfig.GetDuration("timeout")
+	return c.cmdConfig.GetDuration(options.ConfigKeyTimeout)
 }
 
 // GetFieldID returns the customfield ID of a JIRA custom field.
@@ -227,7 +229,7 @@ func (c *Config) GetProjectKey() string {
 
 // GetRepo returns the user/org name and the repo name of the configured GitHub repository.
 func (c *Config) GetRepo() (string, string) {
-	fullName := c.cmdConfig.GetString("repo-name")
+	fullName := c.cmdConfig.GetString(options.ConfigKeyRepoName)
 	parts := strings.Split(fullName, "/")
 	// We check that repo-name is two parts separated by a slash in New, so this is safe
 	return parts[0], parts[1]
@@ -236,8 +238,8 @@ func (c *Config) GetRepo() (string, string) {
 // SetJIRAToken adds the JIRA OAuth tokens in the Viper configuration, ensuring that they
 // are saved for future runs.
 func (c *Config) SetJIRAToken(token *oauth1.Token) {
-	c.cmdConfig.Set("jira-token", token.Token)
-	c.cmdConfig.Set("jira-secret", token.TokenSecret)
+	c.cmdConfig.Set(options.ConfigKeyJiraToken, token.Token)
+	c.cmdConfig.Set(options.ConfigKeyJiraSecret, token.TokenSecret)
 }
 
 // configFile is a serializable representation of the current Viper configuration.
@@ -258,7 +260,10 @@ type configFile struct {
 
 // SaveConfig updates the `since` parameter to now, then saves the configuration file.
 func (c *Config) SaveConfig() error {
-	c.cmdConfig.Set("since", time.Now().Format(dateFormat))
+	c.cmdConfig.Set(
+		options.ConfigKeySince,
+		time.Now().Format(options.DateFormat),
+	)
 
 	var cf configFile
 	if err := c.cmdConfig.Unmarshal(&cf); err != nil {
@@ -326,13 +331,13 @@ func newViper(appName, cfgFile string) *viper.Viper {
 // above if the log level can't be parsed.
 func parseLogLevel(level string) logrus.Level {
 	if level == "" {
-		return defaultLogLevel
+		return options.DefaultLogLevel
 	}
 
 	ll, err := logrus.ParseLevel(level)
 	if err != nil {
 		fmt.Printf("Failed to parse log level, using default. Error: %v\n", err)
-		return defaultLogLevel
+		return options.DefaultLogLevel
 	}
 	return ll
 }
@@ -359,22 +364,23 @@ func (c *Config) validateConfig() error {
 	// Log level and config file location are validated already
 
 	c.log.Debug("Checking config variables...")
-	token := c.cmdConfig.GetString("github-token")
+	token := c.cmdConfig.GetString(options.ConfigKeyGitHubToken)
 	if token == "" {
 		return errGitHubTokenRequired
 	}
 
-	c.basicAuth = (c.cmdConfig.GetString("jira-user") != "") && (c.cmdConfig.GetString("jira-pass") != "")
+	c.basicAuth = (c.cmdConfig.GetString(options.ConfigKeyJiraUser) != "") &&
+		(c.cmdConfig.GetString(options.ConfigKeyJiraPassword) != "")
 
 	if c.basicAuth { //nolint:nestif // TODO(lint)
 		c.log.Debug("Using HTTP Basic Authentication")
 
-		jUser := c.cmdConfig.GetString("jira-user")
+		jUser := c.cmdConfig.GetString(options.ConfigKeyJiraUser)
 		if jUser == "" {
 			return errJiraUsernameRequired
 		}
 
-		jPass := c.cmdConfig.GetString("jira-pass")
+		jPass := c.cmdConfig.GetString(options.ConfigKeyJiraPassword)
 		if jPass == "" {
 			fmt.Print("Enter your Jira password: ")
 			bytePass, err := term.ReadPassword(syscall.Stdin)
@@ -382,27 +388,27 @@ func (c *Config) validateConfig() error {
 				return errJiraPasswordRequired
 			}
 			fmt.Println()
-			c.cmdConfig.Set("jira-pass", string(bytePass))
+			c.cmdConfig.Set(options.ConfigKeyJiraPassword, string(bytePass))
 		}
 	} else {
 		c.log.Debug("Using OAuth 1.0a authentication")
 
-		token := c.cmdConfig.GetString("jira-token")
+		token := c.cmdConfig.GetString(options.ConfigKeyJiraToken)
 		if token == "" {
 			return errJiraAccessTokenRequired
 		}
 
-		secret := c.cmdConfig.GetString("jira-secret")
+		secret := c.cmdConfig.GetString(options.ConfigKeyJiraSecret)
 		if secret == "" {
 			return errJiraAccessTokenSecretRequired
 		}
 
-		consumerKey := c.cmdConfig.GetString("jira-consumer-key")
+		consumerKey := c.cmdConfig.GetString(options.ConfigKeyJiraConsumerKey)
 		if consumerKey == "" {
 			return errJiraConsumerKeyRequired
 		}
 
-		privateKey := c.cmdConfig.GetString("jira-private-key-path")
+		privateKey := c.cmdConfig.GetString(options.ConfigKeyJiraPrivateKeyPath)
 		if privateKey == "" {
 			return errJiraPrivateKeyRequired
 		}
@@ -413,7 +419,7 @@ func (c *Config) validateConfig() error {
 		}
 	}
 
-	repo := c.cmdConfig.GetString("repo-name")
+	repo := c.cmdConfig.GetString(options.ConfigKeyRepoName)
 	if repo == "" {
 		return errGitHubRepoRequired
 	}
@@ -421,7 +427,7 @@ func (c *Config) validateConfig() error {
 		return errGitHubRepoFormatInvalid
 	}
 
-	uri := c.cmdConfig.GetString("jira-uri")
+	uri := c.cmdConfig.GetString(options.ConfigKeyJiraURI)
 	if uri == "" {
 		return errJiraURIRequired
 	}
@@ -429,17 +435,17 @@ func (c *Config) validateConfig() error {
 		return errJiraURIInvalid
 	}
 
-	project := c.cmdConfig.GetString("jira-project")
+	project := c.cmdConfig.GetString(options.ConfigKeyJiraProject)
 	if project == "" {
 		return errJiraProjectRequired
 	}
 
-	sinceStr := c.cmdConfig.GetString("since")
+	sinceStr := c.cmdConfig.GetString(options.ConfigKeySince)
 	if sinceStr == "" {
-		c.cmdConfig.Set("since", "1970-01-01T00:00:00+0000")
+		c.cmdConfig.Set(options.ConfigKeySince, options.DefaultSince)
 	}
 
-	since, err := time.Parse(dateFormat, sinceStr)
+	since, err := time.Parse(options.DateFormat, sinceStr)
 	if err != nil {
 		return errDateInvalid
 	}
@@ -448,29 +454,6 @@ func (c *Config) validateConfig() error {
 	c.log.Debug("All config variables are valid!")
 
 	return nil
-}
-
-// jiraField represents field metadata in JIRA. For an example of its
-// structure, make a request to `${jira-uri}/rest/api/2/field`.
-// TODO(jira): Check if type is already represented in go-jira and remove this definition.
-//
-//nolint:govet
-type jiraField struct {
-	ID          string   `json:"id"`
-	Key         string   `json:"key"`
-	Name        string   `json:"name"`
-	Custom      bool     `json:"custom"`
-	Orderable   bool     `json:"orderable"`
-	Navigable   bool     `json:"navigable"`
-	Searchable  bool     `json:"searchable"`
-	ClauseNames []string `json:"clauseNames"`
-	Schema      struct {
-		Type     string `json:"type"`
-		System   string `json:"system,omitempty"`
-		Items    string `json:"items,omitempty"`
-		Custom   string `json:"custom,omitempty"`
-		CustomID int    `json:"customId,omitempty"`
-	} `json:"schema,omitempty"`
 }
 
 // getFieldIDs requests the metadata of every issue field in the JIRA
@@ -483,7 +466,7 @@ func (c *Config) getFieldIDs(client *jira.Client) (*fields, error) {
 		return nil, fmt.Errorf("getting fields: %w", err)
 	}
 
-	jFieldsPtr := new([]jiraField)
+	jFieldsPtr := new([]jira.Field)
 	_, err = client.Do(req, jFieldsPtr)
 	if err != nil {
 		return nil, fmt.Errorf("getting field IDs: %w", err)

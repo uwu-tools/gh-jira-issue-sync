@@ -29,9 +29,10 @@ import (
 	"github.com/cenkalti/backoff/v4"
 	gh "github.com/google/go-github/v48/github"
 
-	"github.com/uwu-tools/gh-jira-issue-sync/auth"
 	"github.com/uwu-tools/gh-jira-issue-sync/config"
 	"github.com/uwu-tools/gh-jira-issue-sync/github"
+	"github.com/uwu-tools/gh-jira-issue-sync/jira/auth"
+	"github.com/uwu-tools/gh-jira-issue-sync/options"
 )
 
 // commentDateFormat is the format used in the headers of JIRA comments.
@@ -97,16 +98,14 @@ func New(cfg *config.Config) (Client, error) {
 		tp = *oauth
 	} else {
 		basicAuth := jira.BasicAuthTransport{
-			// TODO(config): Parameterize config fields
-			Username: strings.TrimSpace(cfg.GetConfigString("jira-user")),
-			// TODO(j-v2): Replace instances of "jira-pass" with API token
-			APIToken: strings.TrimSpace(cfg.GetConfigString("jira-pass")),
+			Username: cfg.GetConfigString(options.ConfigKeyJiraUser),
+			APIToken: strings.TrimSpace(cfg.GetConfigString(options.ConfigKeyJiraPassword)),
 		}
 
 		tp.Transport = &basicAuth
 	}
 
-	client, err := jira.NewClient(strings.TrimSpace(cfg.GetConfigString("jira-uri")), &tp)
+	client, err := jira.NewClient(strings.TrimSpace(cfg.GetConfigString(options.ConfigKeyJiraURI)), &tp)
 	if err != nil {
 		log.Errorf("Error initializing JIRA clients; check your base URI. Error: %+v", err)
 		return nil, fmt.Errorf("initializing Jira client: %w", err)
