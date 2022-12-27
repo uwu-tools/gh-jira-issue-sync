@@ -39,6 +39,9 @@ type Options struct {
 }
 
 const (
+	// DateFormat is the format used for the `since` configuration parameter.
+	DateFormat = "2006-01-02T15:04:05-0700"
+
 	// Flag / Viper field names.
 	ConfigKeyLogLevel     = "log-level"
 	ConfigKeyConfigFile   = "config"
@@ -53,7 +56,11 @@ const (
 	ConfigKeyTimeout      = "timeout"
 	ConfigKeyPeriod       = "period"
 
-	// Default values.
+	// Default values
+	//
+	// DefaultLogLevel is the level logrus should default to if the configured
+	// option can't be parsed.
+	DefaultLogLevel   = logrus.InfoLevel
 	DefaultConfigFile = "$HOME/.issue-sync.json"
 	DefaultSince      = "1970-01-01T00:00:00+0000"
 	DefaultDryRun     = false
@@ -61,4 +68,4 @@ const (
 	DefaultPeriod     = time.Hour
 )
 
-var DefaultLogLevel = logrus.InfoLevel.String()
+var DefaultLogLevelStr = DefaultLogLevel.String()
