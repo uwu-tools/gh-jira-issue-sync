@@ -39,22 +39,32 @@ type Options struct {
 }
 
 const (
+	AppName = "gh-jira-issue-sync"
+
 	// DateFormat is the format used for the `since` configuration parameter.
 	DateFormat = "2006-01-02T15:04:05-0700"
 
-	// Flag / Viper field names.
-	ConfigKeyLogLevel     = "log-level"
-	ConfigKeyConfigFile   = "config"
-	ConfigKeyGitHubToken  = "github-token"
-	ConfigKeyJiraUser     = "jira-user"
-	ConfigKeyJiraPassword = "jira-pass"
-	ConfigKeyRepoName     = "repo-name"
-	ConfigKeyJiraURI      = "jira-uri"
-	ConfigKeyJiraProject  = "jira-project"
-	ConfigKeySince        = "since"
-	ConfigKeyDryRun       = "dry-run"
-	ConfigKeyTimeout      = "timeout"
-	ConfigKeyPeriod       = "period"
+	// Application config keys.
+	ConfigKeyLogLevel   = "log-level"
+	ConfigKeyConfigFile = "config"
+	ConfigKeySince      = "since"
+	ConfigKeyDryRun     = "dry-run"
+	ConfigKeyPeriod     = "period"
+	ConfigKeyTimeout    = "timeout"
+
+	// GitHub config keys.
+	ConfigKeyRepoName    = "repo-name"
+	ConfigKeyGitHubToken = "github-token"
+
+	// Jira config keys.
+	ConfigKeyJiraURI            = "jira-uri"
+	ConfigKeyJiraProject        = "jira-project"
+	ConfigKeyJiraUser           = "jira-user"
+	ConfigKeyJiraPassword       = "jira-pass"
+	ConfigKeyJiraToken          = "jira-token"
+	ConfigKeyJiraSecret         = "jira-secret"
+	ConfigKeyJiraConsumerKey    = "jira-consumer-key"
+	ConfigKeyJiraPrivateKeyPath = "jira-private-key-path"
 
 	// Default values
 	//
@@ -64,8 +74,8 @@ const (
 	DefaultConfigFile = "$HOME/.issue-sync.json"
 	DefaultSince      = "1970-01-01T00:00:00+0000"
 	DefaultDryRun     = false
-	DefaultTimeout    = time.Minute
 	DefaultPeriod     = time.Hour
+	DefaultTimeout    = time.Minute
 )
 
 var DefaultLogLevelStr = DefaultLogLevel.String()

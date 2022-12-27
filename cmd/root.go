@@ -43,7 +43,7 @@ func Execute() {
 
 // RootCmd represents the command itself and configures it.
 var RootCmd = &cobra.Command{
-	Use:               "gh-jira-issue-sync [options]",
+	Use:               fmt.Sprintf("%s [options]", options.AppName),
 	Short:             "A tool to synchronize GitHub and JIRA issues",
 	Long:              "Full docs coming later; see https://github.com/uwu-tools/gh-jira-issue-sync",
 	PersistentPreRunE: initLogging,
