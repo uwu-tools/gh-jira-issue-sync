@@ -19,7 +19,6 @@ package issue
 import (
 	"fmt"
 	"strconv"
-	"strings"
 	"time"
 
 	gojira "github.com/andygrunwald/go-jira/v2/cloud"
@@ -114,6 +113,8 @@ func Compare(cfg *config.Config, ghClient github.Client, jiraClient jira.Client)
 
 // DidIssueChange tests each of the relevant fields on the provided JIRA and GitHub issue
 // and returns whether or not they differ.
+//
+//nolint:gocognit // TODO(lint)
 func DidIssueChange(cfg *config.Config, ghIssue *gh.Issue, jIssue *gojira.Issue) bool {
 	log := cfg.GetLogger()
 
@@ -136,15 +137,29 @@ func DidIssueChange(cfg *config.Config, ghIssue *gh.Issue, jIssue *gojira.Issue)
 		anyDifferent = true
 	}
 
-	labels := make([]string, len(ghIssue.Labels))
-	for i, l := range ghIssue.Labels {
-		labels[i] = *l.Name
-	}
+	ghLabels := githubLabelsToStrSlice(ghIssue.Labels)
 
 	key = cfg.GetFieldKey(config.GitHubLabels)
-	field, err = jIssue.Fields.Unknowns.String(key)
-	if err != nil && strings.Join(labels, ",") != field {
-		anyDifferent = true
+	jiraLabels, err := jIssue.Fields.Unknowns.StringSlice(key)
+	if err != nil {
+		log.Errorf("collecting GitHub labels defined on Jira issue: %v", err)
+	}
+
+	for _, label := range ghLabels {
+		if !anyDifferent {
+			found := false
+			for i, jiraLabel := range jiraLabels {
+				if i < len(jiraLabels) && !found {
+					if label == jiraLabel {
+						found = true
+						break
+					}
+				} else {
+					anyDifferent = true
+					break
+				}
+			}
+		}
 	}
 
 	log.Debugf("Issues have any differences: %t", anyDifferent)
@@ -177,11 +192,8 @@ func UpdateIssue(
 		//       GitHub issue's reporter.
 		fields.Unknowns.Set(cfg.GetFieldKey(config.GitHubReporter), ghIssue.User.GetLogin())
 
-		labels := make([]string, len(ghIssue.Labels))
-		for i, l := range ghIssue.Labels {
-			labels[i] = l.GetName()
-		}
-		fields.Unknowns.Set(cfg.GetFieldKey(config.GitHubLabels), strings.Join(labels, ","))
+		labels := githubLabelsToStrSlice(ghIssue.Labels)
+		fields.Unknowns.Set(cfg.GetFieldKey(config.GitHubLabels), labels)
 
 		fields.Unknowns.Set(cfg.GetFieldKey(config.LastISUpdate), time.Now().Format(dateFormat))
 
@@ -229,12 +241,8 @@ func CreateIssue(cfg *config.Config, issue *gh.Issue, ghClient github.Client, jC
 	unknowns.Set(cfg.GetFieldKey(config.GitHubStatus), issue.GetState())
 	unknowns.Set(cfg.GetFieldKey(config.GitHubReporter), issue.User.GetLogin())
 
-	// TODO: Is there a way to represent this as an array of labels in Jira?
-	strs := make([]string, len(issue.Labels))
-	for i, v := range issue.Labels {
-		strs[i] = *v.Name
-	}
-	unknowns.Set(cfg.GetFieldKey(config.GitHubLabels), strings.Join(strs, ","))
+	labels := githubLabelsToStrSlice(issue.Labels)
+	unknowns.Set(cfg.GetFieldKey(config.GitHubLabels), labels)
 
 	unknowns.Set(cfg.GetFieldKey(config.LastISUpdate), time.Now().Format(dateFormat))
 
@@ -269,4 +277,14 @@ func CreateIssue(cfg *config.Config, issue *gh.Issue, ghClient github.Client, jC
 	}
 
 	return nil
+}
+
+// TODO(github): Consider github.IssueRequest.GetLabels() here.
+func githubLabelsToStrSlice(ghLabels []*gh.Label) []string {
+	labels := make([]string, len(ghLabels))
+	for i, l := range ghLabels {
+		labels[i] = l.GetName()
+	}
+
+	return labels
 }
