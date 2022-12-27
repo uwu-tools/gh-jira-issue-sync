@@ -17,6 +17,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -48,7 +49,8 @@ var RootCmd = &cobra.Command{
 	Long:              "Full docs coming later; see https://github.com/uwu-tools/gh-jira-issue-sync",
 	PersistentPreRunE: initLogging,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := config.New(cmd)
+		ctx := context.Background()
+		cfg, err := config.New(ctx, cmd)
 		if err != nil {
 			return fmt.Errorf("creating new config: %w", err)
 		}

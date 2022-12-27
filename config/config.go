@@ -67,8 +67,13 @@ type fields struct {
 type Config struct {
 	// cmdFile is the file Viper is using for its configuration (default $HOME/.issue-sync.json).
 	cmdFile string
+
 	// cmdConfig is the Viper configuration object created from the command line and config file.
 	cmdConfig viper.Viper
+
+	// ctx carries a deadline, a cancellation signal, and other values across
+	// API boundaries.
+	ctx context.Context
 
 	// log is a logger set up with the configured log level, app name, etc.
 	log logrus.Entry
@@ -90,7 +95,7 @@ type Config struct {
 // New creates a new, immutable configuration object. This object
 // holds the Viper configuration and the logger, and is validated. The
 // JIRA configuration is not yet initialized.
-func New(cmd *cobra.Command) (*Config, error) {
+func New(ctx context.Context, cmd *cobra.Command) (*Config, error) {
 	var cfg Config
 
 	var err error
@@ -103,6 +108,8 @@ func New(cmd *cobra.Command) (*Config, error) {
 	cfg.cmdConfig.BindPFlags(cmd.Flags()) //nolint:errcheck
 
 	cfg.cmdFile = cfg.cmdConfig.ConfigFileUsed()
+
+	cfg.ctx = ctx
 
 	cfg.log = *newLogger(
 		options.AppName,
@@ -119,9 +126,8 @@ func New(cmd *cobra.Command) (*Config, error) {
 // LoadJIRAConfig loads the JIRA configuration (project key,
 // custom field IDs) from a remote JIRA server.
 func (c *Config) LoadJIRAConfig(client *jira.Client) error {
-	// TODO(j-v2): Pull context from config
 	proj, res, err := client.Project.Get(
-		context.Background(),
+		c.Context(),
 		c.cmdConfig.GetString(options.ConfigKeyJiraProject),
 	)
 	if err != nil {
@@ -144,6 +150,11 @@ func (c *Config) LoadJIRAConfig(client *jira.Client) error {
 	}
 
 	return nil
+}
+
+// Context returns the context.
+func (c *Config) Context() context.Context {
+	return c.ctx
 }
 
 // GetConfigFile returns the file that Viper loaded the configuration from.
@@ -460,8 +471,7 @@ func (c *Config) validateConfig() error {
 // project, and saves the IDs of the custom fields used by issue-sync.
 func (c *Config) getFieldIDs(client *jira.Client) (*fields, error) {
 	c.log.Debug("Collecting field IDs.")
-	// TODO(j-v2): Pull context from config
-	req, err := client.NewRequest(context.Background(), "GET", "/rest/api/2/field", nil)
+	req, err := client.NewRequest(c.Context(), "GET", "/rest/api/2/field", nil)
 	if err != nil {
 		return nil, fmt.Errorf("getting fields: %w", err)
 	}
