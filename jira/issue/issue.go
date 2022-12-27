@@ -18,6 +18,7 @@ package issue
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	gojira "github.com/andygrunwald/go-jira/v2/cloud"
@@ -281,11 +282,25 @@ func CreateIssue(cfg *config.Config, issue *gh.Issue, ghClient github.Client, jC
 	return nil
 }
 
+// githubLabelsToStrSlice converts a slice of GitHub label pointers (the format
+// which is returned by the GitHub API) to a slice of strings, which can be
+// supplied as a value for the `GitHub Labels` custom field.
+//
+// It also converts spaces (' ') to hyphens ('-'), as the Jira `labels` custom
+// field type does not support spaces.
+//
 // TODO(github): Consider github.IssueRequest.GetLabels() here.
 func githubLabelsToStrSlice(ghLabels []*gh.Label) []string {
 	labels := make([]string, len(ghLabels))
 	for i, l := range ghLabels {
-		labels[i] = l.GetName()
+		jiraLabel := l.GetName()
+
+		// Converts spaces (' ') to hyphens ('-'), as the Jira `labels` custom
+		// field type does not support spaces.
+		// TODO(labels): Consider a normalization function for all values not
+		//               supported.
+		jiraLabel = strings.ReplaceAll(jiraLabel, " ", "-")
+		labels[i] = jiraLabel
 	}
 
 	return labels
