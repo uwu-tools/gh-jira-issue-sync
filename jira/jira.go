@@ -34,12 +34,24 @@ import (
 	"github.com/uwu-tools/gh-jira-issue-sync/options"
 )
 
-// commentDateFormat is the format used in the headers of JIRA comments.
-const commentDateFormat = "15:04 PM, January 2 2006"
+const (
+	// commentDateFormat is the format used in the headers of JIRA comments.
+	commentDateFormat = "15:04 PM, January 2 2006"
 
-// maxJQLIssueLength is the maximum number of GitHub issues we can
-// use before we need to stop using JQL and filter issues ourself.
-const maxJQLIssueLength = 100
+	// maxJQLIssueLength is the maximum number of GitHub issues we can
+	// use before we need to stop using JQL and filter issues ourself.
+	maxJQLIssueLength = 100
+
+	// maxIssueSearchResults is the maximum number of items that a page can
+	// return. Each operation can have a different limit for the number of items
+	// returned, and these limits may change without notice. To find the maximum
+	// number of items that an operation could return, set maxResults to a large
+	// number—for example, over 1000—and if the returned value of maxResults is
+	// less than the requested value, the returned value is the maximum.
+	//
+	// ref: https://developer.atlassian.com/cloud/jira/platform/rest/v2/intro/#pagination
+	maxIssueSearchResults = 1000
+)
 
 // getErrorBody reads the HTTP response body of a JIRA API response,
 // logs it as an error, and returns an error object with the contents
@@ -171,8 +183,11 @@ func (j *realJIRAClient) ListIssues(ids []int) ([]jira.Issue, error) {
 	log.Debugf("JQL query used: %s", jql)
 
 	// TODO(backoff): Consider restoring backoff logic here
-	// TODO(j-v2): Add query options
-	jiraIssues, res, err := j.client.Issue.Search(j.cfg.Context(), jql, nil)
+	// TODO(j-v2): Parameterize all query options
+	searchOpts := &jira.SearchOptions{
+		MaxResults: maxIssueSearchResults,
+	}
+	jiraIssues, res, err := j.client.Issue.Search(j.cfg.Context(), jql, searchOpts)
 	if err != nil {
 		log.Errorf("Error retrieving JIRA issues: %+v", err)
 		return nil, getErrorBody(j.cfg, res)
