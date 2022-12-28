@@ -29,8 +29,8 @@ import (
 
 	"github.com/dghubble/oauth1"
 
-	"github.com/uwu-tools/gh-jira-issue-sync/config"
-	"github.com/uwu-tools/gh-jira-issue-sync/options"
+	"github.com/uwu-tools/gh-jira-issue-sync/internal/config"
+	"github.com/uwu-tools/gh-jira-issue-sync/internal/options"
 )
 
 // NewJiraHTTPClient obtains an access token (either from configuration

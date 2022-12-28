@@ -29,10 +29,10 @@ import (
 	gh "github.com/google/go-github/v48/github"
 	"github.com/sirupsen/logrus"
 
-	"github.com/uwu-tools/gh-jira-issue-sync/config"
-	"github.com/uwu-tools/gh-jira-issue-sync/github"
-	"github.com/uwu-tools/gh-jira-issue-sync/jira/auth"
-	"github.com/uwu-tools/gh-jira-issue-sync/options"
+	"github.com/uwu-tools/gh-jira-issue-sync/internal/config"
+	"github.com/uwu-tools/gh-jira-issue-sync/internal/github"
+	"github.com/uwu-tools/gh-jira-issue-sync/internal/jira/auth"
+	"github.com/uwu-tools/gh-jira-issue-sync/internal/options"
 )
 
 const (

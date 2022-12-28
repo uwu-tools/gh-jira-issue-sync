@@ -26,11 +26,11 @@ import (
 	"sigs.k8s.io/release-utils/log"
 	"sigs.k8s.io/release-utils/version"
 
-	"github.com/uwu-tools/gh-jira-issue-sync/config"
-	"github.com/uwu-tools/gh-jira-issue-sync/github"
-	"github.com/uwu-tools/gh-jira-issue-sync/jira"
-	"github.com/uwu-tools/gh-jira-issue-sync/jira/issue"
-	"github.com/uwu-tools/gh-jira-issue-sync/options"
+	"github.com/uwu-tools/gh-jira-issue-sync/internal/config"
+	"github.com/uwu-tools/gh-jira-issue-sync/internal/github"
+	"github.com/uwu-tools/gh-jira-issue-sync/internal/jira"
+	"github.com/uwu-tools/gh-jira-issue-sync/internal/jira/issue"
+	"github.com/uwu-tools/gh-jira-issue-sync/internal/options"
 )
 
 var opts = &options.Options{}

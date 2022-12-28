@@ -25,8 +25,8 @@ import (
 	"github.com/google/go-github/v48/github"
 	"golang.org/x/oauth2"
 
-	"github.com/uwu-tools/gh-jira-issue-sync/config"
-	"github.com/uwu-tools/gh-jira-issue-sync/options"
+	"github.com/uwu-tools/gh-jira-issue-sync/internal/config"
+	"github.com/uwu-tools/gh-jira-issue-sync/internal/options"
 )
 
 // Client is a wrapper around the GitHub API Client library we
