@@ -27,6 +27,7 @@ import (
 	jira "github.com/andygrunwald/go-jira/v2/cloud"
 	"github.com/cenkalti/backoff/v4"
 	gh "github.com/google/go-github/v48/github"
+	"github.com/sirupsen/logrus"
 
 	"github.com/uwu-tools/gh-jira-issue-sync/config"
 	"github.com/uwu-tools/gh-jira-issue-sync/github"
@@ -144,6 +145,30 @@ func New(cfg *config.Config) (Client, error) {
 	return j, nil
 }
 
+func getJQLQuery(projectKey, fieldID string, ids []int) string {
+	idStrs := make([]string, len(ids))
+	for i, v := range ids {
+		idStrs[i] = fmt.Sprint(v)
+	}
+
+	// If the list of IDs is too long, we get a 414 Request-URI Too Large, so in that case,
+	// we'll need to do the filtering ourselves.
+	var jql string
+	if len(ids) < maxJQLIssueLength {
+		jql = fmt.Sprintf(
+			"project='%s' AND cf[%s] in (%s)",
+			projectKey,
+			fieldID,
+			strings.Join(idStrs, ","),
+		)
+	} else {
+		jql = fmt.Sprintf("project='%s'", projectKey)
+	}
+
+	logrus.Debugf("JQL query used: %s", jql)
+	return jql
+}
+
 // realJIRAClient is a standard JIRA clients, which actually makes
 // of the requests against the JIRA REST API. It is the canonical
 // implementation of JIRAClient.
@@ -158,29 +183,11 @@ type realJIRAClient struct {
 func (j *realJIRAClient) ListIssues(ids []int) ([]jira.Issue, error) {
 	log := j.cfg.GetLogger()
 
-	idStrs := make([]string, len(ids))
-	for i, v := range ids {
-		idStrs[i] = fmt.Sprint(v)
-	}
-
-	// If the list of IDs is too long, we get a 414 Request-URI Too Large, so in that case,
-	// we'll need to do the filtering ourselves.
-	// TODO: Re-enable manual filtering, if required
-	/*
-		if len(ids) < maxJQLIssueLength {
-			jql = fmt.Sprintf(
-				// TODO(jira): Fix "The operator 'in' is not supported by the 'cf[#####]' field."
-				"project='%s' AND cf[%s] in (%s)",
-				j.cfg.GetProjectKey(),
-				j.cfg.GetFieldID(config.GitHubID),
-				strings.Join(idStrs, ","),
-			)
-		} else {
-			jql = fmt.Sprintf("project='%s'", j.cfg.GetProjectKey())
-		}
-	*/
-	jql := fmt.Sprintf("project='%s'", j.cfg.GetProjectKey())
-	log.Debugf("JQL query used: %s", jql)
+	jql := getJQLQuery(
+		j.cfg.GetProjectKey(),
+		j.cfg.GetFieldID(config.GitHubID),
+		ids,
+	)
 
 	// TODO(backoff): Consider restoring backoff logic here
 	// TODO(j-v2): Parameterize all query options
@@ -468,20 +475,11 @@ func truncate(s string, length int) string {
 func (j *dryrunJIRAClient) ListIssues(ids []int) ([]jira.Issue, error) {
 	log := j.cfg.GetLogger()
 
-	idStrs := make([]string, len(ids))
-	for i, v := range ids {
-		idStrs[i] = fmt.Sprint(v)
-	}
-
-	var jql string
-	// If the list of IDs is too long, we get a 414 Request-URI Too Large, so in that case,
-	// we'll need to do the filtering ourselves.
-	if len(ids) < maxJQLIssueLength {
-		jql = fmt.Sprintf("project='%s' AND cf[%s] in (%s)",
-			j.cfg.GetProjectKey(), j.cfg.GetFieldID(config.GitHubID), strings.Join(idStrs, ","))
-	} else {
-		jql = fmt.Sprintf("project='%s'", j.cfg.GetProjectKey())
-	}
+	jql := getJQLQuery(
+		j.cfg.GetProjectKey(),
+		j.cfg.GetFieldID(config.GitHubID),
+		ids,
+	)
 
 	ji, res, err := j.request(func() (interface{}, *jira.Response, error) {
 		// TODO(j-v2): Add query options
