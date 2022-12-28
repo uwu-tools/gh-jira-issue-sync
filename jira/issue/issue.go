@@ -67,24 +67,26 @@ func Compare(cfg *config.Config, ghClient github.Client, jiraClient jira.Client)
 	log.Debugf("Jira issues found: %v", len(jiraIssues))
 	log.Debug("Collected all JIRA issues")
 
+	fieldKey := cfg.GetFieldKey(config.GitHubID)
+	log.Debugf("GitHub ID custom field key: %s", fieldKey)
+
 	// TODO(compare): Consider move ID comparison logic into separate function
 	for _, ghIssue := range ghIssues {
 		found := false
 
 		ghID := *ghIssue.ID
 
-		fieldKey := cfg.GetFieldKey(config.GitHubID)
-		log.Debugf("GitHub ID custom field key: %s", fieldKey)
 		for i := range jiraIssues {
 			jIssue := jiraIssues[i]
 
-			// TODO: Getting a field with Unknowns will generate a nil pointer
-			//       exception if the custom field is not defined in JIRA.
-			//       ref: https://github.com/andygrunwald/go-jira/issues/322
+			// TODO(fields): Getting a field with Unknowns will generate a nil
+			//               pointer exception if the custom field is not defined in
+			//               JIRA.
+			//               ref: https://github.com/andygrunwald/go-jira/issues/322
 			unknowns := jIssue.Fields.Unknowns
 			id, exists := unknowns.Value(fieldKey)
 			if !exists {
-				log.Infof("GitHub ID custom field (%s) does not exist", fieldKey)
+				log.Info("GitHub ID custom field is not set for issue")
 			}
 
 			jiraID, ok := id.(float64)

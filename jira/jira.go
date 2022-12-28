@@ -27,6 +27,7 @@ import (
 	jira "github.com/andygrunwald/go-jira/v2/cloud"
 	"github.com/cenkalti/backoff/v4"
 	gh "github.com/google/go-github/v48/github"
+	"github.com/sirupsen/logrus"
 
 	"github.com/uwu-tools/gh-jira-issue-sync/config"
 	"github.com/uwu-tools/gh-jira-issue-sync/github"
@@ -34,12 +35,24 @@ import (
 	"github.com/uwu-tools/gh-jira-issue-sync/options"
 )
 
-// commentDateFormat is the format used in the headers of JIRA comments.
-const commentDateFormat = "15:04 PM, January 2 2006"
+const (
+	// commentDateFormat is the format used in the headers of JIRA comments.
+	commentDateFormat = "15:04 PM, January 2 2006"
 
-// maxJQLIssueLength is the maximum number of GitHub issues we can
-// use before we need to stop using JQL and filter issues ourself.
-const maxJQLIssueLength = 100
+	// maxJQLIssueLength is the maximum number of GitHub issues we can
+	// use before we need to stop using JQL and filter issues ourself.
+	maxJQLIssueLength = 100
+
+	// maxIssueSearchResults is the maximum number of items that a page can
+	// return. Each operation can have a different limit for the number of items
+	// returned, and these limits may change without notice. To find the maximum
+	// number of items that an operation could return, set maxResults to a large
+	// number—for example, over 1000—and if the returned value of maxResults is
+	// less than the requested value, the returned value is the maximum.
+	//
+	// ref: https://developer.atlassian.com/cloud/jira/platform/rest/v2/intro/#pagination
+	maxIssueSearchResults = 1000
+)
 
 // getErrorBody reads the HTTP response body of a JIRA API response,
 // logs it as an error, and returns an error object with the contents
@@ -132,6 +145,30 @@ func New(cfg *config.Config) (Client, error) {
 	return j, nil
 }
 
+func getJQLQuery(projectKey, fieldID string, ids []int) string {
+	idStrs := make([]string, len(ids))
+	for i, v := range ids {
+		idStrs[i] = fmt.Sprint(v)
+	}
+
+	// If the list of IDs is too long, we get a 414 Request-URI Too Large, so in that case,
+	// we'll need to do the filtering ourselves.
+	var jql string
+	if len(ids) < maxJQLIssueLength {
+		jql = fmt.Sprintf(
+			"project='%s' AND cf[%s] in (%s)",
+			projectKey,
+			fieldID,
+			strings.Join(idStrs, ","),
+		)
+	} else {
+		jql = fmt.Sprintf("project='%s'", projectKey)
+	}
+
+	logrus.Debugf("JQL query used: %s", jql)
+	return jql
+}
+
 // realJIRAClient is a standard JIRA clients, which actually makes
 // of the requests against the JIRA REST API. It is the canonical
 // implementation of JIRAClient.
@@ -146,33 +183,18 @@ type realJIRAClient struct {
 func (j *realJIRAClient) ListIssues(ids []int) ([]jira.Issue, error) {
 	log := j.cfg.GetLogger()
 
-	idStrs := make([]string, len(ids))
-	for i, v := range ids {
-		idStrs[i] = fmt.Sprint(v)
-	}
-
-	// If the list of IDs is too long, we get a 414 Request-URI Too Large, so in that case,
-	// we'll need to do the filtering ourselves.
-	// TODO: Re-enable manual filtering, if required
-	/*
-		if len(ids) < maxJQLIssueLength {
-			jql = fmt.Sprintf(
-				// TODO(jira): Fix "The operator 'in' is not supported by the 'cf[#####]' field."
-				"project='%s' AND cf[%s] in (%s)",
-				j.cfg.GetProjectKey(),
-				j.cfg.GetFieldID(config.GitHubID),
-				strings.Join(idStrs, ","),
-			)
-		} else {
-			jql = fmt.Sprintf("project='%s'", j.cfg.GetProjectKey())
-		}
-	*/
-	jql := fmt.Sprintf("project='%s'", j.cfg.GetProjectKey())
-	log.Debugf("JQL query used: %s", jql)
+	jql := getJQLQuery(
+		j.cfg.GetProjectKey(),
+		j.cfg.GetFieldID(config.GitHubID),
+		ids,
+	)
 
 	// TODO(backoff): Consider restoring backoff logic here
-	// TODO(j-v2): Add query options
-	jiraIssues, res, err := j.client.Issue.Search(j.cfg.Context(), jql, nil)
+	// TODO(j-v2): Parameterize all query options
+	searchOpts := &jira.SearchOptions{
+		MaxResults: maxIssueSearchResults,
+	}
+	jiraIssues, res, err := j.client.Issue.Search(j.cfg.Context(), jql, searchOpts)
 	if err != nil {
 		log.Errorf("Error retrieving JIRA issues: %+v", err)
 		return nil, getErrorBody(j.cfg, res)
@@ -453,20 +475,11 @@ func truncate(s string, length int) string {
 func (j *dryrunJIRAClient) ListIssues(ids []int) ([]jira.Issue, error) {
 	log := j.cfg.GetLogger()
 
-	idStrs := make([]string, len(ids))
-	for i, v := range ids {
-		idStrs[i] = fmt.Sprint(v)
-	}
-
-	var jql string
-	// If the list of IDs is too long, we get a 414 Request-URI Too Large, so in that case,
-	// we'll need to do the filtering ourselves.
-	if len(ids) < maxJQLIssueLength {
-		jql = fmt.Sprintf("project='%s' AND cf[%s] in (%s)",
-			j.cfg.GetProjectKey(), j.cfg.GetFieldID(config.GitHubID), strings.Join(idStrs, ","))
-	} else {
-		jql = fmt.Sprintf("project='%s'", j.cfg.GetProjectKey())
-	}
+	jql := getJQLQuery(
+		j.cfg.GetProjectKey(),
+		j.cfg.GetFieldID(config.GitHubID),
+		ids,
+	)
 
 	ji, res, err := j.request(func() (interface{}, *jira.Response, error) {
 		// TODO(j-v2): Add query options
