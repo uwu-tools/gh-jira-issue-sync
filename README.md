@@ -22,8 +22,8 @@ appropriate project's screens:
 
 | Custom Field Name | Type |
 | --- | --- |
-| `GitHub ID` | Short text (plain text only) |
-| `GitHub Number` | Short text (plain text only) |
+| `GitHub ID` | Number |
+| `GitHub Number` | Number |
 | `GitHub Status` | Short text (plain text only) |
 | `GitHub Reporter` | Short text (plain text only) |
 | `GitHub Labels` | Labels |
