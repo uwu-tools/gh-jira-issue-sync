@@ -22,15 +22,14 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
-	"time"
 
 	jira "github.com/andygrunwald/go-jira/v2/cloud"
-	"github.com/cenkalti/backoff/v4"
 	gh "github.com/google/go-github/v48/github"
 	"github.com/sirupsen/logrus"
 
 	"github.com/uwu-tools/gh-jira-issue-sync/internal/config"
 	"github.com/uwu-tools/gh-jira-issue-sync/internal/github"
+	synchttp "github.com/uwu-tools/gh-jira-issue-sync/internal/http"
 	"github.com/uwu-tools/gh-jira-issue-sync/internal/jira/auth"
 	"github.com/uwu-tools/gh-jira-issue-sync/internal/options"
 )
@@ -408,35 +407,15 @@ func (j *realJIRAClient) UpdateComment(
 	return *co, nil
 }
 
-// request takes an API function from the JIRA library
-// and calls it with exponential backoff. If the function succeeds, it
-// returns the expected value and the JIRA API response, as well as a nil
-// error. If it continues to fail until a maximum time is reached, it returns
-// a nil result as well as the returned HTTP response and a timeout error.
+// request executes a Jira request with exponential backoff, using the real
+// client.
 func (j *realJIRAClient) request(f func() (interface{}, *jira.Response, error)) (interface{}, *jira.Response, error) {
-	log := j.cfg.GetLogger()
-
-	var ret interface{}
-	var res *jira.Response
-
-	op := func() error {
-		var err error
-		ret, res, err = f()
-		return err
+	ret, resp, err := synchttp.NewJiraRequest(f, j.cfg.GetLogger(), j.cfg.GetTimeout())
+	if err != nil {
+		return ret, resp, fmt.Errorf("request error: %w", err)
 	}
 
-	b := backoff.NewExponentialBackOff()
-	b.MaxElapsedTime = j.cfg.GetTimeout()
-
-	backoffErr := backoff.RetryNotify(op, b, func(err error, duration time.Duration) {
-		// Round to a whole number of milliseconds
-		duration /= github.RetryBackoffRoundRatio // Convert nanoseconds to milliseconds
-		duration *= github.RetryBackoffRoundRatio // Convert back so it appears correct
-
-		log.Errorf("Error performing operation; retrying in %v: %v", duration, err)
-	})
-
-	return ret, res, fmt.Errorf("backoff error: %w", backoffErr)
+	return ret, resp, nil
 }
 
 // dryrunJIRAClient is an implementation of JIRAClient which performs all
@@ -675,35 +654,13 @@ func (j *dryrunJIRAClient) UpdateComment(
 	}, nil
 }
 
-// request takes an API function from the JIRA library
-// and calls it with exponential backoff. If the function succeeds, it
-// returns the expected value and the JIRA API response, as well as a nil
-// error. If it continues to fail until a maximum time is reached, it returns
-// a nil result as well as the returned HTTP response and a timeout error.
-//
-// This function is identical to that in realJIRAClient.
+// request executes a Jira request with exponential backoff, using the dry-run
+// client.
 func (j *dryrunJIRAClient) request(f func() (interface{}, *jira.Response, error)) (interface{}, *jira.Response, error) {
-	log := j.cfg.GetLogger()
-
-	var ret interface{}
-	var res *jira.Response
-
-	op := func() error {
-		var err error
-		ret, res, err = f()
-		return err
+	ret, resp, err := synchttp.NewJiraRequest(f, j.cfg.GetLogger(), j.cfg.GetTimeout())
+	if err != nil {
+		return ret, resp, fmt.Errorf("request error: %w", err)
 	}
 
-	b := backoff.NewExponentialBackOff()
-	b.MaxElapsedTime = j.cfg.GetTimeout()
-
-	backoffErr := backoff.RetryNotify(op, b, func(err error, duration time.Duration) {
-		// Round to a whole number of milliseconds
-		duration /= github.RetryBackoffRoundRatio // Convert nanoseconds to milliseconds
-		duration *= github.RetryBackoffRoundRatio // Convert back so it appears correct
-
-		log.Errorf("Error performing operation; retrying in %v: %v", duration, err)
-	})
-
-	return ret, res, fmt.Errorf("backoff error: %w", backoffErr)
+	return ret, resp, nil
 }
