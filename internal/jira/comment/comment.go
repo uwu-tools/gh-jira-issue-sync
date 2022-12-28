@@ -24,9 +24,9 @@ import (
 	gojira "github.com/andygrunwald/go-jira/v2/cloud"
 	gh "github.com/google/go-github/v48/github"
 
-	"github.com/uwu-tools/gh-jira-issue-sync/config"
-	"github.com/uwu-tools/gh-jira-issue-sync/github"
-	"github.com/uwu-tools/gh-jira-issue-sync/jira"
+	"github.com/uwu-tools/gh-jira-issue-sync/internal/config"
+	"github.com/uwu-tools/gh-jira-issue-sync/internal/github"
+	"github.com/uwu-tools/gh-jira-issue-sync/internal/jira"
 )
 
 // jCommentRegex matches a generated JIRA comment. It has matching groups to retrieve the

@@ -36,7 +36,7 @@ import (
 	"github.com/spf13/viper"
 	"golang.org/x/term"
 
-	"github.com/uwu-tools/gh-jira-issue-sync/options"
+	"github.com/uwu-tools/gh-jira-issue-sync/internal/options"
 )
 
 // fieldKey is an enum-like type to represent the customfield ID keys.

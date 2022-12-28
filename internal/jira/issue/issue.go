@@ -25,10 +25,10 @@ import (
 	gh "github.com/google/go-github/v48/github"
 	"github.com/trivago/tgo/tcontainer"
 
-	"github.com/uwu-tools/gh-jira-issue-sync/config"
-	"github.com/uwu-tools/gh-jira-issue-sync/github"
-	"github.com/uwu-tools/gh-jira-issue-sync/jira"
-	"github.com/uwu-tools/gh-jira-issue-sync/jira/comment"
+	"github.com/uwu-tools/gh-jira-issue-sync/internal/config"
+	"github.com/uwu-tools/gh-jira-issue-sync/internal/github"
+	"github.com/uwu-tools/gh-jira-issue-sync/internal/jira"
+	"github.com/uwu-tools/gh-jira-issue-sync/internal/jira/comment"
 )
 
 // dateFormat is the format used for the Last IS Update field.
