@@ -19,13 +19,12 @@ package github
 import (
 	"context"
 	"fmt"
-	"time"
 
-	"github.com/cenkalti/backoff/v4"
 	"github.com/google/go-github/v48/github"
 	"golang.org/x/oauth2"
 
 	"github.com/uwu-tools/gh-jira-issue-sync/internal/config"
+	synchttp "github.com/uwu-tools/gh-jira-issue-sync/internal/http"
 	"github.com/uwu-tools/gh-jira-issue-sync/internal/options"
 )
 
@@ -179,37 +178,18 @@ func (g *realGHClient) GetRateLimits() (github.RateLimits, error) {
 	return *rate, nil
 }
 
-const RetryBackoffRoundRatio = time.Millisecond / time.Nanosecond
-
 // request takes an API function from the GitHub library
 // and calls it with exponential backoff. If the function succeeds, it
 // returns the expected value and the GitHub API response, as well as a nil
 // error. If it continues to fail until a maximum time is reached, it returns
 // a nil result as well as the returned HTTP response and a timeout error.
 func (g *realGHClient) request(f func() (interface{}, *github.Response, error)) (interface{}, *github.Response, error) {
-	log := g.cfg.GetLogger()
-
-	var ret interface{}
-	var res *github.Response
-
-	op := func() error {
-		var err error
-		ret, res, err = f()
-		return err
+	ret, resp, err := synchttp.NewGitHubRequest(f, g.cfg.GetLogger(), g.cfg.GetTimeout())
+	if err != nil {
+		return ret, resp, fmt.Errorf("request error: %w", err)
 	}
 
-	b := backoff.NewExponentialBackOff()
-	b.MaxElapsedTime = g.cfg.GetTimeout()
-
-	_ = backoff.RetryNotify(op, b, func(err error, duration time.Duration) { //nolint:errcheck
-		// Round to a whole number of milliseconds
-		duration /= RetryBackoffRoundRatio // Convert nanoseconds to milliseconds
-		duration *= RetryBackoffRoundRatio // Convert back so it appears correct
-
-		log.Errorf("Error performing operation; retrying in %v: %v", duration, err)
-	})
-
-	return ret, res, nil
+	return ret, resp, nil
 }
 
 // New creates a GitHubClient and returns it; which
