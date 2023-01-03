@@ -5,7 +5,7 @@ repository:
   name: gh-jira-issue-sync
 
   # A short description of the repository that will show up on GitHub
-  description: A tool for synchronizing issue tracking from GitHub to JIRA
+  description: A tool for synchronizing issue tracking from GitHub to Jira
 
   # A URL with more information about the repository
   homepage: https://pkg.go.dev/github.com/uwu-tools/gh-jira-issue-sync
