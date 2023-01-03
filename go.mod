@@ -14,7 +14,7 @@ require (
 	github.com/trivago/tgo v1.0.7
 	golang.org/x/oauth2 v0.3.0
 	golang.org/x/term v0.3.0
-	sigs.k8s.io/release-sdk v0.9.6
+	sigs.k8s.io/release-sdk v0.9.7
 	sigs.k8s.io/release-utils v0.7.3
 )
 
@@ -32,6 +32,7 @@ require (
 	github.com/go-git/go-git/v5 v5.5.1 // indirect
 	github.com/golang-jwt/jwt/v4 v4.4.2 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
+	github.com/google/go-github/v48 v48.2.0 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/imdario/mergo v0.3.13 // indirect
