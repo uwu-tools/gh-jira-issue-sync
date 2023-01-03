@@ -22,6 +22,7 @@ import (
 
 	"github.com/google/go-github/v48/github"
 	"golang.org/x/oauth2"
+	_ "sigs.k8s.io/release-sdk/github"
 
 	"github.com/uwu-tools/gh-jira-issue-sync/internal/config"
 	synchttp "github.com/uwu-tools/gh-jira-issue-sync/internal/http"
