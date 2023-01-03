@@ -27,7 +27,7 @@ appropriate project's screens:
 | `GitHub Status` | Short text (plain text only) |
 | `GitHub Reporter` | Short text (plain text only) |
 | `GitHub Labels` | Labels |
-| `Last Issue-Sync Update` | Date Time Picker |
+| `GitHub Last Sync` | Date Time Picker |
 
 If you intend to use OAuth with JIRA, you must create an inbound
 application connection and add a public key. Instructions can be found

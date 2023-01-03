@@ -48,7 +48,7 @@ const (
 	GitHubLabels   fieldKey = iota
 	GitHubStatus   fieldKey = iota
 	GitHubReporter fieldKey = iota
-	LastISUpdate   fieldKey = iota
+	GitHubLastSync fieldKey = iota
 
 	// Custom field names.
 	CustomFieldNameGitHubID       = "GitHub ID"
@@ -56,7 +56,7 @@ const (
 	CustomFieldNameGitHubLabels   = "GitHub Labels"
 	CustomFieldNameGitHubStatus   = "GitHub Status"
 	CustomFieldNameGitHubReporter = "GitHub Reporter"
-	CustomFieldNameGitHubLastSync = "Last Issue-Sync Update"
+	CustomFieldNameGitHubLastSync = "GitHub Last Sync"
 )
 
 // fields represents the custom field IDs of the JIRA custom fields we care about.
@@ -224,7 +224,7 @@ func (c *Config) GetFieldID(key fieldKey) string {
 		return c.fieldIDs.githubReporter
 	case GitHubStatus:
 		return c.fieldIDs.githubStatus
-	case LastISUpdate:
+	case GitHubLastSync:
 		return c.fieldIDs.lastUpdate
 	default:
 		return ""

@@ -31,7 +31,7 @@ import (
 	"github.com/uwu-tools/gh-jira-issue-sync/internal/jira/comment"
 )
 
-// dateFormat is the format used for the Last IS Update field.
+// dateFormat is the format used for the sync time field.
 const dateFormat = "2006-01-02T15:04:05.0-0700"
 
 // Compare gets the list of GitHub issues updated since the `since` date,
@@ -205,7 +205,7 @@ func UpdateIssue(
 		labels := githubLabelsToStrSlice(ghIssue.Labels)
 		fields.Unknowns.Set(cfg.GetFieldKey(config.GitHubLabels), labels)
 
-		fields.Unknowns.Set(cfg.GetFieldKey(config.LastISUpdate), time.Now().Format(dateFormat))
+		fields.Unknowns.Set(cfg.GetFieldKey(config.GitHubLastSync), time.Now().Format(dateFormat))
 
 		fields.Type = jIssue.Fields.Type
 
@@ -254,7 +254,7 @@ func CreateIssue(cfg *config.Config, issue *gh.Issue, ghClient github.Client, jC
 	labels := githubLabelsToStrSlice(issue.Labels)
 	unknowns.Set(cfg.GetFieldKey(config.GitHubLabels), labels)
 
-	unknowns.Set(cfg.GetFieldKey(config.LastISUpdate), time.Now().Format(dateFormat))
+	unknowns.Set(cfg.GetFieldKey(config.GitHubLastSync), time.Now().Format(dateFormat))
 
 	fields := &gojira.IssueFields{
 		Type: gojira.IssueType{
