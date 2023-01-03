@@ -24,7 +24,7 @@ import (
 	"strings"
 
 	jira "github.com/andygrunwald/go-jira/v2/cloud"
-	gh "github.com/google/go-github/v48/github"
+	gh "github.com/google/go-github/v47/github"
 	"github.com/sirupsen/logrus"
 
 	"github.com/uwu-tools/gh-jira-issue-sync/internal/config"

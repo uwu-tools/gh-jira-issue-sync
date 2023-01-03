@@ -20,8 +20,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/google/go-github/v48/github"
+	"github.com/google/go-github/v47/github"
 	"golang.org/x/oauth2"
+	kgh "sigs.k8s.io/release-sdk/github"
 
 	"github.com/uwu-tools/gh-jira-issue-sync/internal/config"
 	synchttp "github.com/uwu-tools/gh-jira-issue-sync/internal/http"
@@ -42,58 +43,52 @@ type Client interface {
 // requests against the GitHub REST API. It is the canonical implementation
 // of GitHubClient.
 type realGHClient struct {
-	cfg    *config.Config
-	client *github.Client
+	cfg          *config.Config
+	client       *kgh.GitHub
+	githubClient *github.Client
 }
+
+const (
+	itemsPerPage  = 100
+	sortOption    = "created"
+	sortDirection = "asc"
+)
 
 // ListIssues returns the list of GitHub issues since the last run of the tool.
 func (g *realGHClient) ListIssues() ([]*github.Issue, error) {
 	log := g.cfg.GetLogger()
 
-	ctx := context.Background()
+	owner, repo := g.cfg.GetRepo()
 
-	user, repo := g.cfg.GetRepo()
-
-	// Set it so that it will run the loop once, and it'll be updated in the loop.
-	pages := 1
 	var issues []*github.Issue
 
-	for page := 1; page <= pages; page++ {
-		is, res, err := g.request(func() (interface{}, *github.Response, error) {
-			return g.client.Issues.ListByRepo(ctx, user, repo, &github.IssueListByRepoOptions{ //nolint:wrapcheck
-				Since:     g.cfg.GetSinceParam(),
-				State:     "all",
-				Sort:      "created",
-				Direction: "asc",
-				ListOptions: github.ListOptions{
-					Page:    page,
-					PerPage: 100,
-				},
-			})
-		})
-		if err != nil {
-			return nil, err
-		}
-		issuePointers, ok := is.([]*github.Issue)
-		if !ok {
-			log.Errorf("Get GitHub issues did not return issues! Got: %v", is)
-			return nil, fmt.Errorf("get GitHub issues failed: expected []*github.Issue; got %T", is) //nolint:goerr113
-		}
+	// TODO(github): Should issue state be configurable?
+	issueState := kgh.IssueStateAll
 
-		var issuePage []*github.Issue
-		for _, v := range issuePointers {
-			// If PullRequestLinks is not nil, it's a Pull Request
-			if v.PullRequestLinks == nil {
-				issuePage = append(issuePage, v)
-			}
-		}
+	// TODO(github): Consider if any of these options need to be exposed.
+	_ = &github.IssueListByRepoOptions{
+		Since:     g.cfg.GetSinceParam(),
+		State:     string(issueState),
+		Sort:      sortOption,
+		Direction: sortDirection,
+		ListOptions: github.ListOptions{
+			PerPage: itemsPerPage,
+		},
+	}
 
-		pages = res.LastPage
-		issues = append(issues, issuePage...)
+	is, err := g.client.ListIssues(owner, repo, issueState)
+	if err != nil {
+		return nil, fmt.Errorf("listing GitHub issues: %w", err)
+	}
+
+	for _, v := range is {
+		// If PullRequestLinks is not nil, it's a Pull Request
+		if v.PullRequestLinks == nil {
+			issues = append(issues, v)
+		}
 	}
 
 	log.Debug("Collected all GitHub issues")
-
 	return issues, nil
 }
 
@@ -106,14 +101,14 @@ func (g *realGHClient) ListComments(issue *github.Issue) ([]*github.IssueComment
 	user, repo := g.cfg.GetRepo()
 	c, _, err := g.request(
 		func() (interface{}, *github.Response, error) {
-			return g.client.Issues.ListComments( //nolint:wrapcheck
+			return g.githubClient.Issues.ListComments( //nolint:wrapcheck
 				ctx,
 				user,
 				repo,
 				issue.GetNumber(),
 				&github.IssueListCommentsOptions{
-					Sort:      github.String("created"),
-					Direction: github.String("asc"),
+					Sort:      github.String(sortOption),
+					Direction: github.String(sortDirection),
 				},
 			)
 		},
@@ -136,7 +131,7 @@ func (g *realGHClient) GetUser(login string) (github.User, error) {
 	log := g.cfg.GetLogger()
 
 	u, _, err := g.request(func() (interface{}, *github.Response, error) {
-		return g.client.Users.Get(context.Background(), login) //nolint:wrapcheck
+		return g.githubClient.Users.Get(context.Background(), login) //nolint:wrapcheck
 	})
 	if err != nil {
 		log.Errorf("Error retrieving GitHub user %s. Error: %v", login, err)
@@ -159,7 +154,7 @@ func (g *realGHClient) GetRateLimits() (github.RateLimits, error) {
 	ctx := context.Background()
 
 	rl, _, err := g.request(func() (interface{}, *github.Response, error) {
-		return g.client.RateLimits(ctx) //nolint:wrapcheck
+		return g.githubClient.RateLimits(ctx) //nolint:wrapcheck
 	})
 	if err != nil {
 		log.Errorf("Error connecting to GitHub; check your token. Error: %v", err)
@@ -200,23 +195,36 @@ func (g *realGHClient) request(f func() (interface{}, *github.Response, error)) 
 func New(cfg *config.Config) (Client, error) {
 	log := cfg.GetLogger()
 
+	token := cfg.GetConfigString(options.ConfigKeyGitHubToken)
+	client, err := kgh.NewWithToken(token)
+	if err != nil {
+		return nil, fmt.Errorf("creating sync client: %w", err)
+	}
+
+	client.SetOptions(
+		&kgh.Options{
+			ItemsPerPage: itemsPerPage,
+		},
+	)
+
 	ctx := context.Background()
 	ts := oauth2.StaticTokenSource(
 		&oauth2.Token{
-			AccessToken: cfg.GetConfigString(options.ConfigKeyGitHubToken),
+			AccessToken: token,
 		},
 	)
 	tc := oauth2.NewClient(ctx, ts)
 
-	client := github.NewClient(tc)
+	githubClient := github.NewClient(tc)
 
 	ret := &realGHClient{
-		cfg:    cfg,
-		client: client,
+		cfg:          cfg,
+		client:       client,
+		githubClient: githubClient,
 	}
 
 	// Make a request so we can check that we can connect fine.
-	_, err := ret.GetRateLimits()
+	_, err = ret.GetRateLimits()
 	if err != nil {
 		return nil, fmt.Errorf("getting GitHub rate limits: %w", err)
 	}
