@@ -48,7 +48,15 @@ const (
 	GitHubLabels   fieldKey = iota
 	GitHubStatus   fieldKey = iota
 	GitHubReporter fieldKey = iota
-	LastISUpdate   fieldKey = iota
+	GitHubLastSync fieldKey = iota
+
+	// Custom field names.
+	CustomFieldNameGitHubID       = "github-id"
+	CustomFieldNameGitHubNumber   = "github-number"
+	CustomFieldNameGitHubLabels   = "github-labels"
+	CustomFieldNameGitHubStatus   = "github-status"
+	CustomFieldNameGitHubReporter = "github-reporter"
+	CustomFieldNameGitHubLastSync = "github-last-sync"
 )
 
 // fields represents the custom field IDs of the JIRA custom fields we care about.
@@ -216,7 +224,7 @@ func (c *Config) GetFieldID(key fieldKey) string {
 		return c.fieldIDs.githubReporter
 	case GitHubStatus:
 		return c.fieldIDs.githubStatus
-	case LastISUpdate:
+	case GitHubLastSync:
 		return c.fieldIDs.lastUpdate
 	default:
 		return ""
@@ -485,43 +493,41 @@ func (c *Config) getFieldIDs(client *jira.Client) (*fields, error) {
 	jFields := *jFieldsPtr
 	var fieldIDs fields
 
-	// TODO(config): Use constants for custom field names
 	for i := range jFields {
 		field := jFields[i]
 		switch field.Name {
-		case "GitHub ID":
+		case CustomFieldNameGitHubID:
 			fieldIDs.githubID = fmt.Sprint(field.Schema.CustomID)
-		case "GitHub Number":
+		case CustomFieldNameGitHubNumber:
 			fieldIDs.githubNumber = fmt.Sprint(field.Schema.CustomID)
-		case "GitHub Labels":
+		case CustomFieldNameGitHubLabels:
 			fieldIDs.githubLabels = fmt.Sprint(field.Schema.CustomID)
-		case "GitHub Status":
+		case CustomFieldNameGitHubStatus:
 			fieldIDs.githubStatus = fmt.Sprint(field.Schema.CustomID)
-		case "GitHub Reporter":
+		case CustomFieldNameGitHubReporter:
 			fieldIDs.githubReporter = fmt.Sprint(field.Schema.CustomID)
-		case "Last Issue-Sync Update":
+		case CustomFieldNameGitHubLastSync:
 			fieldIDs.lastUpdate = fmt.Sprint(field.Schema.CustomID)
 		}
 	}
 
-	// TODO(config): Use constants for custom field names
 	if fieldIDs.githubID == "" {
-		return nil, errCustomFieldIDNotFound("GitHub ID")
+		return nil, errCustomFieldIDNotFound(CustomFieldNameGitHubID)
 	}
 	if fieldIDs.githubNumber == "" {
-		return nil, errCustomFieldIDNotFound("GitHub Number")
+		return nil, errCustomFieldIDNotFound(CustomFieldNameGitHubNumber)
 	}
 	if fieldIDs.githubLabels == "" {
-		return nil, errCustomFieldIDNotFound("Github Labels")
+		return nil, errCustomFieldIDNotFound(CustomFieldNameGitHubLabels)
 	}
 	if fieldIDs.githubStatus == "" {
-		return nil, errCustomFieldIDNotFound("Github Status")
+		return nil, errCustomFieldIDNotFound(CustomFieldNameGitHubStatus)
 	}
 	if fieldIDs.githubReporter == "" {
-		return nil, errCustomFieldIDNotFound("Github Reporter")
+		return nil, errCustomFieldIDNotFound(CustomFieldNameGitHubReporter)
 	}
 	if fieldIDs.lastUpdate == "" {
-		return nil, errCustomFieldIDNotFound("Last Issue-Sync Update")
+		return nil, errCustomFieldIDNotFound(CustomFieldNameGitHubLastSync)
 	}
 
 	c.log.Debug("All fields have been checked.")
