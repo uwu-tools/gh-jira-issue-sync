@@ -51,12 +51,12 @@ const (
 	GitHubLastSync fieldKey = iota
 
 	// Custom field names.
-	CustomFieldNameGitHubID       = "GitHub ID"
-	CustomFieldNameGitHubNumber   = "GitHub Number"
-	CustomFieldNameGitHubLabels   = "GitHub Labels"
-	CustomFieldNameGitHubStatus   = "GitHub Status"
-	CustomFieldNameGitHubReporter = "GitHub Reporter"
-	CustomFieldNameGitHubLastSync = "GitHub Last Sync"
+	CustomFieldNameGitHubID       = "github-id"
+	CustomFieldNameGitHubNumber   = "github-number"
+	CustomFieldNameGitHubLabels   = "github-labels"
+	CustomFieldNameGitHubStatus   = "github-status"
+	CustomFieldNameGitHubReporter = "github-reporter"
+	CustomFieldNameGitHubLastSync = "github-last-sync"
 )
 
 // fields represents the custom field IDs of the JIRA custom fields we care about.

@@ -22,12 +22,12 @@ appropriate project's screens:
 
 | Custom Field Name | Type |
 | --- | --- |
-| `GitHub ID` | Number |
-| `GitHub Number` | Number |
-| `GitHub Status` | Short text (plain text only) |
-| `GitHub Reporter` | Short text (plain text only) |
-| `GitHub Labels` | Labels |
-| `GitHub Last Sync` | Date Time Picker |
+| `github-id` | Number |
+| `github-number` | Number |
+| `github-status` | Short text (plain text only) |
+| `github-reporter` | Short text (plain text only) |
+| `github-labels` | Labels |
+| `github-last-sync` | Date Time Picker |
 
 If you intend to use OAuth with JIRA, you must create an inbound
 application connection and add a public key. Instructions can be found
