@@ -22,7 +22,7 @@ import (
 	"strconv"
 
 	gojira "github.com/andygrunwald/go-jira/v2/cloud"
-	gh "github.com/google/go-github/v47/github"
+	gh "github.com/google/go-github/v48/github"
 
 	"github.com/uwu-tools/gh-jira-issue-sync/internal/config"
 	"github.com/uwu-tools/gh-jira-issue-sync/internal/github"

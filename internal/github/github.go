@@ -20,7 +20,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/google/go-github/v47/github"
+	"github.com/google/go-github/v48/github"
 	"golang.org/x/oauth2"
 	kgh "sigs.k8s.io/release-sdk/github"
 
