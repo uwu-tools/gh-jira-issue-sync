@@ -45,7 +45,7 @@ func Execute() {
 // RootCmd represents the command itself and configures it.
 var RootCmd = &cobra.Command{
 	Use:               fmt.Sprintf("%s [options]", options.AppName),
-	Short:             "A tool to synchronize GitHub and JIRA issues",
+	Short:             "A tool to synchronize GitHub and Jira issues",
 	Long:              "Full docs coming later; see https://github.com/uwu-tools/gh-jira-issue-sync",
 	PersistentPreRunE: initLogging,
 	RunE: func(cmd *cobra.Command, args []string) error {

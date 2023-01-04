@@ -60,7 +60,7 @@ const (
 	CustomFieldNameGitHubLastSync = "github-last-sync"
 )
 
-// fields represents the custom field IDs of the JIRA custom fields we care about.
+// fields represents the custom field IDs of the Jira custom fields we care about.
 type fields struct {
 	githubID       string
 	githubNumber   string
@@ -87,10 +87,10 @@ type Config struct {
 	// basicAuth represents whether we're using HTTP Basic authentication or OAuth.
 	basicAuth bool
 
-	// fieldIDs is the list of custom fields we pulled from the `fields` JIRA endpoint.
+	// fieldIDs is the list of custom fields we pulled from the `fields` Jira endpoint.
 	fieldIDs *fields
 
-	// project represents the JIRA project the user has requested.
+	// project represents the Jira project the user has requested.
 	project *jira.Project
 
 	// since is the parsed value of the `since` configuration parameter, which is the earliest that
@@ -100,7 +100,7 @@ type Config struct {
 
 // New creates a new, immutable configuration object. This object
 // holds the Viper configuration and the logger, and is validated. The
-// JIRA configuration is not yet initialized.
+// Jira configuration is not yet initialized.
 func New(ctx context.Context, cmd *cobra.Command) (*Config, error) {
 	var cfg Config
 
@@ -124,15 +124,15 @@ func New(ctx context.Context, cmd *cobra.Command) (*Config, error) {
 	return &cfg, nil
 }
 
-// LoadJIRAConfig loads the JIRA configuration (project key,
-// custom field IDs) from a remote JIRA server.
-func (c *Config) LoadJIRAConfig(client *jira.Client) error {
+// LoadJiraConfig loads the Jira configuration (project key,
+// custom field IDs) from a remote Jira server.
+func (c *Config) LoadJiraConfig(client *jira.Client) error {
 	proj, res, err := client.Project.Get(
 		c.Context(),
 		c.cmdConfig.GetString(options.ConfigKeyJiraProject),
 	)
 	if err != nil {
-		log.Errorf("error retrieving JIRA project; check key and credentials. Error: %s", err)
+		log.Errorf("error retrieving Jira project; check key and credentials. Error: %s", err)
 		defer res.Body.Close()
 		body, err := io.ReadAll(res.Body)
 		if err != nil {
@@ -199,7 +199,7 @@ func (c *Config) GetTimeout() time.Duration {
 	return c.cmdConfig.GetDuration(options.ConfigKeyTimeout)
 }
 
-// GetFieldID returns the customfield ID of a JIRA custom field.
+// GetFieldID returns the customfield ID of a Jira custom field.
 func (c *Config) GetFieldID(key fieldKey) string {
 	switch key {
 	case GitHubID:
@@ -224,12 +224,12 @@ func (c *Config) GetFieldKey(key fieldKey) string {
 	return fmt.Sprintf("customfield_%s", c.GetFieldID(key))
 }
 
-// GetProject returns the JIRA project the user has configured.
+// GetProject returns the Jira project the user has configured.
 func (c *Config) GetProject() *jira.Project {
 	return c.project
 }
 
-// GetProjectKey returns the JIRA key of the configured project.
+// GetProjectKey returns the Jira key of the configured project.
 func (c *Config) GetProjectKey() string {
 	return c.project.Key
 }
@@ -241,9 +241,9 @@ func (c *Config) GetRepo() (string, string) {
 	return github.GetRepo(repoPath)
 }
 
-// SetJIRAToken adds the JIRA OAuth tokens in the Viper configuration, ensuring that they
+// SetJiraToken adds the Jira OAuth tokens in the Viper configuration, ensuring that they
 // are saved for future runs.
-func (c *Config) SetJIRAToken(token *oauth1.Token) {
+func (c *Config) SetJiraToken(token *oauth1.Token) {
 	c.cmdConfig.Set(options.ConfigKeyJiraToken, token.Token)
 	c.cmdConfig.Set(options.ConfigKeyJiraSecret, token.TokenSecret)
 }
@@ -252,14 +252,14 @@ func (c *Config) SetJIRAToken(token *oauth1.Token) {
 type configFile struct {
 	LogLevel    string        `json:"log-level" mapstructure:"log-level"`
 	GithubToken string        `json:"github-token" mapstructure:"github-token"`
-	JIRAUser    string        `json:"jira-user" mapstructure:"jira-user"`
-	JIRAToken   string        `json:"jira-token" mapstructure:"jira-token"`
-	JIRASecret  string        `json:"jira-secret" mapstructure:"jira-secret"`
-	JIRAKey     string        `json:"jira-private-key-path" mapstructure:"jira-private-key-path"`
-	JIRACKey    string        `json:"jira-consumer-key" mapstructure:"jira-consumer-key"`
+	JiraUser    string        `json:"jira-user" mapstructure:"jira-user"`
+	JiraToken   string        `json:"jira-token" mapstructure:"jira-token"`
+	JiraSecret  string        `json:"jira-secret" mapstructure:"jira-secret"`
+	JiraKey     string        `json:"jira-private-key-path" mapstructure:"jira-private-key-path"`
+	JiraCKey    string        `json:"jira-consumer-key" mapstructure:"jira-consumer-key"`
 	RepoName    string        `json:"repo-name" mapstructure:"repo-name"`
-	JIRAURI     string        `json:"jira-uri" mapstructure:"jira-uri"`
-	JIRAProject string        `json:"jira-project" mapstructure:"jira-project"`
+	JiraURI     string        `json:"jira-uri" mapstructure:"jira-uri"`
+	JiraProject string        `json:"jira-project" mapstructure:"jira-project"`
 	Since       string        `json:"since" mapstructure:"since"`
 	Timeout     time.Duration `json:"timeout" mapstructure:"timeout"`
 }
@@ -335,8 +335,8 @@ func newViper(appName, cfgFile string) *viper.Viper {
 // validateConfig checks the values provided to all of the configuration
 // options, ensuring that e.g. `since` is a valid date, `jira-uri` is a
 // real URI, etc. This is the first level of checking. It does not confirm
-// if a JIRA cli is running at `jira-uri` for example; that is checked
-// in getJIRAClient when we actually make a call to the API.
+// if a Jira cli is running at `jira-uri` for example; that is checked
+// in getJiraClient when we actually make a call to the API.
 func (c *Config) validateConfig() error {
 	// Log level and config file location are validated already
 
@@ -433,7 +433,7 @@ func (c *Config) validateConfig() error {
 	return nil
 }
 
-// getFieldIDs requests the metadata of every issue field in the JIRA
+// getFieldIDs requests the metadata of every issue field in the Jira
 // project, and saves the IDs of the custom fields used by issue-sync.
 func (c *Config) getFieldIDs(client *jira.Client) (*fields, error) {
 	log.Debug("Collecting field IDs.")
