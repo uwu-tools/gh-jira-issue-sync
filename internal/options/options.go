@@ -75,7 +75,7 @@ const (
 	DefaultSince      = "1970-01-01T00:00:00+0000"
 	DefaultDryRun     = false
 	DefaultPeriod     = time.Hour
-	DefaultTimeout    = time.Minute
+	DefaultTimeout    = 30 * time.Second
 )
 
 var DefaultLogLevelStr = DefaultLogLevel.String()
