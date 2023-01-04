@@ -36,7 +36,6 @@ type Client interface {
 	ListIssues() ([]*gogh.Issue, error)
 	ListComments(issue *gogh.Issue) ([]*gogh.IssueComment, error)
 	GetUser(login string) (gogh.User, error)
-	GetRateLimits() (gogh.RateLimits, error)
 }
 
 // realGHClient is a standard GitHub clients, that actually makes all of the
@@ -141,33 +140,6 @@ func (g *realGHClient) GetUser(login string) (gogh.User, error) {
 	return *user, nil
 }
 
-// GetRateLimits returns the current rate limits on the GitHub API. This is a
-// simple and lightweight request that can also be used simply for testing the API.
-func (g *realGHClient) GetRateLimits() (gogh.RateLimits, error) {
-	log := g.cfg.GetLogger()
-
-	ctx := context.Background()
-
-	rl, _, err := g.request(func() (interface{}, *gogh.Response, error) {
-		return g.githubClient.RateLimits(ctx) //nolint:wrapcheck
-	})
-	if err != nil {
-		log.Errorf("Error connecting to GitHub; check your token. Error: %v", err)
-		return gogh.RateLimits{}, err
-	}
-	rate, ok := rl.(*gogh.RateLimits)
-	if !ok {
-		log.Errorf("Get GitHub rate limits did not return rate limits! Got: %v", rl)
-		return gogh.RateLimits{},
-			fmt.Errorf( //nolint:goerr113
-				"get GitHub rate limits failed: expected *github.RateLimits; got %T",
-				rl,
-			)
-	}
-
-	return *rate, nil
-}
-
 // request takes an API function from the GitHub library
 // and calls it with exponential backoff. If the function succeeds, it
 // returns the expected value and the GitHub API response, as well as a nil
@@ -218,12 +190,6 @@ func New(cfg *config.Config) (Client, error) {
 		githubClient: githubClient,
 	}
 
-	// Make a request so we can check that we can connect fine.
-	_, err = ret.GetRateLimits()
-	if err != nil {
-		return nil, fmt.Errorf("getting GitHub rate limits: %w", err)
-	}
 	log.Debug("Successfully connected to GitHub.")
-
 	return ret, nil
 }
