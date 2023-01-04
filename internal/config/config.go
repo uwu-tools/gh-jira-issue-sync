@@ -36,6 +36,7 @@ import (
 	"github.com/spf13/viper"
 	"golang.org/x/term"
 
+	"github.com/uwu-tools/gh-jira-issue-sync/internal/github"
 	"github.com/uwu-tools/gh-jira-issue-sync/internal/options"
 )
 
@@ -248,10 +249,9 @@ func (c *Config) GetProjectKey() string {
 
 // GetRepo returns the user/org name and the repo name of the configured GitHub repository.
 func (c *Config) GetRepo() (string, string) {
-	fullName := c.cmdConfig.GetString(options.ConfigKeyRepoName)
-	parts := strings.Split(fullName, "/")
+	repoPath := c.cmdConfig.GetString(options.ConfigKeyRepoName)
 	// We check that repo-name is two parts separated by a slash in New, so this is safe
-	return parts[0], parts[1]
+	return github.GetRepo(repoPath)
 }
 
 // SetJIRAToken adds the JIRA OAuth tokens in the Viper configuration, ensuring that they

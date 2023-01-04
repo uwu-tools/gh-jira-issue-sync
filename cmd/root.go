@@ -61,7 +61,9 @@ var RootCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("creating Jira client: %w", err)
 		}
-		ghClient, err := github.New(cfg)
+
+		ghToken := cfg.GetConfigString(options.ConfigKeyGitHubToken)
+		ghClient, err := github.New(ghToken)
 		if err != nil {
 			return fmt.Errorf("creating GitHub client: %w", err)
 		}

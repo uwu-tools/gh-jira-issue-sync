@@ -43,7 +43,8 @@ func Compare(cfg *config.Config, ghClient github.Client, jiraClient jira.Client)
 
 	log.Debug("Collecting issues")
 
-	ghIssues, err := ghClient.ListIssues()
+	owner, repo := cfg.GetRepo()
+	ghIssues, err := ghClient.ListIssues(owner, repo)
 	if err != nil {
 		return fmt.Errorf("listing GitHub issues: %w", err)
 	}
