@@ -20,12 +20,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/google/go-github/v48/github"
+	gogh "github.com/google/go-github/v48/github"
 	"golang.org/x/oauth2"
-	kgh "sigs.k8s.io/release-sdk/github"
+	"sigs.k8s.io/release-sdk/github"
 
 	"github.com/uwu-tools/gh-jira-issue-sync/internal/config"
-	synchttp "github.com/uwu-tools/gh-jira-issue-sync/internal/http"
 	"github.com/uwu-tools/gh-jira-issue-sync/internal/options"
 )
 
@@ -33,49 +32,45 @@ import (
 // use. It allows us to swap in other implementations, such as a dry run
 // clients, or mock clients for testing.
 type Client interface {
-	ListIssues() ([]*github.Issue, error)
-	ListComments(issue *github.Issue) ([]*github.IssueComment, error)
-	GetUser(login string) (github.User, error)
-	GetRateLimits() (github.RateLimits, error)
+	ListIssues() ([]*gogh.Issue, error)
+	ListComments(issue *gogh.Issue) ([]*gogh.IssueComment, error)
+	GetUser(login string) (*gogh.User, error)
 }
 
-// realGHClient is a standard GitHub clients, that actually makes all of the
+// githubClient is a standard GitHub clients, that actually makes all of the
 // requests against the GitHub REST API. It is the canonical implementation
 // of GitHubClient.
-type realGHClient struct {
-	cfg          *config.Config
-	client       *kgh.GitHub
-	githubClient *github.Client
+type githubClient struct {
+	cfg        *config.Config
+	client     *github.GitHub
+	goghClient *gogh.Client
 }
 
-const (
-	itemsPerPage  = 100
-	sortOption    = "created"
-	sortDirection = "asc"
-)
+const itemsPerPage = 100
 
 // ListIssues returns the list of GitHub issues since the last run of the tool.
-func (g *realGHClient) ListIssues() ([]*github.Issue, error) {
+func (g *githubClient) ListIssues() ([]*gogh.Issue, error) {
 	log := g.cfg.GetLogger()
 
 	owner, repo := g.cfg.GetRepo()
 
-	var issues []*github.Issue
+	var issues []*gogh.Issue
 
 	// TODO(github): Should issue state be configurable?
-	issueState := kgh.IssueStateAll
+	issueState := github.IssueStateAll
 
-	// TODO(github): Consider if any of these options need to be exposed.
-	_ = &github.IssueListByRepoOptions{
-		Since:     g.cfg.GetSinceParam(),
-		State:     string(issueState),
-		Sort:      sortOption,
-		Direction: sortDirection,
-		ListOptions: github.ListOptions{
-			PerPage: itemsPerPage,
-		},
-	}
-
+	// TODO(github): Consider if these options need to be exposed upstream.
+	/*
+		gogh.IssueListByRepoOptions{
+			Since:     g.cfg.GetSinceParam(),
+			State:     string(issueState),
+			Sort:      "created",
+			Direction: "asc",
+			ListOptions: gogh.ListOptions{
+				PerPage: itemsPerPage,
+			},
+		}
+	*/
 	is, err := g.client.ListIssues(owner, repo, issueState)
 	if err != nil {
 		return nil, fmt.Errorf("listing GitHub issues: %w", err)
@@ -94,97 +89,49 @@ func (g *realGHClient) ListIssues() ([]*github.Issue, error) {
 
 // ListComments returns the list of all comments on a GitHub issue in
 // ascending order of creation.
-func (g *realGHClient) ListComments(issue *github.Issue) ([]*github.IssueComment, error) {
+func (g *githubClient) ListComments(issue *gogh.Issue) ([]*gogh.IssueComment, error) {
 	log := g.cfg.GetLogger()
 
-	ctx := context.Background()
-	user, repo := g.cfg.GetRepo()
-	c, _, err := g.request(
-		func() (interface{}, *github.Response, error) {
-			return g.githubClient.Issues.ListComments( //nolint:wrapcheck
-				ctx,
-				user,
-				repo,
-				issue.GetNumber(),
-				&github.IssueListCommentsOptions{
-					Sort:      github.String(sortOption),
-					Direction: github.String(sortDirection),
-				},
-			)
-		},
+	owner, repo := g.cfg.GetRepo()
+	issueNum := issue.GetNumber()
+	since := g.cfg.GetSinceParam()
+
+	comments, err := g.client.ListComments(
+		owner,
+		repo,
+		issueNum,
+		github.SortCreated,
+		github.SortDirectionAscending,
+		&since,
 	)
 	if err != nil {
-		log.Errorf("Error retrieving GitHub comments for issue #%d. Error: %v.", issue.GetNumber(), err)
-		return nil, err
-	}
-	comments, ok := c.([]*github.IssueComment)
-	if !ok {
-		log.Errorf("Get GitHub comments did not return comments! Got: %v", c)
-		return nil, fmt.Errorf("get GitHub comments failed: expected []*github.IssueComment; got %T", c) //nolint:goerr113
+		log.Errorf("Error retrieving GitHub comments for issue #%d. Error: %v.", issueNum, err)
+		return nil, fmt.Errorf(
+			"listing GitHub comments for issue #%d. Error: %w",
+			issueNum,
+			err,
+		)
 	}
 
 	return comments, nil
 }
 
 // GetUser returns a GitHub user from its login.
-func (g *realGHClient) GetUser(login string) (github.User, error) {
+func (g *githubClient) GetUser(login string) (*gogh.User, error) {
 	log := g.cfg.GetLogger()
 
-	u, _, err := g.request(func() (interface{}, *github.Response, error) {
-		return g.githubClient.Users.Get(context.Background(), login) //nolint:wrapcheck
-	})
+	log.Debugf("Retrieving GitHub user (%s)", login)
+	user, resp, err := g.goghClient.Users.Get(context.Background(), login)
 	if err != nil {
-		log.Errorf("Error retrieving GitHub user %s. Error: %v", login, err)
+		return nil, fmt.Errorf(
+			"retrieving GitHub user (%s): %w (response: %v)",
+			login,
+			err,
+			resp,
+		)
 	}
 
-	user, ok := u.(*github.User)
-	if !ok {
-		log.Errorf("Get GitHub user did not return user! Got: %v", u)
-		return github.User{}, fmt.Errorf("get GitHub user failed: expected *github.User; got %T", u) //nolint:goerr113
-	}
-
-	return *user, nil
-}
-
-// GetRateLimits returns the current rate limits on the GitHub API. This is a
-// simple and lightweight request that can also be used simply for testing the API.
-func (g *realGHClient) GetRateLimits() (github.RateLimits, error) {
-	log := g.cfg.GetLogger()
-
-	ctx := context.Background()
-
-	rl, _, err := g.request(func() (interface{}, *github.Response, error) {
-		return g.githubClient.RateLimits(ctx) //nolint:wrapcheck
-	})
-	if err != nil {
-		log.Errorf("Error connecting to GitHub; check your token. Error: %v", err)
-		return github.RateLimits{}, err
-	}
-	rate, ok := rl.(*github.RateLimits)
-	if !ok {
-		log.Errorf("Get GitHub rate limits did not return rate limits! Got: %v", rl)
-		return github.RateLimits{},
-			fmt.Errorf( //nolint:goerr113
-				"get GitHub rate limits failed: expected *github.RateLimits; got %T",
-				rl,
-			)
-	}
-
-	return *rate, nil
-}
-
-// request takes an API function from the GitHub library
-// and calls it with exponential backoff. If the function succeeds, it
-// returns the expected value and the GitHub API response, as well as a nil
-// error. If it continues to fail until a maximum time is reached, it returns
-// a nil result as well as the returned HTTP response and a timeout error.
-func (g *realGHClient) request(f func() (interface{}, *github.Response, error)) (interface{}, *github.Response, error) {
-	ret, resp, err := synchttp.NewGitHubRequest(f, g.cfg.GetLogger(), g.cfg.GetTimeout())
-	if err != nil {
-		return ret, resp, fmt.Errorf("request error: %w", err)
-	}
-
-	return ret, resp, nil
+	return user, nil
 }
 
 // New creates a GitHubClient and returns it; which
@@ -196,16 +143,16 @@ func New(cfg *config.Config) (Client, error) {
 	log := cfg.GetLogger()
 
 	token := cfg.GetConfigString(options.ConfigKeyGitHubToken)
-	client, err := kgh.NewWithToken(token)
+	client, err := github.NewWithToken(token)
 	if err != nil {
 		return nil, fmt.Errorf("creating sync client: %w", err)
 	}
 
-	client.SetOptions(
-		&kgh.Options{
-			ItemsPerPage: itemsPerPage,
-		},
-	)
+	opts := &github.Options{
+		ItemsPerPage: itemsPerPage,
+	}
+
+	client.SetOptions(opts)
 
 	ctx := context.Background()
 	ts := oauth2.StaticTokenSource(
@@ -215,20 +162,14 @@ func New(cfg *config.Config) (Client, error) {
 	)
 	tc := oauth2.NewClient(ctx, ts)
 
-	githubClient := github.NewClient(tc)
+	goghClient := gogh.NewClient(tc)
 
-	ret := &realGHClient{
-		cfg:          cfg,
-		client:       client,
-		githubClient: githubClient,
+	ret := &githubClient{
+		cfg:        cfg,
+		client:     client,
+		goghClient: goghClient,
 	}
 
-	// Make a request so we can check that we can connect fine.
-	_, err = ret.GetRateLimits()
-	if err != nil {
-		return nil, fmt.Errorf("getting GitHub rate limits: %w", err)
-	}
 	log.Debug("Successfully connected to GitHub.")
-
 	return ret, nil
 }

@@ -22,7 +22,7 @@ import (
 	"time"
 
 	gojira "github.com/andygrunwald/go-jira/v2/cloud"
-	gh "github.com/google/go-github/v48/github"
+	gogh "github.com/google/go-github/v48/github"
 	"github.com/trivago/tgo/tcontainer"
 
 	"github.com/uwu-tools/gh-jira-issue-sync/internal/config"
@@ -120,7 +120,7 @@ func Compare(cfg *config.Config, ghClient github.Client, jiraClient jira.Client)
 // and returns whether or not they differ.
 //
 //nolint:gocognit // TODO(lint)
-func DidIssueChange(cfg *config.Config, ghIssue *gh.Issue, jIssue *gojira.Issue) bool {
+func DidIssueChange(cfg *config.Config, ghIssue *gogh.Issue, jIssue *gojira.Issue) bool {
 	log := cfg.GetLogger()
 
 	log.Debugf("Comparing GitHub issue #%d and JIRA issue %s", ghIssue.GetNumber(), jIssue.Key)
@@ -181,7 +181,7 @@ func DidIssueChange(cfg *config.Config, ghIssue *gh.Issue, jIssue *gojira.Issue)
 // issue.
 func UpdateIssue(
 	cfg *config.Config,
-	ghIssue *gh.Issue,
+	ghIssue *gogh.Issue,
 	jIssue *gojira.Issue,
 	ghClient github.Client,
 	jClient jira.Client,
@@ -239,7 +239,7 @@ func UpdateIssue(
 
 // CreateIssue generates a JIRA issue from the various fields on the given GitHub issue, then
 // sends it to the JIRA API.
-func CreateIssue(cfg *config.Config, issue *gh.Issue, ghClient github.Client, jClient jira.Client) error {
+func CreateIssue(cfg *config.Config, issue *gogh.Issue, ghClient github.Client, jClient jira.Client) error {
 	log := cfg.GetLogger()
 
 	log.Debugf("Creating JIRA issue based on GitHub issue #%d", *issue.Number)
@@ -297,7 +297,7 @@ func CreateIssue(cfg *config.Config, issue *gh.Issue, ghClient github.Client, jC
 // field type does not support spaces.
 //
 // TODO(github): Consider github.IssueRequest.GetLabels() here.
-func githubLabelsToStrSlice(ghLabels []*gh.Label) []string {
+func githubLabelsToStrSlice(ghLabels []*gogh.Label) []string {
 	labels := make([]string, len(ghLabels))
 	for i, l := range ghLabels {
 		jiraLabel := l.GetName()

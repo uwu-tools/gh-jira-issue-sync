@@ -14,7 +14,7 @@ require (
 	github.com/trivago/tgo v1.0.7
 	golang.org/x/oauth2 v0.3.0
 	golang.org/x/term v0.3.0
-	sigs.k8s.io/release-sdk v0.9.7
+	sigs.k8s.io/release-sdk v0.9.8-0.20230104002921-c885fdbbb791
 	sigs.k8s.io/release-utils v0.7.3
 )
 

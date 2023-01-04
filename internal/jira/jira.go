@@ -24,7 +24,7 @@ import (
 	"strings"
 
 	jira "github.com/andygrunwald/go-jira/v2/cloud"
-	gh "github.com/google/go-github/v48/github"
+	gogh "github.com/google/go-github/v48/github"
 	"github.com/sirupsen/logrus"
 
 	"github.com/uwu-tools/gh-jira-issue-sync/internal/config"
@@ -82,10 +82,14 @@ type Client interface {
 	// TODO: Remove unnecessary return values; consider only returning error
 	UpdateIssue(issue *jira.Issue) (jira.Issue, error)
 	// TODO: Remove unnecessary return values; consider only returning error
-	CreateComment(issue *jira.Issue, comment *gh.IssueComment, githubClient github.Client) (jira.Comment, error)
+	CreateComment(
+		issue *jira.Issue, comment *gogh.IssueComment, githubClient github.Client,
+	) (jira.Comment, error)
 	// TODO: Remove unnecessary return values; consider only returning error
 	// TODO: Re-arrange arguments
-	UpdateComment(issue *jira.Issue, id string, comment *gh.IssueComment, githubClient github.Client) (jira.Comment, error)
+	UpdateComment(
+		issue *jira.Issue, id string, comment *gogh.IssueComment, githubClient github.Client,
+	) (jira.Comment, error)
 }
 
 // New creates a new Client and configures it with
@@ -295,7 +299,7 @@ const maxBodyLength = 1 << 15
 // the provided GitHub comment. It then returns the created comment.
 func (j *realJIRAClient) CreateComment(
 	issue *jira.Issue,
-	comment *gh.IssueComment,
+	comment *gogh.IssueComment,
 	githubClient github.Client,
 ) (jira.Comment, error) {
 	log := j.cfg.GetLogger()
@@ -346,7 +350,7 @@ func (j *realJIRAClient) CreateComment(
 func (j *realJIRAClient) UpdateComment(
 	issue *jira.Issue,
 	id string,
-	comment *gh.IssueComment,
+	comment *gogh.IssueComment,
 	githubClient github.Client,
 ) (jira.Comment, error) {
 	log := j.cfg.GetLogger()
@@ -571,7 +575,7 @@ func (j *dryrunJIRAClient) UpdateIssue(issue *jira.Issue) (jira.Issue, error) {
 // returns a comment object containing the body that would be used.
 func (j *dryrunJIRAClient) CreateComment(
 	issue *jira.Issue,
-	comment *gh.IssueComment,
+	comment *gogh.IssueComment,
 	githubClient github.Client,
 ) (jira.Comment, error) {
 	log := j.cfg.GetLogger()
@@ -615,7 +619,7 @@ func (j *dryrunJIRAClient) CreateComment(
 func (j *dryrunJIRAClient) UpdateComment(
 	issue *jira.Issue,
 	id string,
-	comment *gh.IssueComment,
+	comment *gogh.IssueComment,
 	githubClient github.Client,
 ) (jira.Comment, error) {
 	log := j.cfg.GetLogger()

@@ -22,7 +22,7 @@ import (
 	"strconv"
 
 	gojira "github.com/andygrunwald/go-jira/v2/cloud"
-	gh "github.com/google/go-github/v48/github"
+	gogh "github.com/google/go-github/v48/github"
 
 	"github.com/uwu-tools/gh-jira-issue-sync/internal/config"
 	"github.com/uwu-tools/gh-jira-issue-sync/internal/github"
@@ -46,7 +46,7 @@ var jCommentIDRegex = regexp.MustCompile(`^Comment \[\(ID (\d+)\)\|`)
 // UpdateComment; if it doesn't, it calls CreateComment.
 func Compare(
 	cfg *config.Config,
-	ghIssue *gh.Issue,
+	ghIssue *gogh.Issue,
 	jIssue *gojira.Issue,
 	ghClient github.Client,
 	jClient jira.Client,
@@ -117,7 +117,7 @@ func Compare(
 // of the JIRA comment, and updates the JIRA comment if necessary.
 func UpdateComment(
 	cfg *config.Config,
-	ghComment *gh.IssueComment,
+	ghComment *gogh.IssueComment,
 	jComment *gojira.Comment,
 	jIssue *gojira.Issue,
 	ghClient github.Client,

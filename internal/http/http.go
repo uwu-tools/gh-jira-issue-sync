@@ -22,38 +22,10 @@ import (
 
 	jira "github.com/andygrunwald/go-jira/v2/cloud"
 	"github.com/cenkalti/backoff/v4"
-	"github.com/google/go-github/v48/github"
 	"github.com/sirupsen/logrus"
 )
 
 const retryBackoffRoundRatio = time.Millisecond / time.Nanosecond
-
-// NewGitHubRequest takes an API function from the GitHub library
-// and calls it with exponential backoff. If the function succeeds, it
-// returns the expected value and the GitHub API response, as well as a nil
-// error. If it continues to fail until a maximum time is reached, it returns
-// a nil result as well as the returned HTTP response and a timeout error.
-func NewGitHubRequest(
-	f func() (interface{}, *github.Response, error),
-	log logrus.Entry, //nolint:gocritic
-	timeout time.Duration,
-) (interface{}, *github.Response, error) {
-	var ret interface{}
-	var res *github.Response
-
-	op := func() error {
-		var err error
-		ret, res, err = f()
-		return err
-	}
-
-	backoffErr := retryNotify(op, log, timeout)
-	if backoffErr != nil {
-		return ret, res, errBackoff(backoffErr)
-	}
-
-	return ret, res, nil
-}
 
 // NewJiraRequest takes an API function from the JIRA library and calls it with
 // exponential backoff. If the function succeeds, it returns the expected value
