@@ -23,6 +23,7 @@ import (
 
 	gojira "github.com/andygrunwald/go-jira/v2/cloud"
 	gogh "github.com/google/go-github/v48/github"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/uwu-tools/gh-jira-issue-sync/internal/config"
 	"github.com/uwu-tools/gh-jira-issue-sync/internal/github"
@@ -51,14 +52,19 @@ func Compare(
 	ghClient github.Client,
 	jClient jira.Client,
 ) error {
-	log := cfg.GetLogger()
-
 	if ghIssue.GetComments() == 0 {
 		log.Debugf("Issue #%d has no comments, skipping.", *ghIssue.Number)
 		return nil
 	}
 
-	ghComments, err := ghClient.ListComments(ghIssue)
+	owner, repo := cfg.GetRepo()
+	since := cfg.GetSinceParam()
+	ghComments, err := ghClient.ListComments(
+		owner,
+		repo,
+		ghIssue,
+		since,
+	)
 	if err != nil {
 		return fmt.Errorf("listing GitHub comments: %w", err)
 	}
@@ -123,8 +129,6 @@ func UpdateComment(
 	ghClient github.Client,
 	jClient jira.Client,
 ) error {
-	log := cfg.GetLogger()
-
 	// fields[0] is the whole body, 1 is the ID, 2 is the username, 3 is the real name (or "" if none)
 	// 4 is the date, and 5 is the real body
 	fields := jCommentRegex.FindStringSubmatch(jComment.Body)

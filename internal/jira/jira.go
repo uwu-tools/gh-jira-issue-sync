@@ -25,7 +25,7 @@ import (
 
 	jira "github.com/andygrunwald/go-jira/v2/cloud"
 	gogh "github.com/google/go-github/v48/github"
-	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/uwu-tools/gh-jira-issue-sync/internal/config"
 	"github.com/uwu-tools/gh-jira-issue-sync/internal/github"
@@ -58,14 +58,14 @@ const (
 // of the body. If an error occurs during reading, that error is
 // instead printed and returned. This function closes the body for
 // further reading.
-func getErrorBody(cfg *config.Config, res *jira.Response) error {
-	log := cfg.GetLogger()
+func getErrorBody(res *jira.Response) error {
 	defer res.Body.Close()
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		log.Errorf("Error occurred trying to read error body: %+v", err)
 		return fmt.Errorf("reading error body: %w", err)
 	}
+
 	log.Debugf("Error body: %+v", body)
 	return fmt.Errorf("reading error body: %s", string(body)) //nolint:goerr113
 }
@@ -97,8 +97,6 @@ type Client interface {
 // on the configuration; currently, it creates either a standard
 // clients, or a dry-run clients.
 func New(cfg *config.Config) (Client, error) {
-	log := cfg.GetLogger()
-
 	var j Client
 	var tp http.Client
 	var err error
@@ -168,7 +166,7 @@ func getJQLQuery(projectKey, fieldID string, ids []int) string {
 		jql = fmt.Sprintf("project='%s'", projectKey)
 	}
 
-	logrus.Debugf("JQL query used: %s", jql)
+	log.Debugf("JQL query used: %s", jql)
 	return jql
 }
 
@@ -184,8 +182,6 @@ type realJIRAClient struct {
 // have GitHub IDs in the provided list. `ids` should be a comma-separated
 // list of GitHub IDs.
 func (j *realJIRAClient) ListIssues(ids []int) ([]jira.Issue, error) {
-	log := j.cfg.GetLogger()
-
 	jql := getJQLQuery(
 		j.cfg.GetProjectKey(),
 		j.cfg.GetFieldID(config.GitHubID),
@@ -200,7 +196,7 @@ func (j *realJIRAClient) ListIssues(ids []int) ([]jira.Issue, error) {
 	jiraIssues, res, err := j.client.Issue.Search(j.cfg.Context(), jql, searchOpts)
 	if err != nil {
 		log.Errorf("Error retrieving JIRA issues: %+v", err)
-		return nil, getErrorBody(j.cfg, res)
+		return nil, getErrorBody(res)
 	}
 
 	var issues []jira.Issue
@@ -227,15 +223,13 @@ func (j *realJIRAClient) ListIssues(ids []int) ([]jira.Issue, error) {
 // GetIssue returns a single JIRA issue within the configured project
 // according to the issue key (e.g. "PROJ-13").
 func (j *realJIRAClient) GetIssue(key string) (*jira.Issue, error) {
-	log := j.cfg.GetLogger()
-
 	i, res, err := j.request(func() (interface{}, *jira.Response, error) {
 		// TODO(j-v2): Add query options
 		return j.client.Issue.Get(j.cfg.Context(), key, nil) //nolint:wrapcheck
 	})
 	if err != nil {
 		log.Errorf("Error retrieving JIRA issue: %+v", err)
-		return nil, getErrorBody(j.cfg, res)
+		return nil, getErrorBody(res)
 	}
 	issue, ok := i.(*jira.Issue)
 	if !ok {
@@ -250,14 +244,12 @@ func (j *realJIRAClient) GetIssue(key string) (*jira.Issue, error) {
 // the provided issue object. It returns the created issue, with all the
 // fields provided (including e.g. ID and Key).
 func (j *realJIRAClient) CreateIssue(issue *jira.Issue) (jira.Issue, error) {
-	log := j.cfg.GetLogger()
-
 	i, res, err := j.request(func() (interface{}, *jira.Response, error) {
 		return j.client.Issue.Create(j.cfg.Context(), issue) //nolint:wrapcheck
 	})
 	if err != nil {
 		log.Errorf("Error creating JIRA issue: %+v", err)
-		return jira.Issue{}, getErrorBody(j.cfg, res)
+		return jira.Issue{}, getErrorBody(res)
 	}
 	is, ok := i.(*jira.Issue)
 	if !ok {
@@ -272,15 +264,13 @@ func (j *realJIRAClient) CreateIssue(issue *jira.Issue) (jira.Issue, error) {
 // issue object) with the fields on the provided issue. It returns the updated
 // issue as it exists on JIRA.
 func (j *realJIRAClient) UpdateIssue(issue *jira.Issue) (jira.Issue, error) {
-	log := j.cfg.GetLogger()
-
 	i, res, err := j.request(func() (interface{}, *jira.Response, error) {
 		// TODO(j-v2): Add query options
 		return j.client.Issue.Update(j.cfg.Context(), issue, nil) //nolint:wrapcheck
 	})
 	if err != nil {
 		log.Errorf("Error updating JIRA issue %s: %v", issue.Key, err)
-		return jira.Issue{}, getErrorBody(j.cfg, res)
+		return jira.Issue{}, getErrorBody(res)
 	}
 	is, ok := i.(*jira.Issue)
 	if !ok {
@@ -302,8 +292,6 @@ func (j *realJIRAClient) CreateComment(
 	comment *gogh.IssueComment,
 	githubClient github.Client,
 ) (jira.Comment, error) {
-	log := j.cfg.GetLogger()
-
 	user, err := githubClient.GetUser(comment.User.GetLogin())
 	if err != nil {
 		return jira.Comment{}, fmt.Errorf("getting GitHub user: %w", err)
@@ -334,7 +322,7 @@ func (j *realJIRAClient) CreateComment(
 	})
 	if err != nil {
 		log.Errorf("Error creating JIRA comment on issue %s. Error: %v", issue.Key, err)
-		return jira.Comment{}, getErrorBody(j.cfg, res)
+		return jira.Comment{}, getErrorBody(res)
 	}
 	co, ok := com.(*jira.Comment)
 	if !ok {
@@ -353,8 +341,6 @@ func (j *realJIRAClient) UpdateComment(
 	comment *gogh.IssueComment,
 	githubClient github.Client,
 ) (jira.Comment, error) {
-	log := j.cfg.GetLogger()
-
 	user, err := githubClient.GetUser(comment.User.GetLogin())
 	if err != nil {
 		return jira.Comment{}, fmt.Errorf("getting GitHub user: %w", err)
@@ -401,7 +387,7 @@ func (j *realJIRAClient) UpdateComment(
 	})
 	if err != nil {
 		log.Errorf("Error updating comment: %+v", err)
-		return jira.Comment{}, getErrorBody(j.cfg, res)
+		return jira.Comment{}, getErrorBody(res)
 	}
 	co, ok := com.(*jira.Comment)
 	if !ok {
@@ -414,7 +400,7 @@ func (j *realJIRAClient) UpdateComment(
 // request executes a Jira request with exponential backoff, using the real
 // client.
 func (j *realJIRAClient) request(f func() (interface{}, *jira.Response, error)) (interface{}, *jira.Response, error) {
-	ret, resp, err := synchttp.NewJiraRequest(f, j.cfg.GetLogger(), j.cfg.GetTimeout())
+	ret, resp, err := synchttp.NewJiraRequest(f, j.cfg.GetTimeout())
 	if err != nil {
 		return ret, resp, fmt.Errorf("request error: %w", err)
 	}
@@ -456,8 +442,6 @@ func truncate(s string, length int) string {
 //
 // This function is identical to that in realJIRAClient.
 func (j *dryrunJIRAClient) ListIssues(ids []int) ([]jira.Issue, error) {
-	log := j.cfg.GetLogger()
-
 	jql := getJQLQuery(
 		j.cfg.GetProjectKey(),
 		j.cfg.GetFieldID(config.GitHubID),
@@ -470,7 +454,7 @@ func (j *dryrunJIRAClient) ListIssues(ids []int) ([]jira.Issue, error) {
 	})
 	if err != nil {
 		log.Errorf("Error retrieving JIRA issues: %+v", err)
-		return nil, getErrorBody(j.cfg, res)
+		return nil, getErrorBody(res)
 	}
 	jiraIssues, ok := ji.([]jira.Issue)
 	if !ok {
@@ -504,15 +488,13 @@ func (j *dryrunJIRAClient) ListIssues(ids []int) ([]jira.Issue, error) {
 //
 // This function is identical to that in realJIRAClient.
 func (j *dryrunJIRAClient) GetIssue(key string) (*jira.Issue, error) {
-	log := j.cfg.GetLogger()
-
 	i, res, err := j.request(func() (interface{}, *jira.Response, error) {
 		// TODO(j-v2): Add query options
 		return j.client.Issue.Get(j.cfg.Context(), key, nil) //nolint:wrapcheck
 	})
 	if err != nil {
 		log.Errorf("Error retrieving JIRA issue: %+v", err)
-		return nil, getErrorBody(j.cfg, res)
+		return nil, getErrorBody(res)
 	}
 	issue, ok := i.(*jira.Issue)
 	if !ok {
@@ -527,8 +509,6 @@ func (j *dryrunJIRAClient) GetIssue(key string) (*jira.Issue, error) {
 // it to be created according to the provided issue object. It returns the
 // provided issue object as-is.
 func (j *dryrunJIRAClient) CreateIssue(issue *jira.Issue) (jira.Issue, error) {
-	log := j.cfg.GetLogger()
-
 	fields := issue.Fields
 
 	log.Info("")
@@ -549,8 +529,6 @@ func (j *dryrunJIRAClient) CreateIssue(issue *jira.Issue) (jira.Issue, error) {
 // (identified by issue.Key) were it to be updated according to the issue
 // object. It then returns the provided issue object as-is.
 func (j *dryrunJIRAClient) UpdateIssue(issue *jira.Issue) (jira.Issue, error) {
-	log := j.cfg.GetLogger()
-
 	fields := issue.Fields
 
 	log.Info("")
@@ -578,8 +556,6 @@ func (j *dryrunJIRAClient) CreateComment(
 	comment *gogh.IssueComment,
 	githubClient github.Client,
 ) (jira.Comment, error) {
-	log := j.cfg.GetLogger()
-
 	user, err := githubClient.GetUser(comment.User.GetLogin())
 	if err != nil {
 		return jira.Comment{}, fmt.Errorf("getting GitHub user: %w", err)
@@ -622,8 +598,6 @@ func (j *dryrunJIRAClient) UpdateComment(
 	comment *gogh.IssueComment,
 	githubClient github.Client,
 ) (jira.Comment, error) {
-	log := j.cfg.GetLogger()
-
 	user, err := githubClient.GetUser(comment.User.GetLogin())
 	if err != nil {
 		return jira.Comment{}, fmt.Errorf("getting GitHub user: %w", err)
@@ -661,7 +635,7 @@ func (j *dryrunJIRAClient) UpdateComment(
 // request executes a Jira request with exponential backoff, using the dry-run
 // client.
 func (j *dryrunJIRAClient) request(f func() (interface{}, *jira.Response, error)) (interface{}, *jira.Response, error) {
-	ret, resp, err := synchttp.NewJiraRequest(f, j.cfg.GetLogger(), j.cfg.GetTimeout())
+	ret, resp, err := synchttp.NewJiraRequest(f, j.cfg.GetTimeout())
 	if err != nil {
 		return ret, resp, fmt.Errorf("request error: %w", err)
 	}

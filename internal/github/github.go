@@ -19,21 +19,23 @@ package github
 import (
 	"context"
 	"fmt"
+	"strings"
+	"time"
 
 	gogh "github.com/google/go-github/v48/github"
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
 	"sigs.k8s.io/release-sdk/github"
-
-	"github.com/uwu-tools/gh-jira-issue-sync/internal/config"
-	"github.com/uwu-tools/gh-jira-issue-sync/internal/options"
 )
 
 // Client is a wrapper around the GitHub API Client library we
 // use. It allows us to swap in other implementations, such as a dry run
 // clients, or mock clients for testing.
 type Client interface {
-	ListIssues() ([]*gogh.Issue, error)
-	ListComments(issue *gogh.Issue) ([]*gogh.IssueComment, error)
+	ListIssues(owner, repo string) ([]*gogh.Issue, error)
+	ListComments(
+		owner, repo string, issue *gogh.Issue, since time.Time,
+	) ([]*gogh.IssueComment, error)
 	GetUser(login string) (*gogh.User, error)
 }
 
@@ -41,7 +43,6 @@ type Client interface {
 // requests against the GitHub REST API. It is the canonical implementation
 // of GitHubClient.
 type githubClient struct {
-	cfg        *config.Config
 	client     *github.GitHub
 	goghClient *gogh.Client
 }
@@ -49,11 +50,7 @@ type githubClient struct {
 const itemsPerPage = 100
 
 // ListIssues returns the list of GitHub issues since the last run of the tool.
-func (g *githubClient) ListIssues() ([]*gogh.Issue, error) {
-	log := g.cfg.GetLogger()
-
-	owner, repo := g.cfg.GetRepo()
-
+func (g *githubClient) ListIssues(owner, repo string) ([]*gogh.Issue, error) {
 	var issues []*gogh.Issue
 
 	// TODO(github): Should issue state be configurable?
@@ -89,13 +86,10 @@ func (g *githubClient) ListIssues() ([]*gogh.Issue, error) {
 
 // ListComments returns the list of all comments on a GitHub issue in
 // ascending order of creation.
-func (g *githubClient) ListComments(issue *gogh.Issue) ([]*gogh.IssueComment, error) {
-	log := g.cfg.GetLogger()
-
-	owner, repo := g.cfg.GetRepo()
+func (g *githubClient) ListComments(
+	owner, repo string, issue *gogh.Issue, since time.Time,
+) ([]*gogh.IssueComment, error) {
 	issueNum := issue.GetNumber()
-	since := g.cfg.GetSinceParam()
-
 	comments, err := g.client.ListComments(
 		owner,
 		repo,
@@ -118,8 +112,6 @@ func (g *githubClient) ListComments(issue *gogh.Issue) ([]*gogh.IssueComment, er
 
 // GetUser returns a GitHub user from its login.
 func (g *githubClient) GetUser(login string) (*gogh.User, error) {
-	log := g.cfg.GetLogger()
-
 	log.Debugf("Retrieving GitHub user (%s)", login)
 	user, resp, err := g.goghClient.Users.Get(context.Background(), login)
 	if err != nil {
@@ -139,10 +131,7 @@ func (g *githubClient) GetUser(login string) (*gogh.User, error) {
 // run. For example, a dry-run clients may be created which does
 // not make any requests that would change anything on the server,
 // but instead simply prints out the actions that it's asked to take.
-func New(cfg *config.Config) (Client, error) {
-	log := cfg.GetLogger()
-
-	token := cfg.GetConfigString(options.ConfigKeyGitHubToken)
+func New(token string) (Client, error) {
 	client, err := github.NewWithToken(token)
 	if err != nil {
 		return nil, fmt.Errorf("creating sync client: %w", err)
@@ -165,11 +154,21 @@ func New(cfg *config.Config) (Client, error) {
 	goghClient := gogh.NewClient(tc)
 
 	ret := &githubClient{
-		cfg:        cfg,
 		client:     client,
 		goghClient: goghClient,
 	}
 
 	log.Debug("Successfully connected to GitHub.")
 	return ret, nil
+}
+
+// GetRepo returns the user/org name and the repo name of the configured GitHub
+// repository.
+// Expected input: "owner/repo"
+//
+// TODO(github): Consider whether sigs.k8s.io/release-sdk can be used here.
+func GetRepo(repoPath string) (string, string) {
+	parts := strings.Split(repoPath, "/")
+	// TODO(github): Is this safe?
+	return parts[0], parts[1]
 }

@@ -31,11 +31,12 @@ import (
 	jira "github.com/andygrunwald/go-jira/v2/cloud"
 	"github.com/dghubble/oauth1"
 	"github.com/fsnotify/fsnotify"
-	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"golang.org/x/term"
 
+	"github.com/uwu-tools/gh-jira-issue-sync/internal/github"
 	"github.com/uwu-tools/gh-jira-issue-sync/internal/options"
 )
 
@@ -83,9 +84,6 @@ type Config struct {
 	// API boundaries.
 	ctx context.Context
 
-	// log is a logger set up with the configured log level, app name, etc.
-	log logrus.Entry
-
 	// basicAuth represents whether we're using HTTP Basic authentication or OAuth.
 	basicAuth bool
 
@@ -119,11 +117,6 @@ func New(ctx context.Context, cmd *cobra.Command) (*Config, error) {
 
 	cfg.ctx = ctx
 
-	cfg.log = *newLogger(
-		options.AppName,
-		cfg.cmdConfig.GetString(options.ConfigKeyLogLevel),
-	)
-
 	if err := cfg.validateConfig(); err != nil {
 		return nil, err
 	}
@@ -139,15 +132,15 @@ func (c *Config) LoadJIRAConfig(client *jira.Client) error {
 		c.cmdConfig.GetString(options.ConfigKeyJiraProject),
 	)
 	if err != nil {
-		c.log.Errorf("error retrieving JIRA project; check key and credentials. Error: %s", err)
+		log.Errorf("error retrieving JIRA project; check key and credentials. Error: %s", err)
 		defer res.Body.Close()
 		body, err := io.ReadAll(res.Body)
 		if err != nil {
-			c.log.Errorf("error occurred trying to read error body: %s", err)
+			log.Errorf("error occurred trying to read error body: %s", err)
 			return fmt.Errorf("reading Jira project: %w", err)
 		}
 
-		c.log.Debugf("Error body: %s", body)
+		log.Debugf("Error body: %s", body)
 		return fmt.Errorf("reading error body: %s", string(body)) //nolint:goerr113
 	}
 	c.project = proj
@@ -184,11 +177,6 @@ func (c *Config) IsBasicAuth() bool {
 // GetSinceParam returns the `since` configuration parameter, parsed as a time.Time.
 func (c *Config) GetSinceParam() time.Time {
 	return c.since
-}
-
-// GetLogger returns the configured application logger.
-func (c *Config) GetLogger() logrus.Entry {
-	return c.log
 }
 
 // IsDryRun returns whether the application is running in dry-run mode or not.
@@ -248,10 +236,9 @@ func (c *Config) GetProjectKey() string {
 
 // GetRepo returns the user/org name and the repo name of the configured GitHub repository.
 func (c *Config) GetRepo() (string, string) {
-	fullName := c.cmdConfig.GetString(options.ConfigKeyRepoName)
-	parts := strings.Split(fullName, "/")
+	repoPath := c.cmdConfig.GetString(options.ConfigKeyRepoName)
 	// We check that repo-name is two parts separated by a slash in New, so this is safe
-	return parts[0], parts[1]
+	return github.GetRepo(repoPath)
 }
 
 // SetJIRAToken adds the JIRA OAuth tokens in the Viper configuration, ensuring that they
@@ -314,7 +301,7 @@ func (c *Config) SaveConfig() error {
 // default configuration values. This viper object becomes
 // the single source of truth for the app configuration.
 func newViper(appName, cfgFile string) *viper.Viper {
-	log := logrus.New()
+	logger := log.New()
 	v := viper.New()
 
 	v.SetEnvPrefix(appName)
@@ -338,40 +325,11 @@ func newViper(appName, cfgFile string) *viper.Viper {
 		log.WithError(err).Warningf("Error reading config file: %v", cfgFile)
 	}
 
-	if log.Level == logrus.DebugLevel {
+	if logger.Level == log.DebugLevel {
 		v.Debug()
 	}
 
 	return v
-}
-
-// parseLogLevel is a helper function to parse the log level passed in the
-// configuration into a logrus Level, or to use the default log level set
-// above if the log level can't be parsed.
-func parseLogLevel(level string) logrus.Level {
-	if level == "" {
-		return options.DefaultLogLevel
-	}
-
-	ll, err := logrus.ParseLevel(level)
-	if err != nil {
-		fmt.Printf("Failed to parse log level, using default. Error: %v\n", err)
-		return options.DefaultLogLevel
-	}
-	return ll
-}
-
-// newLogger uses the log level provided in the configuration
-// to create a new logrus logger and set fields on it to make
-// it easy to use.
-func newLogger(app, level string) *logrus.Entry {
-	logger := logrus.New()
-	logger.Level = parseLogLevel(level)
-	logEntry := logrus.NewEntry(logger).WithFields(logrus.Fields{
-		"app": app,
-	})
-	logEntry.WithField("log-level", logger.Level).Info("log level set")
-	return logEntry
 }
 
 // validateConfig checks the values provided to all of the configuration
@@ -382,7 +340,7 @@ func newLogger(app, level string) *logrus.Entry {
 func (c *Config) validateConfig() error {
 	// Log level and config file location are validated already
 
-	c.log.Debug("Checking config variables...")
+	log.Debug("Checking config variables...")
 	token := c.cmdConfig.GetString(options.ConfigKeyGitHubToken)
 	if token == "" {
 		return errGitHubTokenRequired
@@ -392,7 +350,7 @@ func (c *Config) validateConfig() error {
 		(c.cmdConfig.GetString(options.ConfigKeyJiraPassword) != "")
 
 	if c.basicAuth { //nolint:nestif // TODO(lint)
-		c.log.Debug("Using HTTP Basic Authentication")
+		log.Debug("Using HTTP Basic Authentication")
 
 		jUser := c.cmdConfig.GetString(options.ConfigKeyJiraUser)
 		if jUser == "" {
@@ -410,7 +368,7 @@ func (c *Config) validateConfig() error {
 			c.cmdConfig.Set(options.ConfigKeyJiraPassword, string(bytePass))
 		}
 	} else {
-		c.log.Debug("Using OAuth 1.0a authentication")
+		log.Debug("Using OAuth 1.0a authentication")
 
 		token := c.cmdConfig.GetString(options.ConfigKeyJiraToken)
 		if token == "" {
@@ -470,7 +428,7 @@ func (c *Config) validateConfig() error {
 	}
 	c.since = since
 
-	c.log.Debug("All config variables are valid!")
+	log.Debug("All config variables are valid!")
 
 	return nil
 }
@@ -478,7 +436,7 @@ func (c *Config) validateConfig() error {
 // getFieldIDs requests the metadata of every issue field in the JIRA
 // project, and saves the IDs of the custom fields used by issue-sync.
 func (c *Config) getFieldIDs(client *jira.Client) (*fields, error) {
-	c.log.Debug("Collecting field IDs.")
+	log.Debug("Collecting field IDs.")
 	req, err := client.NewRequest(c.Context(), "GET", "/rest/api/2/field", nil)
 	if err != nil {
 		return nil, fmt.Errorf("getting fields: %w", err)
@@ -530,7 +488,7 @@ func (c *Config) getFieldIDs(client *jira.Client) (*fields, error) {
 		return nil, errCustomFieldIDNotFound(CustomFieldNameGitHubLastSync)
 	}
 
-	c.log.Debug("All fields have been checked.")
+	log.Debug("All fields have been checked.")
 
 	return &fieldIDs, nil
 }
