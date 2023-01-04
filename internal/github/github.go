@@ -38,19 +38,19 @@ type Client interface {
 	GetUser(login string) (gogh.User, error)
 }
 
-// realGHClient is a standard GitHub clients, that actually makes all of the
+// githubClient is a standard GitHub clients, that actually makes all of the
 // requests against the GitHub REST API. It is the canonical implementation
 // of GitHubClient.
-type realGHClient struct {
-	cfg          *config.Config
-	client       *github.GitHub
-	githubClient *gogh.Client
+type githubClient struct {
+	cfg        *config.Config
+	client     *github.GitHub
+	goghClient *gogh.Client
 }
 
 const itemsPerPage = 100
 
 // ListIssues returns the list of GitHub issues since the last run of the tool.
-func (g *realGHClient) ListIssues() ([]*gogh.Issue, error) {
+func (g *githubClient) ListIssues() ([]*gogh.Issue, error) {
 	log := g.cfg.GetLogger()
 
 	owner, repo := g.cfg.GetRepo()
@@ -90,7 +90,7 @@ func (g *realGHClient) ListIssues() ([]*gogh.Issue, error) {
 
 // ListComments returns the list of all comments on a GitHub issue in
 // ascending order of creation.
-func (g *realGHClient) ListComments(issue *gogh.Issue) ([]*gogh.IssueComment, error) {
+func (g *githubClient) ListComments(issue *gogh.Issue) ([]*gogh.IssueComment, error) {
 	log := g.cfg.GetLogger()
 
 	owner, repo := g.cfg.GetRepo()
@@ -118,11 +118,11 @@ func (g *realGHClient) ListComments(issue *gogh.Issue) ([]*gogh.IssueComment, er
 }
 
 // GetUser returns a GitHub user from its login.
-func (g *realGHClient) GetUser(login string) (gogh.User, error) {
+func (g *githubClient) GetUser(login string) (gogh.User, error) {
 	log := g.cfg.GetLogger()
 
 	u, _, err := g.request(func() (interface{}, *gogh.Response, error) {
-		return g.githubClient.Users.Get(context.Background(), login) //nolint:wrapcheck
+		return g.goghClient.Users.Get(context.Background(), login) //nolint:wrapcheck
 	})
 	if err != nil {
 		log.Errorf("Error retrieving GitHub user %s. Error: %v", login, err)
@@ -142,7 +142,7 @@ func (g *realGHClient) GetUser(login string) (gogh.User, error) {
 // returns the expected value and the GitHub API response, as well as a nil
 // error. If it continues to fail until a maximum time is reached, it returns
 // a nil result as well as the returned HTTP response and a timeout error.
-func (g *realGHClient) request(f func() (interface{}, *gogh.Response, error)) (interface{}, *gogh.Response, error) {
+func (g *githubClient) request(f func() (interface{}, *gogh.Response, error)) (interface{}, *gogh.Response, error) {
 	ret, resp, err := synchttp.NewGitHubRequest(f, g.cfg.GetLogger(), g.cfg.GetTimeout())
 	if err != nil {
 		return ret, resp, fmt.Errorf("request error: %w", err)
@@ -165,11 +165,11 @@ func New(cfg *config.Config) (Client, error) {
 		return nil, fmt.Errorf("creating sync client: %w", err)
 	}
 
-	client.SetOptions(
-		&github.Options{
-			ItemsPerPage: itemsPerPage,
-		},
-	)
+	opts := &github.Options{
+		ItemsPerPage: itemsPerPage,
+	}
+
+	client.SetOptions(opts)
 
 	ctx := context.Background()
 	ts := oauth2.StaticTokenSource(
@@ -179,12 +179,12 @@ func New(cfg *config.Config) (Client, error) {
 	)
 	tc := oauth2.NewClient(ctx, ts)
 
-	githubClient := gogh.NewClient(tc)
+	goghClient := gogh.NewClient(tc)
 
-	ret := &realGHClient{
-		cfg:          cfg,
-		client:       client,
-		githubClient: githubClient,
+	ret := &githubClient{
+		cfg:        cfg,
+		client:     client,
+		goghClient: goghClient,
 	}
 
 	log.Debug("Successfully connected to GitHub.")
