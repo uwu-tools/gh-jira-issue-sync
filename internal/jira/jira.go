@@ -53,23 +53,6 @@ const (
 	maxIssueSearchResults = 1000
 )
 
-// getErrorBody reads the HTTP response body of a Jira API response,
-// logs it as an error, and returns an error object with the contents
-// of the body. If an error occurs during reading, that error is
-// instead printed and returned. This function closes the body for
-// further reading.
-func getErrorBody(res *jira.Response) error {
-	defer res.Body.Close()
-	body, err := io.ReadAll(res.Body)
-	if err != nil {
-		log.Errorf("Error occurred trying to read error body: %+v", err)
-		return fmt.Errorf("reading error body: %w", err)
-	}
-
-	log.Debugf("Error body: %+v", body)
-	return fmt.Errorf("reading error body: %s", string(body)) //nolint:goerr113
-}
-
 // Client is a wrapper around the Jira API clients library we
 // use. It allows us to hide implementation details such as backoff
 // as well as swap in other implementations, such as for dry run
@@ -144,30 +127,6 @@ func New(cfg *config.Config) (Client, error) {
 	}
 
 	return j, nil
-}
-
-func getJQLQuery(projectKey, fieldID string, ids []int) string {
-	idStrs := make([]string, len(ids))
-	for i, v := range ids {
-		idStrs[i] = fmt.Sprint(v)
-	}
-
-	// If the list of IDs is too long, we get a 414 Request-URI Too Large, so in that case,
-	// we'll need to do the filtering ourselves.
-	var jql string
-	if len(ids) < maxJQLIssueLength {
-		jql = fmt.Sprintf(
-			"project='%s' AND cf[%s] in (%s)",
-			projectKey,
-			fieldID,
-			strings.Join(idStrs, ","),
-		)
-	} else {
-		jql = fmt.Sprintf("project='%s'", projectKey)
-	}
-
-	log.Debugf("JQL query used: %s", jql)
-	return jql
 }
 
 // realJiraClient is a standard Jira clients, which actually makes
@@ -641,4 +600,45 @@ func (j *dryrunJiraClient) request(f func() (interface{}, *jira.Response, error)
 	}
 
 	return ret, resp, nil
+}
+
+func getJQLQuery(projectKey, fieldID string, ids []int) string {
+	idStrs := make([]string, len(ids))
+	for i, v := range ids {
+		idStrs[i] = fmt.Sprint(v)
+	}
+
+	// If the list of IDs is too long, we get a 414 Request-URI Too Large, so in that case,
+	// we'll need to do the filtering ourselves.
+	var jql string
+	if len(ids) < maxJQLIssueLength {
+		jql = fmt.Sprintf(
+			"project='%s' AND cf[%s] in (%s)",
+			projectKey,
+			fieldID,
+			strings.Join(idStrs, ","),
+		)
+	} else {
+		jql = fmt.Sprintf("project='%s'", projectKey)
+	}
+
+	log.Debugf("JQL query used: %s", jql)
+	return jql
+}
+
+// getErrorBody reads the HTTP response body of a Jira API response,
+// logs it as an error, and returns an error object with the contents
+// of the body. If an error occurs during reading, that error is
+// instead printed and returned. This function closes the body for
+// further reading.
+func getErrorBody(res *jira.Response) error {
+	defer res.Body.Close()
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		log.Errorf("Error occurred trying to read error body: %+v", err)
+		return fmt.Errorf("reading error body: %w", err)
+	}
+
+	log.Debugf("Error body: %+v", body)
+	return fmt.Errorf("reading error body: %s", string(body)) //nolint:goerr113
 }
