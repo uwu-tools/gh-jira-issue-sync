@@ -20,9 +20,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/google/go-github/v48/github"
+	gogh "github.com/google/go-github/v48/github"
 	"golang.org/x/oauth2"
-	kgh "sigs.k8s.io/release-sdk/github"
+	"sigs.k8s.io/release-sdk/github"
 
 	"github.com/uwu-tools/gh-jira-issue-sync/internal/config"
 	synchttp "github.com/uwu-tools/gh-jira-issue-sync/internal/http"
@@ -33,10 +33,10 @@ import (
 // use. It allows us to swap in other implementations, such as a dry run
 // clients, or mock clients for testing.
 type Client interface {
-	ListIssues() ([]*github.Issue, error)
-	ListComments(issue *github.Issue) ([]*github.IssueComment, error)
-	GetUser(login string) (github.User, error)
-	GetRateLimits() (github.RateLimits, error)
+	ListIssues() ([]*gogh.Issue, error)
+	ListComments(issue *gogh.Issue) ([]*gogh.IssueComment, error)
+	GetUser(login string) (gogh.User, error)
+	GetRateLimits() (gogh.RateLimits, error)
 }
 
 // realGHClient is a standard GitHub clients, that actually makes all of the
@@ -44,8 +44,8 @@ type Client interface {
 // of GitHubClient.
 type realGHClient struct {
 	cfg          *config.Config
-	client       *kgh.GitHub
-	githubClient *github.Client
+	client       *github.GitHub
+	githubClient *gogh.Client
 }
 
 const (
@@ -55,23 +55,23 @@ const (
 )
 
 // ListIssues returns the list of GitHub issues since the last run of the tool.
-func (g *realGHClient) ListIssues() ([]*github.Issue, error) {
+func (g *realGHClient) ListIssues() ([]*gogh.Issue, error) {
 	log := g.cfg.GetLogger()
 
 	owner, repo := g.cfg.GetRepo()
 
-	var issues []*github.Issue
+	var issues []*gogh.Issue
 
 	// TODO(github): Should issue state be configurable?
-	issueState := kgh.IssueStateAll
+	issueState := github.IssueStateAll
 
 	// TODO(github): Consider if any of these options need to be exposed.
-	_ = &github.IssueListByRepoOptions{
+	_ = &gogh.IssueListByRepoOptions{
 		Since:     g.cfg.GetSinceParam(),
 		State:     string(issueState),
 		Sort:      sortOption,
 		Direction: sortDirection,
-		ListOptions: github.ListOptions{
+		ListOptions: gogh.ListOptions{
 			PerPage: itemsPerPage,
 		},
 	}
@@ -94,21 +94,21 @@ func (g *realGHClient) ListIssues() ([]*github.Issue, error) {
 
 // ListComments returns the list of all comments on a GitHub issue in
 // ascending order of creation.
-func (g *realGHClient) ListComments(issue *github.Issue) ([]*github.IssueComment, error) {
+func (g *realGHClient) ListComments(issue *gogh.Issue) ([]*gogh.IssueComment, error) {
 	log := g.cfg.GetLogger()
 
 	ctx := context.Background()
 	user, repo := g.cfg.GetRepo()
 	c, _, err := g.request(
-		func() (interface{}, *github.Response, error) {
+		func() (interface{}, *gogh.Response, error) {
 			return g.githubClient.Issues.ListComments( //nolint:wrapcheck
 				ctx,
 				user,
 				repo,
 				issue.GetNumber(),
-				&github.IssueListCommentsOptions{
-					Sort:      github.String(sortOption),
-					Direction: github.String(sortDirection),
+				&gogh.IssueListCommentsOptions{
+					Sort:      gogh.String(sortOption),
+					Direction: gogh.String(sortDirection),
 				},
 			)
 		},
@@ -117,7 +117,7 @@ func (g *realGHClient) ListComments(issue *github.Issue) ([]*github.IssueComment
 		log.Errorf("Error retrieving GitHub comments for issue #%d. Error: %v.", issue.GetNumber(), err)
 		return nil, err
 	}
-	comments, ok := c.([]*github.IssueComment)
+	comments, ok := c.([]*gogh.IssueComment)
 	if !ok {
 		log.Errorf("Get GitHub comments did not return comments! Got: %v", c)
 		return nil, fmt.Errorf("get GitHub comments failed: expected []*github.IssueComment; got %T", c) //nolint:goerr113
@@ -127,20 +127,20 @@ func (g *realGHClient) ListComments(issue *github.Issue) ([]*github.IssueComment
 }
 
 // GetUser returns a GitHub user from its login.
-func (g *realGHClient) GetUser(login string) (github.User, error) {
+func (g *realGHClient) GetUser(login string) (gogh.User, error) {
 	log := g.cfg.GetLogger()
 
-	u, _, err := g.request(func() (interface{}, *github.Response, error) {
+	u, _, err := g.request(func() (interface{}, *gogh.Response, error) {
 		return g.githubClient.Users.Get(context.Background(), login) //nolint:wrapcheck
 	})
 	if err != nil {
 		log.Errorf("Error retrieving GitHub user %s. Error: %v", login, err)
 	}
 
-	user, ok := u.(*github.User)
+	user, ok := u.(*gogh.User)
 	if !ok {
 		log.Errorf("Get GitHub user did not return user! Got: %v", u)
-		return github.User{}, fmt.Errorf("get GitHub user failed: expected *github.User; got %T", u) //nolint:goerr113
+		return gogh.User{}, fmt.Errorf("get GitHub user failed: expected *github.User; got %T", u) //nolint:goerr113
 	}
 
 	return *user, nil
@@ -148,22 +148,22 @@ func (g *realGHClient) GetUser(login string) (github.User, error) {
 
 // GetRateLimits returns the current rate limits on the GitHub API. This is a
 // simple and lightweight request that can also be used simply for testing the API.
-func (g *realGHClient) GetRateLimits() (github.RateLimits, error) {
+func (g *realGHClient) GetRateLimits() (gogh.RateLimits, error) {
 	log := g.cfg.GetLogger()
 
 	ctx := context.Background()
 
-	rl, _, err := g.request(func() (interface{}, *github.Response, error) {
+	rl, _, err := g.request(func() (interface{}, *gogh.Response, error) {
 		return g.githubClient.RateLimits(ctx) //nolint:wrapcheck
 	})
 	if err != nil {
 		log.Errorf("Error connecting to GitHub; check your token. Error: %v", err)
-		return github.RateLimits{}, err
+		return gogh.RateLimits{}, err
 	}
-	rate, ok := rl.(*github.RateLimits)
+	rate, ok := rl.(*gogh.RateLimits)
 	if !ok {
 		log.Errorf("Get GitHub rate limits did not return rate limits! Got: %v", rl)
-		return github.RateLimits{},
+		return gogh.RateLimits{},
 			fmt.Errorf( //nolint:goerr113
 				"get GitHub rate limits failed: expected *github.RateLimits; got %T",
 				rl,
@@ -178,7 +178,7 @@ func (g *realGHClient) GetRateLimits() (github.RateLimits, error) {
 // returns the expected value and the GitHub API response, as well as a nil
 // error. If it continues to fail until a maximum time is reached, it returns
 // a nil result as well as the returned HTTP response and a timeout error.
-func (g *realGHClient) request(f func() (interface{}, *github.Response, error)) (interface{}, *github.Response, error) {
+func (g *realGHClient) request(f func() (interface{}, *gogh.Response, error)) (interface{}, *gogh.Response, error) {
 	ret, resp, err := synchttp.NewGitHubRequest(f, g.cfg.GetLogger(), g.cfg.GetTimeout())
 	if err != nil {
 		return ret, resp, fmt.Errorf("request error: %w", err)
@@ -196,13 +196,13 @@ func New(cfg *config.Config) (Client, error) {
 	log := cfg.GetLogger()
 
 	token := cfg.GetConfigString(options.ConfigKeyGitHubToken)
-	client, err := kgh.NewWithToken(token)
+	client, err := github.NewWithToken(token)
 	if err != nil {
 		return nil, fmt.Errorf("creating sync client: %w", err)
 	}
 
 	client.SetOptions(
-		&kgh.Options{
+		&github.Options{
 			ItemsPerPage: itemsPerPage,
 		},
 	)
@@ -215,7 +215,7 @@ func New(cfg *config.Config) (Client, error) {
 	)
 	tc := oauth2.NewClient(ctx, ts)
 
-	githubClient := github.NewClient(tc)
+	githubClient := gogh.NewClient(tc)
 
 	ret := &realGHClient{
 		cfg:          cfg,
