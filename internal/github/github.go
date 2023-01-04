@@ -25,7 +25,6 @@ import (
 	"sigs.k8s.io/release-sdk/github"
 
 	"github.com/uwu-tools/gh-jira-issue-sync/internal/config"
-	synchttp "github.com/uwu-tools/gh-jira-issue-sync/internal/http"
 	"github.com/uwu-tools/gh-jira-issue-sync/internal/options"
 )
 
@@ -35,7 +34,7 @@ import (
 type Client interface {
 	ListIssues() ([]*gogh.Issue, error)
 	ListComments(issue *gogh.Issue) ([]*gogh.IssueComment, error)
-	GetUser(login string) (gogh.User, error)
+	GetUser(login string) (*gogh.User, error)
 }
 
 // githubClient is a standard GitHub clients, that actually makes all of the
@@ -118,37 +117,21 @@ func (g *githubClient) ListComments(issue *gogh.Issue) ([]*gogh.IssueComment, er
 }
 
 // GetUser returns a GitHub user from its login.
-func (g *githubClient) GetUser(login string) (gogh.User, error) {
+func (g *githubClient) GetUser(login string) (*gogh.User, error) {
 	log := g.cfg.GetLogger()
 
-	u, _, err := g.request(func() (interface{}, *gogh.Response, error) {
-		return g.goghClient.Users.Get(context.Background(), login) //nolint:wrapcheck
-	})
+	log.Debugf("Retrieving GitHub user (%s)", login)
+	user, resp, err := g.goghClient.Users.Get(context.Background(), login)
 	if err != nil {
-		log.Errorf("Error retrieving GitHub user %s. Error: %v", login, err)
+		return nil, fmt.Errorf(
+			"retrieving GitHub user (%s): %w (response: %v)",
+			login,
+			err,
+			resp,
+		)
 	}
 
-	user, ok := u.(*gogh.User)
-	if !ok {
-		log.Errorf("Get GitHub user did not return user! Got: %v", u)
-		return gogh.User{}, fmt.Errorf("get GitHub user failed: expected *github.User; got %T", u) //nolint:goerr113
-	}
-
-	return *user, nil
-}
-
-// request takes an API function from the GitHub library
-// and calls it with exponential backoff. If the function succeeds, it
-// returns the expected value and the GitHub API response, as well as a nil
-// error. If it continues to fail until a maximum time is reached, it returns
-// a nil result as well as the returned HTTP response and a timeout error.
-func (g *githubClient) request(f func() (interface{}, *gogh.Response, error)) (interface{}, *gogh.Response, error) {
-	ret, resp, err := synchttp.NewGitHubRequest(f, g.cfg.GetLogger(), g.cfg.GetTimeout())
-	if err != nil {
-		return ret, resp, fmt.Errorf("request error: %w", err)
-	}
-
-	return ret, resp, nil
+	return user, nil
 }
 
 // New creates a GitHubClient and returns it; which
