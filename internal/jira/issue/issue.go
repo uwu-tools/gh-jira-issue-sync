@@ -23,6 +23,7 @@ import (
 
 	gojira "github.com/andygrunwald/go-jira/v2/cloud"
 	gogh "github.com/google/go-github/v48/github"
+	log "github.com/sirupsen/logrus"
 	"github.com/trivago/tgo/tcontainer"
 
 	"github.com/uwu-tools/gh-jira-issue-sync/internal/config"
@@ -39,8 +40,6 @@ const dateFormat = "2006-01-02T15:04:05.0-0700"
 // then matches each one. If a JIRA issue already exists for a given GitHub issue,
 // it calls UpdateIssue; if no JIRA issue already exists, it calls CreateIssue.
 func Compare(cfg *config.Config, ghClient github.Client, jiraClient jira.Client) error {
-	log := cfg.GetLogger()
-
 	log.Debug("Collecting issues")
 
 	owner, repo := cfg.GetRepo()
@@ -122,8 +121,6 @@ func Compare(cfg *config.Config, ghClient github.Client, jiraClient jira.Client)
 //
 //nolint:gocognit // TODO(lint)
 func DidIssueChange(cfg *config.Config, ghIssue *gogh.Issue, jIssue *gojira.Issue) bool {
-	log := cfg.GetLogger()
-
 	log.Debugf("Comparing GitHub issue #%d and JIRA issue %s", ghIssue.GetNumber(), jIssue.Key)
 
 	anyDifferent := false
@@ -187,8 +184,6 @@ func UpdateIssue(
 	ghClient github.Client,
 	jClient jira.Client,
 ) error {
-	log := cfg.GetLogger()
-
 	log.Debugf("Updating JIRA %s with GitHub #%d", jIssue.Key, *ghIssue.Number)
 
 	if DidIssueChange(cfg, ghIssue, jIssue) {
@@ -241,8 +236,6 @@ func UpdateIssue(
 // CreateIssue generates a JIRA issue from the various fields on the given GitHub issue, then
 // sends it to the JIRA API.
 func CreateIssue(cfg *config.Config, issue *gogh.Issue, ghClient github.Client, jClient jira.Client) error {
-	log := cfg.GetLogger()
-
 	log.Debugf("Creating JIRA issue based on GitHub issue #%d", *issue.Number)
 
 	unknowns := tcontainer.NewMarshalMap()

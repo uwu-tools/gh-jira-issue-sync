@@ -55,8 +55,6 @@ var RootCmd = &cobra.Command{
 			return fmt.Errorf("creating new config: %w", err)
 		}
 
-		log := cfg.GetLogger()
-
 		jiraClient, err := jira.New(cfg)
 		if err != nil {
 			return fmt.Errorf("creating Jira client: %w", err)
@@ -70,11 +68,13 @@ var RootCmd = &cobra.Command{
 
 		for {
 			if err := issue.Compare(cfg, ghClient, jiraClient); err != nil {
-				log.Error(err)
+				// TODO(log): Better error message
+				logrus.Error(err)
 			}
 			if !cfg.IsDryRun() {
 				if err := cfg.SaveConfig(); err != nil {
-					log.Error(err)
+					// TODO(log): Better error message
+					logrus.Error(err)
 				}
 			}
 			if !cfg.IsDaemon() {

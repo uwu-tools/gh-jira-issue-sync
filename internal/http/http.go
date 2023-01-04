@@ -22,7 +22,7 @@ import (
 
 	jira "github.com/andygrunwald/go-jira/v2/cloud"
 	"github.com/cenkalti/backoff/v4"
-	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 const retryBackoffRoundRatio = time.Millisecond / time.Nanosecond
@@ -34,7 +34,6 @@ const retryBackoffRoundRatio = time.Millisecond / time.Nanosecond
 // returned HTTP response and a timeout error.
 func NewJiraRequest(
 	f func() (interface{}, *jira.Response, error),
-	log logrus.Entry, //nolint:gocritic
 	timeout time.Duration,
 ) (interface{}, *jira.Response, error) {
 	var ret interface{}
@@ -46,7 +45,7 @@ func NewJiraRequest(
 		return err
 	}
 
-	backoffErr := retryNotify(op, log, timeout)
+	backoffErr := retryNotify(op, timeout)
 	if backoffErr != nil {
 		return ret, res, errBackoff(backoffErr)
 	}
@@ -56,7 +55,6 @@ func NewJiraRequest(
 
 func retryNotify(
 	op backoff.Operation,
-	log logrus.Entry, //nolint:gocritic
 	timeout time.Duration,
 ) error {
 	b := backoff.NewExponentialBackOff()
