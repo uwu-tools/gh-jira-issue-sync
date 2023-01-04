@@ -97,30 +97,25 @@ func (g *realGHClient) ListIssues() ([]*gogh.Issue, error) {
 func (g *realGHClient) ListComments(issue *gogh.Issue) ([]*gogh.IssueComment, error) {
 	log := g.cfg.GetLogger()
 
-	ctx := context.Background()
-	user, repo := g.cfg.GetRepo()
-	c, _, err := g.request(
-		func() (interface{}, *gogh.Response, error) {
-			return g.githubClient.Issues.ListComments( //nolint:wrapcheck
-				ctx,
-				user,
-				repo,
-				issue.GetNumber(),
-				&gogh.IssueListCommentsOptions{
-					Sort:      gogh.String(sortOption),
-					Direction: gogh.String(sortDirection),
-				},
-			)
-		},
+	owner, repo := g.cfg.GetRepo()
+	issueNum := issue.GetNumber()
+	since := g.cfg.GetSinceParam()
+
+	comments, err := g.client.ListComments(
+		owner,
+		repo,
+		issueNum,
+		github.SortCreated,
+		github.SortDirectionAscending,
+		&since,
 	)
 	if err != nil {
-		log.Errorf("Error retrieving GitHub comments for issue #%d. Error: %v.", issue.GetNumber(), err)
-		return nil, err
-	}
-	comments, ok := c.([]*gogh.IssueComment)
-	if !ok {
-		log.Errorf("Get GitHub comments did not return comments! Got: %v", c)
-		return nil, fmt.Errorf("get GitHub comments failed: expected []*github.IssueComment; got %T", c) //nolint:goerr113
+		log.Errorf("Error retrieving GitHub comments for issue #%d. Error: %v.", issueNum, err)
+		return nil, fmt.Errorf(
+			"listing GitHub comments for issue #%d. Error: %w",
+			issueNum,
+			err,
+		)
 	}
 
 	return comments, nil
