@@ -47,11 +47,7 @@ type realGHClient struct {
 	githubClient *gogh.Client
 }
 
-const (
-	itemsPerPage  = 100
-	sortOption    = "created"
-	sortDirection = "asc"
-)
+const itemsPerPage = 100
 
 // ListIssues returns the list of GitHub issues since the last run of the tool.
 func (g *realGHClient) ListIssues() ([]*gogh.Issue, error) {
@@ -64,17 +60,18 @@ func (g *realGHClient) ListIssues() ([]*gogh.Issue, error) {
 	// TODO(github): Should issue state be configurable?
 	issueState := github.IssueStateAll
 
-	// TODO(github): Consider if any of these options need to be exposed.
-	_ = &gogh.IssueListByRepoOptions{
-		Since:     g.cfg.GetSinceParam(),
-		State:     string(issueState),
-		Sort:      sortOption,
-		Direction: sortDirection,
-		ListOptions: gogh.ListOptions{
-			PerPage: itemsPerPage,
-		},
-	}
-
+	// TODO(github): Consider if these options need to be exposed upstream.
+	/*
+		gogh.IssueListByRepoOptions{
+			Since:     g.cfg.GetSinceParam(),
+			State:     string(issueState),
+			Sort:      "created",
+			Direction: "asc",
+			ListOptions: gogh.ListOptions{
+				PerPage: itemsPerPage,
+			},
+		}
+	*/
 	is, err := g.client.ListIssues(owner, repo, issueState)
 	if err != nil {
 		return nil, fmt.Errorf("listing GitHub issues: %w", err)
