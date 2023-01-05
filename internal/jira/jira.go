@@ -61,18 +61,18 @@ type Client interface {
 	ListIssues(ids []int) ([]jira.Issue, error)
 	GetIssue(key string) (*jira.Issue, error)
 	// TODO: Remove unnecessary return values; consider only returning error
-	CreateIssue(issue *jira.Issue) (jira.Issue, error)
+	CreateIssue(issue *jira.Issue) (*jira.Issue, error)
 	// TODO: Remove unnecessary return values; consider only returning error
-	UpdateIssue(issue *jira.Issue) (jira.Issue, error)
+	UpdateIssue(issue *jira.Issue) (*jira.Issue, error)
 	// TODO: Remove unnecessary return values; consider only returning error
 	CreateComment(
 		issue *jira.Issue, comment *gogh.IssueComment, githubClient github.Client,
-	) (jira.Comment, error)
+	) (*jira.Comment, error)
 	// TODO: Remove unnecessary return values; consider only returning error
 	// TODO: Re-arrange arguments
 	UpdateComment(
 		issue *jira.Issue, id string, comment *gogh.IssueComment, githubClient github.Client,
-	) (jira.Comment, error)
+	) (*jira.Comment, error)
 }
 
 // jiraClient is a standard Jira clients, which actually makes
@@ -233,7 +233,7 @@ func (j *jiraClient) GetIssue(key string) (*jira.Issue, error) {
 // CreateIssue creates a new Jira issue according to the fields provided in
 // the provided issue object. It returns the created issue, with all the
 // fields provided (including e.g. ID and Key).
-func (j *jiraClient) CreateIssue(issue *jira.Issue) (jira.Issue, error) {
+func (j *jiraClient) CreateIssue(issue *jira.Issue) (*jira.Issue, error) {
 	var newIssue *jira.Issue
 
 	// TODO(dry-run): Simplify logic
@@ -243,12 +243,12 @@ func (j *jiraClient) CreateIssue(issue *jira.Issue) (jira.Issue, error) {
 		})
 		if err != nil {
 			log.Errorf("Error creating Jira issue: %+v", err)
-			return jira.Issue{}, getErrorBody(res)
+			return nil, getErrorBody(res)
 		}
 		is, ok := i.(*jira.Issue)
 		if !ok {
 			log.Errorf("Create Jira issue did not return issue! Got: %v", i)
-			return jira.Issue{}, fmt.Errorf("create Jira issue failed: expected *jira.Issue; got %T", i) //nolint:goerr113
+			return nil, fmt.Errorf("create Jira issue failed: expected *jira.Issue; got %T", i) //nolint:goerr113
 		}
 
 		newIssue = is
@@ -268,13 +268,13 @@ func (j *jiraClient) CreateIssue(issue *jira.Issue) (jira.Issue, error) {
 		log.Info("")
 	}
 
-	return *newIssue, nil
+	return newIssue, nil
 }
 
 // UpdateIssue updates a given issue (identified by the Key field of the provided
 // issue object) with the fields on the provided issue. It returns the updated
 // issue as it exists on Jira.
-func (j *jiraClient) UpdateIssue(issue *jira.Issue) (jira.Issue, error) {
+func (j *jiraClient) UpdateIssue(issue *jira.Issue) (*jira.Issue, error) {
 	var newIssue *jira.Issue
 
 	// TODO(dry-run): Simplify logic
@@ -285,12 +285,12 @@ func (j *jiraClient) UpdateIssue(issue *jira.Issue) (jira.Issue, error) {
 		})
 		if err != nil {
 			log.Errorf("Error updating Jira issue %s: %v", issue.Key, err)
-			return jira.Issue{}, getErrorBody(res)
+			return nil, getErrorBody(res)
 		}
 		is, ok := i.(*jira.Issue)
 		if !ok {
 			log.Errorf("Update Jira issue did not return issue! Got: %v", i)
-			return jira.Issue{}, fmt.Errorf("update Jira issue failed: expected *jira.Issue; got %T", i) //nolint:goerr113
+			return nil, fmt.Errorf("update Jira issue failed: expected *jira.Issue; got %T", i) //nolint:goerr113
 		}
 
 		newIssue = is
@@ -313,7 +313,7 @@ func (j *jiraClient) UpdateIssue(issue *jira.Issue) (jira.Issue, error) {
 		log.Info("")
 	}
 
-	return *newIssue, nil
+	return newIssue, nil
 }
 
 // maxBodyLength is the maximum length of a Jira comment body, which is currently
@@ -326,10 +326,10 @@ func (j *jiraClient) CreateComment(
 	issue *jira.Issue,
 	comment *gogh.IssueComment,
 	githubClient github.Client,
-) (jira.Comment, error) {
+) (*jira.Comment, error) {
 	user, err := githubClient.GetUser(comment.User.GetLogin())
 	if err != nil {
-		return jira.Comment{}, fmt.Errorf("getting GitHub user: %w", err)
+		return nil, fmt.Errorf("getting GitHub user: %w", err)
 	}
 
 	body := fmt.Sprintf("Comment [(ID %d)|%s]", comment.GetID(), comment.GetHTMLURL())
@@ -359,12 +359,12 @@ func (j *jiraClient) CreateComment(
 		})
 		if err != nil {
 			log.Errorf("Error creating Jira comment on issue %s. Error: %v", issue.Key, err)
-			return jira.Comment{}, getErrorBody(res)
+			return nil, getErrorBody(res)
 		}
 		co, ok := com.(*jira.Comment)
 		if !ok {
 			log.Errorf("Create Jira comment did not return comment! Got: %v", com)
-			return jira.Comment{}, fmt.Errorf( //nolint:goerr113
+			return nil, fmt.Errorf( //nolint:goerr113
 				"create Jira comment failed: expected *jira.Comment; got %T",
 				com,
 			)
@@ -385,7 +385,7 @@ func (j *jiraClient) CreateComment(
 		log.Info("")
 	}
 
-	return *newComment, nil
+	return newComment, nil
 }
 
 // UpdateComment updates a comment (identified by the `id` parameter) on a given
@@ -396,10 +396,10 @@ func (j *jiraClient) UpdateComment(
 	id string,
 	comment *gogh.IssueComment,
 	githubClient github.Client,
-) (jira.Comment, error) {
+) (*jira.Comment, error) {
 	user, err := githubClient.GetUser(comment.User.GetLogin())
 	if err != nil {
-		return jira.Comment{}, fmt.Errorf("getting GitHub user: %w", err)
+		return nil, fmt.Errorf("getting GitHub user: %w", err)
 	}
 
 	body := fmt.Sprintf("Comment [(ID %d)|%s]", comment.GetID(), comment.GetHTMLURL())
@@ -441,7 +441,7 @@ func (j *jiraClient) UpdateComment(
 		)
 		if err != nil {
 			log.Errorf("Error creating comment update request: %s", err)
-			return jira.Comment{}, fmt.Errorf("creating comment update request: %w", err)
+			return nil, fmt.Errorf("creating comment update request: %w", err)
 		}
 
 		com, res, err := j.request(func() (interface{}, *jira.Response, error) {
@@ -450,12 +450,12 @@ func (j *jiraClient) UpdateComment(
 		})
 		if err != nil {
 			log.Errorf("Error updating comment: %+v", err)
-			return jira.Comment{}, getErrorBody(res)
+			return nil, getErrorBody(res)
 		}
 		co, ok := com.(*jira.Comment)
 		if !ok {
 			log.Errorf("Update Jira comment did not return comment! Got: %v", com)
-			return jira.Comment{}, fmt.Errorf( //nolint:goerr113
+			return nil, fmt.Errorf( //nolint:goerr113
 				"update Jira comment failed: expected *jira.Comment; got %T",
 				com,
 			)
@@ -476,7 +476,7 @@ func (j *jiraClient) UpdateComment(
 		log.Info("")
 	}
 
-	return *updatedComment, nil
+	return updatedComment, nil
 }
 
 // request executes a Jira request with exponential backoff, using the real
