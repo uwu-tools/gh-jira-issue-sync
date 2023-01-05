@@ -35,7 +35,7 @@ import (
 
 // NewJiraHTTPClient obtains an access token (either from configuration
 // or from an OAuth handshake) and creates an HTTP client that uses the
-// token, which can be used to configure a JIRA client.
+// token, which can be used to configure a Jira client.
 func NewJiraHTTPClient(cfg *config.Config) (*http.Client, error) {
 	ctx := context.Background()
 
@@ -50,7 +50,7 @@ func NewJiraHTTPClient(cfg *config.Config) (*http.Client, error) {
 		if err != nil {
 			return nil, err
 		}
-		cfg.SetJIRAToken(tok)
+		cfg.SetJiraToken(tok)
 	}
 
 	return oauthConfig.Client(ctx, tok), nil
@@ -122,7 +122,7 @@ func jiraTokenFromConfig(cfg *config.Config) (*oauth1.Token, bool) {
 }
 
 // jiraTokenFromWeb performs an OAuth handshake, obtaining a request and
-// then an access token by authorizing with the JIRA REST API.
+// then an access token by authorizing with the Jira REST API.
 func jiraTokenFromWeb(cfg *oauth1.Config) (*oauth1.Token, error) {
 	requestToken, requestSecret, err := cfg.RequestToken()
 	if err != nil {

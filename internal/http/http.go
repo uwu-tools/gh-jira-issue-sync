@@ -27,9 +27,9 @@ import (
 
 const retryBackoffRoundRatio = time.Millisecond / time.Nanosecond
 
-// NewJiraRequest takes an API function from the JIRA library and calls it with
+// NewJiraRequest takes an API function from the Jira library and calls it with
 // exponential backoff. If the function succeeds, it returns the expected value
-// and the JIRA API response, as well as a nil error. If it continues to fail
+// and the Jira API response, as well as a nil error. If it continues to fail
 // until a maximum time is reached, it returns a nil result as well as the
 // returned HTTP response and a timeout error.
 func NewJiraRequest(

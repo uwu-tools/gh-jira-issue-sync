@@ -2,7 +2,7 @@
 
 ## Instructions
 
-Copy your private key which you have configured with JIRA into the
+Copy your private key which you have configured with Jira into the
 current directory.
 
 Fill out the config.yaml and secret.yaml files with the correct

@@ -30,14 +30,14 @@ import (
 	"github.com/uwu-tools/gh-jira-issue-sync/internal/jira"
 )
 
-// jCommentRegex matches a generated JIRA comment. It has matching groups to retrieve the
+// jCommentRegex matches a generated Jira comment. It has matching groups to retrieve the
 // GitHub Comment ID (\1), the GitHub username (\2), the GitHub real name (\3, if it exists),
 // the time the comment was posted (\3 or \4), and the body of the comment (\4 or \5).
 var jCommentRegex = regexp.MustCompile(
 	`^Comment \[\(ID (\d+)\)\|.*?] from GitHub user \[(.+)\|.*?] \((.+)\) at (.+):\n\n(.+)$`,
 )
 
-// jCommentIDRegex just matches the beginning of a generated JIRA comment. It's a smaller,
+// jCommentIDRegex just matches the beginning of a generated Jira comment. It's a smaller,
 // simpler, and more efficient regex, to quickly filter only generated comments and retrieve
 // just their GitHub ID for matching.
 var jCommentIDRegex = regexp.MustCompile(`^Comment \[\(ID (\d+)\)\|`)
@@ -71,10 +71,10 @@ func Compare(
 
 	var jComments []*gojira.Comment
 	if jIssue.Fields.Comments == nil {
-		log.Debugf("JIRA issue %s has no comments.", jIssue.Key)
+		log.Debugf("Jira issue %s has no comments.", jIssue.Key)
 	} else {
 		jComments = jIssue.Fields.Comments.Comments
-		log.Debugf("JIRA issue %s has %d comments", jIssue.Key, len(jComments))
+		log.Debugf("Jira issue %s has %d comments", jIssue.Key, len(jComments))
 	}
 
 	for _, ghComment := range ghComments {
@@ -112,15 +112,15 @@ func Compare(
 			return fmt.Errorf("creating Jira comment: %w", err)
 		}
 
-		log.Debugf("Created JIRA comment %s.", comment.ID)
+		log.Debugf("Created Jira comment %s.", comment.ID)
 	}
 
-	log.Debugf("Copied comments from GH issue #%d to JIRA issue %s.", *ghIssue.Number, jIssue.Key)
+	log.Debugf("Copied comments from GH issue #%d to Jira issue %s.", *ghIssue.Number, jIssue.Key)
 	return nil
 }
 
 // UpdateComment compares the body of a GitHub comment with the body (minus header)
-// of the JIRA comment, and updates the JIRA comment if necessary.
+// of the Jira comment, and updates the Jira comment if necessary.
 func UpdateComment(
 	cfg *config.Config,
 	ghComment *gogh.IssueComment,
@@ -142,7 +142,7 @@ func UpdateComment(
 		return fmt.Errorf("updating Jira comment: %w", err)
 	}
 
-	log.Debugf("Updated JIRA comment %s", comment.ID)
+	log.Debugf("Updated Jira comment %s", comment.ID)
 
 	return nil
 }
