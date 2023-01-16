@@ -96,7 +96,7 @@ func init() {
 	RootCmd.PersistentFlags().StringVar(
 		&opts.ConfigFile,
 		options.ConfigKeyConfigFile,
-		options.DefaultConfigFile,
+		"",
 		"viper config file location",
 	)
 

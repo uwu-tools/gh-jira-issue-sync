@@ -70,12 +70,12 @@ const (
 	//
 	// DefaultLogLevel is the level logrus should default to if the configured
 	// option can't be parsed.
-	DefaultLogLevel   = logrus.InfoLevel
-	DefaultConfigFile = "$HOME/.issue-sync.json"
-	DefaultSince      = "1970-01-01T00:00:00+0000"
-	DefaultDryRun     = false
-	DefaultPeriod     = time.Hour
-	DefaultTimeout    = 30 * time.Second
+	DefaultLogLevel       = logrus.InfoLevel
+	DefaultConfigFileName = ".issue-sync.json"
+	DefaultSince          = "1970-01-01T00:00:00+0000"
+	DefaultDryRun         = false
+	DefaultPeriod         = time.Hour
+	DefaultTimeout        = 30 * time.Second
 )
 
 var DefaultLogLevelStr = DefaultLogLevel.String()
