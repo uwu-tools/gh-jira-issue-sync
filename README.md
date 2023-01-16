@@ -110,7 +110,7 @@ in a number of nanoseconds.
 ### Configuration File
 
 By default, gh-jira-issue-sync looks for the configuration file at
-`$HOME/.issue-sync.json`. To override this location, use the `--config`
+`$PWD/.issue-sync.json`. To override this location, use the `--config`
 option on the command line.
 
 If both a configuration file and command line arguments are provided,
@@ -118,7 +118,7 @@ the command line arguments override the configuration file.
 
 After a successful run, the current configuration, with command line
 arguments overwritten, is saved to the configuration file (either the
-one provided, or `$HOME/.issue-sync.json`); the "since" date is updated
+one provided, or `$PWD/.issue-sync.json`); the "since" date is updated
 to the current date when the tool is run, as well.
 
 ### Authentication

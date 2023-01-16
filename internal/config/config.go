@@ -24,6 +24,7 @@ import (
 	"io"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strings"
 	"syscall"
 	"time"
@@ -74,7 +75,7 @@ type fields struct {
 //
 //nolint:govet
 type Config struct {
-	// cmdFile is the file Viper is using for its configuration (default $HOME/.issue-sync.json).
+	// cmdFile is the file Viper is using for its configuration.
 	cmdFile string
 
 	// cmdConfig is the Viper configuration object created from the command line and config file.
@@ -104,12 +105,33 @@ type Config struct {
 func New(ctx context.Context, cmd *cobra.Command) (*Config, error) {
 	var cfg Config
 
-	var err error
-	cfg.cmdFile, err = cmd.Flags().GetString(options.ConfigKeyConfigFile)
+	cfgFilePath, err := cmd.Flags().GetString(options.ConfigKeyConfigFile)
 	if err != nil {
-		cfg.cmdFile = ""
+		return nil, fmt.Errorf("getting config file: %w", err)
 	}
 
+	if cfgFilePath == "" {
+		log.Debug("config file path was not set, falling back to default")
+
+		cfgFileDir, err := os.Getwd()
+		if err != nil {
+			return nil, fmt.Errorf("getting working directory: %w", err)
+		}
+
+		cfgFilePath = filepath.Join(cfgFileDir, options.DefaultConfigFileName)
+	}
+
+	_, err = os.Stat(cfgFilePath)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"checking if config file (%s) exists: %w",
+			cfgFilePath,
+			err,
+		)
+	}
+
+	log.Debugf("using config file: %s", cfgFilePath)
+	cfg.cmdFile = cfgFilePath
 	cfg.cmdConfig = *newViper(options.AppName, cfg.cmdFile)
 	cfg.cmdConfig.BindPFlags(cmd.Flags()) //nolint:errcheck
 
