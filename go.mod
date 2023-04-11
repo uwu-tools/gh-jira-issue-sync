@@ -12,8 +12,8 @@ require (
 	github.com/spf13/cobra v1.6.1
 	github.com/spf13/viper v1.15.0
 	github.com/trivago/tgo v1.0.7
-	golang.org/x/oauth2 v0.6.0
-	golang.org/x/term v0.6.0
+	golang.org/x/oauth2 v0.7.0
+	golang.org/x/term v0.7.0
 	sigs.k8s.io/release-sdk v0.9.8-0.20230104002921-c885fdbbb791
 	sigs.k8s.io/release-utils v0.7.3
 )
@@ -52,9 +52,9 @@ require (
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	golang.org/x/crypto v0.3.0 // indirect
 	golang.org/x/mod v0.8.0 // indirect
-	golang.org/x/net v0.8.0 // indirect
-	golang.org/x/sys v0.6.0 // indirect
-	golang.org/x/text v0.8.0 // indirect
+	golang.org/x/net v0.9.0 // indirect
+	golang.org/x/sys v0.7.0 // indirect
+	golang.org/x/text v0.9.0 // indirect
 	golang.org/x/tools v0.6.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
