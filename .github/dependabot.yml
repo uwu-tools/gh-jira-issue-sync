@@ -9,10 +9,26 @@ updates:
   directory: "/"
   schedule:
     interval: "weekly"
+    groups:
+      golang-x:
+        patterns:
+          - "golang.org/x/*"
+      k8s-sigs:
+        patterns:
+          - "sigs.k8s.io/*"
+      spf13:
+        patterns:
+          - "github.com/spf13/cobra"
+          - "github.com/spf13/viper"
 - package-ecosystem: "github-actions"
   directory: "/"
   schedule:
     interval: "weekly"
+    groups:
+      github:
+        patterns:
+          - "actions/*"
+          - "github/*"
 - package-ecosystem: "docker"
   directory: /
   schedule:
