@@ -23,9 +23,9 @@ import (
 	"regexp"
 	"strings"
 
-	jira "github.com/andygrunwald/go-jira/v2/cloud"
 	gogh "github.com/google/go-github/v48/github"
 	log "github.com/sirupsen/logrus"
+	jira "github.com/uwu-tools/go-jira/v2/cloud"
 
 	"github.com/uwu-tools/gh-jira-issue-sync/internal/config"
 	"github.com/uwu-tools/gh-jira-issue-sync/internal/github"
