@@ -20,9 +20,9 @@ import (
 	"fmt"
 	"time"
 
-	jira "github.com/andygrunwald/go-jira/v2/cloud"
 	"github.com/cenkalti/backoff/v4"
 	log "github.com/sirupsen/logrus"
+	jira "github.com/uwu-tools/go-jira/v2/cloud"
 )
 
 const retryBackoffRoundRatio = time.Millisecond / time.Nanosecond

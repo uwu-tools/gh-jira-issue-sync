@@ -29,12 +29,12 @@ import (
 	"syscall"
 	"time"
 
-	jira "github.com/andygrunwald/go-jira/v2/cloud"
 	"github.com/dghubble/oauth1"
 	"github.com/fsnotify/fsnotify"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	jira "github.com/uwu-tools/go-jira/v2/cloud"
 	"golang.org/x/term"
 
 	"github.com/uwu-tools/gh-jira-issue-sync/internal/github"
