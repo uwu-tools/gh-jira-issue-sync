@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/andygrunwald/go-jira/v2 v2.0.0-20221123211055-094697715517
-	github.com/cenkalti/backoff/v4 v4.2.0
+	github.com/cenkalti/backoff/v4 v4.2.1
 	github.com/dghubble/oauth1 v0.7.2
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/google/go-github/v48 v48.2.0
