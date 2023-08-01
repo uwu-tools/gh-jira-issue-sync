@@ -1,6 +1,6 @@
 module github.com/uwu-tools/gh-jira-issue-sync
 
-go 1.19
+go 1.20
 
 require (
 	github.com/andygrunwald/go-jira/v2 v2.0.0-20221123211055-094697715517
