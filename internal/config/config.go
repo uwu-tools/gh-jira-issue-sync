@@ -172,7 +172,7 @@ func (c *Config) LoadJiraConfig(client *jira.Client) error {
 	}
 	c.project = proj
 
-	err = c.getComponents(proj)
+	c.components, err = c.getComponents(proj)
 	if err != nil {
 		return err
 	}
@@ -535,7 +535,9 @@ func (c *Config) getFieldIDs(client *jira.Client) (*fields, error) {
 
 // getComponents resolves every component set in config against
 // Jira project, and saves these components used by issue-sync.
-func (c *Config) getComponents(proj *jira.Project) error {
+func (c *Config) getComponents(proj *jira.Project) ([]*jira.Component, error) {
+	var returnComponents []*jira.Component
+
 	componentsStr := c.cmdConfig.GetString(options.ConfigKeyJiraComponents)
 	if componentsStr != "" {
 		components := strings.Split(componentsStr, ",")
@@ -548,24 +550,23 @@ func (c *Config) getComponents(proj *jira.Project) error {
 				projComponent := &proj.Components[j]
 
 				if projComponent.Name == *configComponent {
+					found = true
 					foundComponent := jira.Component{
 						Name: projComponent.Name,
 						ID:   projComponent.ID,
 					}
 
-					c.components = append(c.components, &foundComponent)
-
-					found = true
+					returnComponents = append(returnComponents, &foundComponent)
 				}
 			}
 
 			if !found {
 				log.Errorf("The Jira project does not have such component defined: %s", *configComponent)
-				return ReadingJiraComponentError(*configComponent)
+				return nil, ReadingJiraComponentError(*configComponent)
 			}
 		}
 	}
-	return nil
+	return returnComponents, nil
 }
 
 // Errors
