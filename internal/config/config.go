@@ -272,18 +272,20 @@ func (c *Config) SetJiraToken(token *oauth1.Token) {
 
 // configFile is a serializable representation of the current Viper configuration.
 type configFile struct {
-	LogLevel    string        `json:"log-level" mapstructure:"log-level"`
-	GithubToken string        `json:"github-token" mapstructure:"github-token"`
-	JiraUser    string        `json:"jira-user" mapstructure:"jira-user"`
-	JiraToken   string        `json:"jira-token" mapstructure:"jira-token"`
-	JiraSecret  string        `json:"jira-secret" mapstructure:"jira-secret"`
-	JiraKey     string        `json:"jira-private-key-path" mapstructure:"jira-private-key-path"`
-	JiraCKey    string        `json:"jira-consumer-key" mapstructure:"jira-consumer-key"`
-	RepoName    string        `json:"repo-name" mapstructure:"repo-name"`
-	JiraURI     string        `json:"jira-uri" mapstructure:"jira-uri"`
-	JiraProject string        `json:"jira-project" mapstructure:"jira-project"`
-	Since       string        `json:"since" mapstructure:"since"`
-	Timeout     time.Duration `json:"timeout" mapstructure:"timeout"`
+	LogLevel    string        `json:"log-level,omitempty" mapstructure:"log-level"`
+	DryRun      bool          `json:"dry-run,omitempty" mapstructure:"dry-run"`
+	GithubToken string        `json:"github-token,omitempty" mapstructure:"github-token"`
+	JiraUser    string        `json:"jira-user,omitempty" mapstructure:"jira-user"`
+	JiraPass    string        `json:"jira-pass,omitempty" mapstructure:"jira-pass"`
+	JiraToken   string        `json:"jira-token,omitempty" mapstructure:"jira-token"`
+	JiraSecret  string        `json:"jira-secret,omitempty" mapstructure:"jira-secret"`
+	JiraKey     string        `json:"jira-private-key-path,omitempty" mapstructure:"jira-private-key-path"`
+	JiraCKey    string        `json:"jira-consumer-key,omitempty" mapstructure:"jira-consumer-key"`
+	RepoName    string        `json:"repo-name,omitempty" mapstructure:"repo-name"`
+	JiraURI     string        `json:"jira-uri,omitempty" mapstructure:"jira-uri"`
+	JiraProject string        `json:"jira-project,omitempty" mapstructure:"jira-project"`
+	Since       string        `json:"since,omitempty" mapstructure:"since"`
+	Timeout     time.Duration `json:"timeout,omitempty" mapstructure:"timeout"`
 }
 
 // SaveConfig updates the `since` parameter to now, then saves the configuration file.

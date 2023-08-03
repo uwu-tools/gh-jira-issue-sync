@@ -57,6 +57,7 @@ Configuration arguments are as follows:
 | Name | Value Type | Example Value | Required | Default |
 | --- | --- | --- | --- | --- |
 | log-level | string | "warn" | false | "info" |
+| dry-run | bool | false | false | false |
 | github-token | string | | true | null |
 | jira-user | string | "user@jira.example.com" | false | null |
 | jira-pass | string | | false | null |
@@ -74,6 +75,8 @@ Configuration arguments are as follows:
 
 `log-level` is the minimum level which will be logged; any output below
 this value will be discarded.
+
+`dry-run` is for experimenting with the tool, if set to `true`, no changes will be executed in Jira
 
 `github-token` is a personal access token used to access GitHub as a
 specific user.
