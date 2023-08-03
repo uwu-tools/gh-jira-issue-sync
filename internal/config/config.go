@@ -174,7 +174,9 @@ func (c *Config) LoadJiraConfig(client *jira.Client) error {
 
 	component := c.cmdConfig.GetString(options.ConfigKeyJiraComponent)
 	if component != "" {
-		for _, projComponent := range proj.Components {
+		for i := range proj.Components {
+			projComponent := &proj.Components[i]
+
 			if projComponent.Name == component {
 				c.components = []*jira.Component{{
 					Name: projComponent.Name,
