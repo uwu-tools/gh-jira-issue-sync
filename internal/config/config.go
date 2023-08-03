@@ -185,7 +185,7 @@ func (c *Config) LoadJiraConfig(client *jira.Client) error {
 
 		if c.components == nil {
 			log.Errorf("Error occurred trying to get component from config. The Jira project does not have such component defined: %s", component)
-			return fmt.Errorf("reading Jira component: %s", component)
+			return ReadingJiraComponentError(component)
 		}
 	}
 
@@ -566,4 +566,10 @@ var (
 
 func errCustomFieldIDNotFound(field string) error {
 	return fmt.Errorf("could not find ID custom field '%s'; check that it is named correctly", field) //nolint:goerr113
+}
+
+type ReadingJiraComponentError string
+
+func (r ReadingJiraComponentError) Error() string {
+	return fmt.Sprintf("reading Jira component: %s", string(r))
 }
