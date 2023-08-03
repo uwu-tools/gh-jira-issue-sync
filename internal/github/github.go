@@ -22,7 +22,7 @@ import (
 	"strings"
 	"time"
 
-	gogh "github.com/google/go-github/v48/github"
+	gogh "github.com/google/go-github/v53/github"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
 	"sigs.k8s.io/release-sdk/github"
