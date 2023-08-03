@@ -65,6 +65,7 @@ const (
 	ConfigKeyJiraSecret         = "jira-secret"
 	ConfigKeyJiraConsumerKey    = "jira-consumer-key"
 	ConfigKeyJiraPrivateKeyPath = "jira-private-key-path"
+	ConfigKeyJiraComponent      = "jira-component"
 
 	// Default values
 	//

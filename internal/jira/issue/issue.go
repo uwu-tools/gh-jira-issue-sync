@@ -250,17 +250,15 @@ func CreateIssue(cfg *config.Config, issue *gogh.Issue, ghClient github.Client, 
 
 	unknowns.Set(cfg.GetFieldKey(config.GitHubLastSync), time.Now().Format(dateFormat))
 
-	project := *cfg.GetProject()
-
 	fields := &gojira.IssueFields{
 		Type: gojira.IssueType{
 			Name: "Task", // TODO: Determine issue type
 		},
-		Project:     project,
+		Project:     *cfg.GetProject(),
 		Summary:     issue.GetTitle(),
 		Description: issue.GetBody(),
 		Unknowns:    unknowns,
-		Components:  []*gojira.Component{{ID: project.Components[0].ID, Name: project.Components[0].Name}},
+		Components:  cfg.GetJiraComponent(),
 	}
 
 	jIssue := &gojira.Issue{

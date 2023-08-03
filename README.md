@@ -68,6 +68,7 @@ Configuration arguments are as follows:
 | repo-name | string | "uwu-tools/gh-jira-issue-sync" | true | null |
 | jira-uri | string | "https://jira.example.com" | true | null |
 | jira-project | string | "SYNC" | true | null |
+| jira-component | string | "Core" | false | null |
 | since | string | "2017-07-01T13:45:00-0800" | false | "1970-01-01T00:00:00+0000" |
 | timeout | duration | 500ms | false | 1m |
 
@@ -101,6 +102,9 @@ lives at a non-root URL, the path must be included. For example,
 
 `jira-project` is the key (not the name) of the project in Jira to
 which the issues will be synchronized.
+
+`jira-component` is the name of the component in Jira that
+will be added to the issues when synchronized. Not required. Used, when has value. When value is invalid (component not found on the project), the tool returns with error.
 
 `since` is the cutoff date issue-sync will use when searching for issues
 to synchronize. If an issue was last updated before this time, it will
