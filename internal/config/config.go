@@ -186,7 +186,7 @@ func (c *Config) LoadJiraConfig(client *jira.Client) error {
 		}
 
 		if c.components == nil {
-			log.Errorf("Error occurred trying to get component from config. The Jira project does not have such component defined: %s", component)
+			log.Errorf("The Jira project does not have such component defined: %s", component)
 			return ReadingJiraComponentError(component)
 		}
 	}
