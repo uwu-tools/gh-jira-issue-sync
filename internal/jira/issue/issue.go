@@ -21,7 +21,7 @@ import (
 	"strings"
 	"time"
 
-	gogh "github.com/google/go-github/v48/github"
+	gogh "github.com/google/go-github/v53/github"
 	log "github.com/sirupsen/logrus"
 	"github.com/trivago/tgo/tcontainer"
 	gojira "github.com/uwu-tools/go-jira/v2/cloud"
