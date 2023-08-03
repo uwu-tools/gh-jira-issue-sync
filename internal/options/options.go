@@ -23,14 +23,15 @@ import (
 )
 
 type Options struct {
-	LogLevel     string
-	ConfigFile   string
-	GitHubToken  string
-	JiraUser     string
-	JiraPassword string
-	RepoName     string
-	JiraURI      string
-	JiraProject  string
+	LogLevel       string
+	ConfigFile     string
+	GitHubToken    string
+	JiraUser       string
+	JiraPassword   string
+	RepoName       string
+	JiraURI        string
+	JiraProject    string
+	JiraComponents string
 	// TODO(options): Should this be a time type?
 	Since   string
 	Confirm bool
@@ -65,7 +66,7 @@ const (
 	ConfigKeyJiraSecret         = "jira-secret"
 	ConfigKeyJiraConsumerKey    = "jira-consumer-key"
 	ConfigKeyJiraPrivateKeyPath = "jira-private-key-path"
-	ConfigKeyJiraComponent      = "jira-component"
+	ConfigKeyJiraComponents     = "jira-components"
 
 	// Default values
 	//

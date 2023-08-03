@@ -103,8 +103,10 @@ lives at a non-root URL, the path must be included. For example,
 `jira-project` is the key (not the name) of the project in Jira to
 which the issues will be synchronized.
 
-`jira-component` is the name of the component in Jira that
-will be added to the issues when synchronized. Not required. Used, when has value. When value is invalid (component not found on the project), the tool returns with error.
+`jira-components` is the coma-separated names of the components in Jira 
+that will be added to the issues when synchronized. If a component 
+not found on the project or the set value is otherwise invalid, 
+an error will return. (optional)
 
 `since` is the cutoff date issue-sync will use when searching for issues
 to synchronize. If an issue was last updated before this time, it will

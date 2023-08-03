@@ -94,9 +94,9 @@ type Config struct {
 	// project represents the Jira project the user has requested.
 	project *jira.Project
 
-	// component represents the Jira component the user would like use for the sync.
-	// Comes from the value of the `jira-component` configuration parameter.
-	// Items in Jira will have the component set to this value.
+	// components represents the Jira components the user would like use for the sync.
+	// Comes from the value of the `jira-components` configuration parameter.
+	// Items in Jira will have the components field set to these values.
 	components []*jira.Component
 
 	// since is the parsed value of the `since` configuration parameter, which is the earliest that
@@ -172,23 +172,9 @@ func (c *Config) LoadJiraConfig(client *jira.Client) error {
 	}
 	c.project = proj
 
-	component := c.cmdConfig.GetString(options.ConfigKeyJiraComponent)
-	if component != "" {
-		for i := range proj.Components {
-			projComponent := &proj.Components[i]
-
-			if projComponent.Name == component {
-				c.components = []*jira.Component{{
-					Name: projComponent.Name,
-					ID:   projComponent.ID,
-				}}
-			}
-		}
-
-		if c.components == nil {
-			log.Errorf("The Jira project does not have such component defined: %s", component)
-			return ReadingJiraComponentError(component)
-		}
+	err = c.getComponents(proj)
+	if err != nil {
+		return err
 	}
 
 	c.fieldIDs, err = c.getFieldIDs(client)
@@ -288,7 +274,7 @@ func (c *Config) GetRepo() (string, string) {
 }
 
 // GetJiraComponent returns the Jira component the user has configured.
-func (c *Config) GetJiraComponent() []*jira.Component {
+func (c *Config) GetJiraComponents() []*jira.Component {
 	return c.components
 }
 
@@ -547,6 +533,41 @@ func (c *Config) getFieldIDs(client *jira.Client) (*fields, error) {
 	return &fieldIDs, nil
 }
 
+// getComponents resolves every component set in config against
+// Jira project, and saves these components used by issue-sync.
+func (c *Config) getComponents(proj *jira.Project) error {
+	componentsStr := c.cmdConfig.GetString(options.ConfigKeyJiraComponents)
+	if componentsStr != "" {
+		components := strings.Split(componentsStr, ",")
+
+		for i := range components {
+			configComponent := &components[i]
+			found := false
+
+			for j := range proj.Components {
+				projComponent := &proj.Components[j]
+
+				if projComponent.Name == *configComponent {
+					foundComponent := jira.Component{
+						Name: projComponent.Name,
+						ID:   projComponent.ID,
+					}
+
+					c.components = append(c.components, &foundComponent)
+
+					found = true
+				}
+			}
+
+			if !found {
+				log.Errorf("The Jira project does not have such component defined: %s", *configComponent)
+				return ReadingJiraComponentError(*configComponent)
+			}
+		}
+	}
+	return nil
+}
+
 // Errors
 
 var (
@@ -573,5 +594,5 @@ func errCustomFieldIDNotFound(field string) error {
 type ReadingJiraComponentError string
 
 func (r ReadingJiraComponentError) Error() string {
-	return fmt.Sprintf("reading Jira component: %s", string(r))
+	return fmt.Sprintf("could not find Jira component: %s; check that it is named correctly", string(r))
 }

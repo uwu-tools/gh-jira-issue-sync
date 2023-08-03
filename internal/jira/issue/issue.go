@@ -258,7 +258,7 @@ func CreateIssue(cfg *config.Config, issue *gogh.Issue, ghClient github.Client, 
 		Summary:     issue.GetTitle(),
 		Description: issue.GetBody(),
 		Unknowns:    unknowns,
-		Components:  cfg.GetJiraComponent(),
+		Components:  cfg.GetJiraComponents(),
 	}
 
 	jIssue := &gojira.Issue{
