@@ -68,7 +68,7 @@ Configuration arguments are as follows:
 | repo-name | string | "uwu-tools/gh-jira-issue-sync" | true | null |
 | jira-uri | string | "https://jira.example.com" | true | null |
 | jira-project | string | "SYNC" | true | null |
-| jira-component | string | "Core,Payment" | false | null |
+| jira-components | string | "Core,Payment" | false | null |
 | since | string | "2017-07-01T13:45:00-0800" | false | "1970-01-01T00:00:00+0000" |
 | timeout | duration | 500ms | false | 1m |
 
