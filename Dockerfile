@@ -1,13 +1,14 @@
-FROM cgr.dev/chainguard/go:1.20
+FROM cgr.dev/chainguard/go:1.20@sha256:a50b9f354ad5a645e15b2bf97ac1153e650e7a0eec46cb014875019db1081a4d as build
 
-WORKDIR /opt/gh-jira-issue-sync
+COPY . . 
+RUN CGO_ENABLED=0 go build .
 
-RUN apk update --no-cache && apk add ca-certificates
+FROM cgr.dev/chainguard/static
 
-COPY bin/gh-jira-issue-sync /opt/gh-jira-issue-sync/gh-jira-issue-sync
+COPY --from=build gh-jira-issue-sync /bin/gh-jira-issue-sync
 
-COPY config.json /opt/gh-jira-issue-sync/config.json
+COPY config.json /etc/config.json
 
-ENTRYPOINT ["./gh-jira-issue-sync"]
+ENTRYPOINT ["/bin/gh-jira-issue-sync"]
 
-CMD ["--config", "config.json"]
+CMD ["--config", "/etc/config.json"]
