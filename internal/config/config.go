@@ -201,9 +201,9 @@ func (c *Config) GetSinceParam() time.Time {
 	return c.since
 }
 
-// IsDryRun returns whether the application is running in dry-run mode or not.
+// IsDryRun returns whether the application is running in confirmed mode or not.
 func (c *Config) IsDryRun() bool {
-	return c.cmdConfig.GetBool(options.ConfigKeyDryRun)
+	return !c.cmdConfig.GetBool(options.ConfigKeyConfirm)
 }
 
 // IsDaemon returns whether the application is running as a daemon.
@@ -273,7 +273,6 @@ func (c *Config) SetJiraToken(token *oauth1.Token) {
 // configFile is a serializable representation of the current Viper configuration.
 type configFile struct {
 	LogLevel    string        `json:"log-level,omitempty" mapstructure:"log-level"`
-	DryRun      bool          `json:"dry-run,omitempty" mapstructure:"dry-run"`
 	GithubToken string        `json:"github-token,omitempty" mapstructure:"github-token"`
 	JiraUser    string        `json:"jira-user,omitempty" mapstructure:"jira-user"`
 	JiraPass    string        `json:"jira-pass,omitempty" mapstructure:"jira-pass"`
@@ -285,6 +284,7 @@ type configFile struct {
 	JiraURI     string        `json:"jira-uri,omitempty" mapstructure:"jira-uri"`
 	JiraProject string        `json:"jira-project,omitempty" mapstructure:"jira-project"`
 	Since       string        `json:"since,omitempty" mapstructure:"since"`
+	Confirm     bool          `json:"confirm,omitempty" mapstructure:"confirm"`
 	Timeout     time.Duration `json:"timeout,omitempty" mapstructure:"timeout"`
 }
 

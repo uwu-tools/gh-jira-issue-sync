@@ -157,11 +157,11 @@ func init() {
 	)
 
 	RootCmd.PersistentFlags().BoolVarP(
-		&opts.DryRun,
-		options.ConfigKeyDryRun,
-		"d",
-		options.DefaultDryRun,
-		"print out actions to be taken, but do not execute them",
+		&opts.Confirm,
+		options.ConfigKeyConfirm,
+		"c",
+		options.DefaultConfirm,
+		"if set to true, all actions will be executed, otherwise they are just printed out (dry run)",
 	)
 
 	RootCmd.PersistentFlags().DurationVarP(

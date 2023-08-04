@@ -33,7 +33,7 @@ type Options struct {
 	JiraProject  string
 	// TODO(options): Should this be a time type?
 	Since   string
-	DryRun  bool
+	Confirm bool
 	Timeout time.Duration
 	Period  time.Duration
 }
@@ -48,7 +48,7 @@ const (
 	ConfigKeyLogLevel   = "log-level"
 	ConfigKeyConfigFile = "config"
 	ConfigKeySince      = "since"
-	ConfigKeyDryRun     = "dry-run"
+	ConfigKeyConfirm    = "confirm"
 	ConfigKeyPeriod     = "period"
 	ConfigKeyTimeout    = "timeout"
 
@@ -73,7 +73,7 @@ const (
 	DefaultLogLevel       = logrus.InfoLevel
 	DefaultConfigFileName = ".issue-sync.json"
 	DefaultSince          = "1970-01-01T00:00:00+0000"
-	DefaultDryRun         = false
+	DefaultConfirm        = false
 	DefaultPeriod         = time.Hour
 	DefaultTimeout        = 30 * time.Second
 )
