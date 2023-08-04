@@ -1,8 +1,6 @@
-FROM cgr.dev/chainguard/go:1.20
+FROM cgr.dev/chainguard/static:latest-glibc
 
 WORKDIR /opt/gh-jira-issue-sync
-
-RUN apk update --no-cache && apk add ca-certificates
 
 COPY bin/gh-jira-issue-sync /opt/gh-jira-issue-sync/gh-jira-issue-sync
 
