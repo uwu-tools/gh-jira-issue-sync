@@ -298,7 +298,7 @@ type configFile struct {
 	RepoName      string        `json:"repo-name,omitempty" mapstructure:"repo-name"`
 	JiraURI       string        `json:"jira-uri,omitempty" mapstructure:"jira-uri"`
 	JiraProject   string        `json:"jira-project,omitempty" mapstructure:"jira-project"`
-	JiraComponent string        `json:"jira-component" mapstructure:"jira-component"`
+	JiraComponent string        `json:"jira-component,omitempty" mapstructure:"jira-component"`
 	Since         string        `json:"since,omitempty" mapstructure:"since"`
 	Confirm       bool          `json:"confirm,omitempty" mapstructure:"confirm"`
 	Timeout       time.Duration `json:"timeout,omitempty" mapstructure:"timeout"`
