@@ -539,33 +539,37 @@ func (c *Config) getComponents(proj *jira.Project) ([]*jira.Component, error) {
 	var returnComponents []*jira.Component
 
 	componentsStr := c.cmdConfig.GetString(options.ConfigKeyJiraComponents)
-	if componentsStr != "" {
-		components := strings.Split(componentsStr, ",")
 
-		for i := range components {
-			configComponent := &components[i]
-			found := false
+	if componentsStr == "" {
+		return returnComponents, nil
+	}
 
-			for j := range proj.Components {
-				projComponent := &proj.Components[j]
+	components := strings.Split(componentsStr, ",")
 
-				if projComponent.Name == *configComponent {
-					found = true
-					foundComponent := jira.Component{
-						Name: projComponent.Name,
-						ID:   projComponent.ID,
-					}
+	for i := range components {
+		configComponent := &components[i]
+		found := false
 
-					returnComponents = append(returnComponents, &foundComponent)
+		for j := range proj.Components {
+			projComponent := &proj.Components[j]
+
+			if projComponent.Name == *configComponent {
+				found = true
+				foundComponent := jira.Component{
+					Name: projComponent.Name,
+					ID:   projComponent.ID,
 				}
-			}
 
-			if !found {
-				log.Errorf("The Jira project does not have such component defined: %s", *configComponent)
-				return nil, ReadingJiraComponentError(*configComponent)
+				returnComponents = append(returnComponents, &foundComponent)
 			}
 		}
+
+		if !found {
+			log.Errorf("The Jira project does not have such component defined: %s", *configComponent)
+			return nil, ReadingJiraComponentError(*configComponent)
+		}
 	}
+
 	return returnComponents, nil
 }
 
