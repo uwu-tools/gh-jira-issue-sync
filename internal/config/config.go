@@ -273,7 +273,7 @@ func (c *Config) GetRepo() (string, string) {
 	return github.GetRepo(repoPath)
 }
 
-// GetJiraComponent returns the Jira component the user has configured.
+// GetJiraComponents returns the Jira component the user has configured.
 func (c *Config) GetJiraComponents() []*jira.Component {
 	return c.components
 }
@@ -287,21 +287,21 @@ func (c *Config) SetJiraToken(token *oauth1.Token) {
 
 // configFile is a serializable representation of the current Viper configuration.
 type configFile struct {
-	LogLevel      string        `json:"log-level,omitempty" mapstructure:"log-level"`
-	GithubToken   string        `json:"github-token,omitempty" mapstructure:"github-token"`
-	JiraUser      string        `json:"jira-user,omitempty" mapstructure:"jira-user"`
-	JiraPass      string        `json:"jira-pass,omitempty" mapstructure:"jira-pass"`
-	JiraToken     string        `json:"jira-token,omitempty" mapstructure:"jira-token"`
-	JiraSecret    string        `json:"jira-secret,omitempty" mapstructure:"jira-secret"`
-	JiraKey       string        `json:"jira-private-key-path,omitempty" mapstructure:"jira-private-key-path"`
-	JiraCKey      string        `json:"jira-consumer-key,omitempty" mapstructure:"jira-consumer-key"`
-	RepoName      string        `json:"repo-name,omitempty" mapstructure:"repo-name"`
-	JiraURI       string        `json:"jira-uri,omitempty" mapstructure:"jira-uri"`
-	JiraProject   string        `json:"jira-project,omitempty" mapstructure:"jira-project"`
-	JiraComponent string        `json:"jira-component,omitempty" mapstructure:"jira-component"`
-	Since         string        `json:"since,omitempty" mapstructure:"since"`
-	Confirm       bool          `json:"confirm,omitempty" mapstructure:"confirm"`
-	Timeout       time.Duration `json:"timeout,omitempty" mapstructure:"timeout"`
+	LogLevel       string        `json:"log-level,omitempty" mapstructure:"log-level"`
+	GithubToken    string        `json:"github-token,omitempty" mapstructure:"github-token"`
+	JiraUser       string        `json:"jira-user,omitempty" mapstructure:"jira-user"`
+	JiraPass       string        `json:"jira-pass,omitempty" mapstructure:"jira-pass"`
+	JiraToken      string        `json:"jira-token,omitempty" mapstructure:"jira-token"`
+	JiraSecret     string        `json:"jira-secret,omitempty" mapstructure:"jira-secret"`
+	JiraKey        string        `json:"jira-private-key-path,omitempty" mapstructure:"jira-private-key-path"`
+	JiraCKey       string        `json:"jira-consumer-key,omitempty" mapstructure:"jira-consumer-key"`
+	RepoName       string        `json:"repo-name,omitempty" mapstructure:"repo-name"`
+	JiraURI        string        `json:"jira-uri,omitempty" mapstructure:"jira-uri"`
+	JiraProject    string        `json:"jira-project,omitempty" mapstructure:"jira-project"`
+	JiraComponents string        `json:"jira-components,omitempty" mapstructure:"jira-components"`
+	Since          string        `json:"since,omitempty" mapstructure:"since"`
+	Confirm        bool          `json:"confirm,omitempty" mapstructure:"confirm"`
+	Timeout        time.Duration `json:"timeout,omitempty" mapstructure:"timeout"`
 }
 
 // SaveConfig updates the `since` parameter to now, then saves the configuration file.
