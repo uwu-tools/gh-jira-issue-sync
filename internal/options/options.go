@@ -23,21 +23,20 @@ import (
 )
 
 type Options struct {
-	LogLevel     string
-	ConfigFile   string
-	GitHubToken  string
-	JiraUser     string
-	JiraPassword string
-	RepoName     string
-	JiraURI      string
-	JiraProject  string
+	LogLevel       string
+	ConfigFile     string
+	GitHubToken    string
+	JiraUser       string
+	JiraPassword   string
+	RepoName       string
+	JiraURI        string
+	JiraProject    string
+	JiraComponents string
 	// TODO(options): Should this be a time type?
 	Since   string
 	Confirm bool
 	Timeout time.Duration
 	Period  time.Duration
-
-	JiraComponents string
 }
 
 const (
