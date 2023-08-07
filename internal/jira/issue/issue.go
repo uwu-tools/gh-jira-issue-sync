@@ -266,6 +266,7 @@ func GetMissingComponents(cfg *config.Config, jIssue *gojira.Issue) []*gojira.Co
 			returnComponents = append(returnComponents, &configComponent)
 		}
 	}
+
 	return returnComponents
 }
 
