@@ -151,7 +151,7 @@ func init() {
 	RootCmd.PersistentFlags().StringVarP(
 		&opts.JiraComponents,
 		options.ConfigKeyJiraComponents,
-		"c",
+		"C",
 		"",
 		"set the Jira components to be used",
 	)
