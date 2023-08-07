@@ -140,6 +140,10 @@ func DidIssueChange(cfg *config.Config, ghIssue *gogh.Issue, jIssue *gojira.Issu
 		anyDifferent = true
 	}
 
+	if GetMissingComponents(cfg, jIssue) != nil {
+		anyDifferent = true
+	}
+
 	if len(ghIssue.Labels) > 0 { //nolint:nestif // TODO(lint)
 		ghLabels := githubLabelsToStrSlice(ghIssue.Labels)
 
@@ -211,6 +215,11 @@ func UpdateIssue(
 			ID:     jIssue.ID,
 		}
 
+		missingComponents := GetMissingComponents(cfg, jIssue)
+		for i := range missingComponents {
+			issue.Fields.Components = append(issue.Fields.Components, missingComponents[i])
+		}
+
 		_, err := jClient.UpdateIssue(issue)
 		if err != nil {
 			return fmt.Errorf("updating Jira issue: %w", err)
@@ -231,6 +240,33 @@ func UpdateIssue(
 	}
 
 	return nil
+}
+
+// GetMissingComponents compares configurated components with the Jira issue
+// components. Returns the components that are missing from the Jira issue.
+func GetMissingComponents(cfg *config.Config, jIssue *gojira.Issue) []*gojira.Component {
+	var returnComponents []*gojira.Component
+
+	components := cfg.GetJiraComponents()
+	for i := range components {
+		configComponent := *components[i]
+
+		found := false
+
+		for j := range jIssue.Fields.Components {
+			issueComponent := *jIssue.Fields.Components[j]
+
+			if issueComponent.Name == configComponent.Name {
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			returnComponents = append(returnComponents, &configComponent)
+		}
+	}
+	return returnComponents
 }
 
 // CreateIssue generates a Jira issue from the various fields on the given GitHub issue, then
