@@ -1,4 +1,4 @@
-FROM cgr.dev/chainguard/go:1.20@sha256:a50b9f354ad5a645e15b2bf97ac1153e650e7a0eec46cb014875019db1081a4d as build
+FROM cgr.dev/chainguard/go:1.20@sha256:8864ff1cd54f5819063ea23133a9f03d7626cec7e9fba8efa7004c71176adc48 as build
 
 COPY . . 
 RUN CGO_ENABLED=0 go build .
