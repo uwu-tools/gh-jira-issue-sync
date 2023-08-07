@@ -546,14 +546,13 @@ func (c *Config) getComponents(proj *jira.Project) ([]*jira.Component, error) {
 
 	components := strings.Split(componentsStr, ",")
 
-	for i := range components {
-		configComponent := &components[i]
+	for _, configComponent := range components {
 		found := false
 
 		for j := range proj.Components {
 			projComponent := &proj.Components[j]
 
-			if projComponent.Name == *configComponent {
+			if projComponent.Name == configComponent {
 				found = true
 				foundComponent := jira.Component{
 					Name: projComponent.Name,
@@ -565,8 +564,8 @@ func (c *Config) getComponents(proj *jira.Project) ([]*jira.Component, error) {
 		}
 
 		if !found {
-			log.Errorf("The Jira project does not have such component defined: %s", *configComponent)
-			return nil, ReadingJiraComponentError(*configComponent)
+			log.Errorf("The Jira project does not have such component defined: %s", configComponent)
+			return nil, ReadingJiraComponentError(configComponent)
 		}
 	}
 
