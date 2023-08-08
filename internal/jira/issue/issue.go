@@ -248,14 +248,10 @@ func GetMissingComponents(cfg *config.Config, jIssue *gojira.Issue) []*gojira.Co
 	var returnComponents []*gojira.Component
 
 	components := cfg.GetJiraComponents()
-	for i := range components {
-		configComponent := *components[i]
-
+	for _, configComponent := range components {
 		found := false
 
-		for j := range jIssue.Fields.Components {
-			issueComponent := *jIssue.Fields.Components[j]
-
+		for _, issueComponent := range jIssue.Fields.Components {
 			if issueComponent.Name == configComponent.Name {
 				found = true
 				break
@@ -263,7 +259,7 @@ func GetMissingComponents(cfg *config.Config, jIssue *gojira.Issue) []*gojira.Co
 		}
 
 		if !found {
-			returnComponents = append(returnComponents, &configComponent)
+			returnComponents = append(returnComponents, configComponent)
 		}
 	}
 
