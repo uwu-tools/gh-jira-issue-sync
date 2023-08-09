@@ -31,7 +31,10 @@ jobs:
         run: go build -v ./...
 
       - name: Build (via make)
-        run: make build
+        uses: magefile/mage-action@v2
+        with:
+          version: v1.14.0
+          args: build
 
   verify:
     runs-on: ubuntu-latest
@@ -57,7 +60,10 @@ jobs:
       #  run: make license-check
 
       - name: Run linter
-        run: make lint
+        uses: magefile/mage-action@v2
+        with:
+          version: v1.14.0
+          args: lint
 
   test:
     runs-on: ubuntu-latest
@@ -77,7 +83,10 @@ jobs:
           cache: true
 
       - name: Run unit tests
-        run: make test
+        uses: magefile/mage-action@v2
+        with:
+          version: v1.14.0
+          args: test
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@eaaf4bedf32dbdc6b720b63067d99c4d77d6047d
