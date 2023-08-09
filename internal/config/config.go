@@ -534,7 +534,7 @@ func (c *Config) getFieldIDs(client *jira.Client) (*fields, error) {
 }
 
 // getComponents resolves every component set in config against
-// Jira project, and saves these components used by issue-sync.
+// Jira project, and returns with these components used by issue-sync.
 func (c *Config) getComponents(proj *jira.Project) ([]*jira.Component, error) {
 	var returnComponents []*jira.Component
 
