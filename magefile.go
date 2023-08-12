@@ -19,54 +19,281 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
 	"github.com/magefile/mage/sh"
 	"sigs.k8s.io/release-utils/mage"
-)
 
-var (
-	proj            = "gh-jira-issue-sync"
-	orgPath         = "github.com/uwu-tools"
-	golangciVersion = "v1.50.1"
-	coverMode       = "atomic"
-	coverProfile    = "unit-coverage.out"
-	version, _      = sh.Output("./git-version")
-	repoPath        = fmt.Sprintf("%s/%s", orgPath, proj)
-	ldFlags         = fmt.Sprintf("-X %s/cmd.Version=%s", repoPath, version)
+	"github.com/uwu-tools/magex/pkg"
 )
-
-func init() {
-	os.Setenv("GO15VENDOREXPERIMENT", "1")
-	os.Setenv("CGO_ENABLED", "0")
-}
 
 // Default target to run when none is specified
 // If not set, running mage will list available targets
-// var Default = Build
+var Default = Verify
 
-// Create executable to bin/
-func Build() error {
-	return sh.RunV("go", "build", "-o", fmt.Sprintf("bin/%s", proj), "-ldflags", ldFlags, repoPath)
+const (
+	binDir     = "bin"
+	moduleName = "github.com/uwu-tools/gh-jira-issue-sync"
+	scriptDir  = "scripts"
+
+	// Versions.
+	golangciVersion = "v1.50.1"
+	minGoVersion    = "1.20"
+
+	// Environment variables.
+	envLDFLAGS      = "GHJIRA_LDFLAGS"
+	envMinGoVersion = "MIN_GO_VERSION"
+
+	// Test variables.
+	coverMode            = "atomic"
+	coverProfileFilename = "unit-coverage.out"
+)
+
+// All runs all targets for this repository
+func All() error {
+	if err := Verify(); err != nil {
+		return err
+	}
+
+	if err := Test(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
-// Remove bin
-func Clean() error {
-	return sh.Rm("bin")
-}
-
-// Run tests
+// Test runs various test functions
 func Test() error {
-	return sh.RunV("go", "test", "-v", "-covermode", coverMode, "-coverprofile", coverProfile, "./...")
+	// TODO(mage): Upstream should support setting covermode/coverprofile.
+	return sh.RunV(
+		"go",
+		"test",
+		"-v",
+		"-covermode", coverMode,
+		"-coverprofile", coverProfileFilename,
+		"./...",
+	)
 }
 
-// Run linter
-func Lint() error {
-	return mage.RunGolangCILint(golangciVersion, true, "-v")
+// Verify runs repository verification scripts
+func Verify() error {
+	fmt.Println("Ensuring mage is available...")
+	if err := pkg.EnsureMage(""); err != nil {
+		return err
+	}
+
+	// TODO(mage): Support verifying headers.
+	/*
+		fmt.Println("Running copyright header checks...")
+		if err := mage.VerifyBoilerplate("v0.2.5", binDir, boilerplateDir, false); err != nil {
+			return err
+		}
+	*/
+
+	// TODO(mage): Support verifying external dependencies.
+	/*
+		fmt.Println("Running external dependency checks...")
+		if err := mage.VerifyDeps("v0.3.0", "", "", true); err != nil {
+			return err
+		}
+	*/
+
+	// TODO(mage): Support verifying go module.
+	// TODO(mage): Upstream should support setting minimum version.
+	/*
+		os.Setenv(envMinGoVersion, minGoVersion)
+		fmt.Println("Running go module linter...")
+		if err := mage.VerifyGoMod(scriptDir); err != nil {
+			return err
+		}
+	*/
+
+	fmt.Println("Running golangci-lint...")
+	if err := mage.RunGolangCILint(golangciVersion, false); err != nil {
+		return err
+	}
+
+	if err := Build(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
-// Run linter with auto fix enabled
-func LintFix() error {
-	return mage.RunGolangCILint(golangciVersion, true, "--fix")
+// Build runs go build
+func Build() error {
+	fmt.Println("Running go build...")
+
+	ldFlag, err := mage.GenerateLDFlags()
+	if err != nil {
+		return err
+	}
+
+	os.Setenv(envLDFLAGS, ldFlag)
+
+	if err := mage.VerifyBuild(scriptDir); err != nil {
+		return err
+	}
+
+	fmt.Println("Binaries available in the output directory.")
+	return nil
+}
+
+func BuildBinaries() error {
+	fmt.Println("Building binaries with goreleaser...")
+
+	ldFlag, err := mage.GenerateLDFlags()
+	if err != nil {
+		return err
+	}
+
+	os.Setenv(envLDFLAGS, ldFlag)
+
+	return sh.RunV(
+		"goreleaser",
+		"release",
+		"--clean",
+	)
+}
+
+func BuildBinariesSnapshot() error {
+	fmt.Println("Building binaries with goreleaser in snapshot mode...")
+
+	ldFlag, err := mage.GenerateLDFlags()
+	if err != nil {
+		return err
+	}
+
+	os.Setenv(envLDFLAGS, ldFlag)
+
+	return sh.RunV(
+		"goreleaser",
+		"release",
+		"--clean",
+		"--snapshot",
+		"--skip-sign",
+	)
+}
+
+// BuildImages build bom image using ko
+func BuildImages() error {
+	fmt.Println("Building images with ko...")
+
+	gitVersion := getVersion()
+	gitCommit := getCommit()
+	ldFlag, err := mage.GenerateLDFlags()
+	if err != nil {
+		return err
+	}
+	os.Setenv(envLDFLAGS, ldFlag)
+	os.Setenv("KOCACHE", "/tmp/ko")
+
+	if os.Getenv("KO_DOCKER_REPO") == "" {
+		return errors.New("missing KO_DOCKER_REPO environment variable")
+	}
+
+	return sh.RunV(
+		"ko",
+		"build",
+		"--bare",
+		"--platform=all",
+		"--tags", gitVersion,
+		"--tags", gitCommit,
+		moduleName,
+	)
+}
+
+// BuildImagesLocal build images locally and not push
+func BuildImagesLocal() error {
+	fmt.Println("Building image with ko for local test...")
+	if err := mage.EnsureKO(""); err != nil {
+		return err
+	}
+
+	ldFlag, err := mage.GenerateLDFlags()
+	if err != nil {
+		return err
+	}
+
+	os.Setenv(envLDFLAGS, ldFlag)
+	os.Setenv("KOCACHE", "/tmp/ko")
+
+	return sh.RunV(
+		"ko",
+		"build",
+		"--bare",
+		"--local",
+		"--platform=linux/amd64",
+		moduleName,
+	)
+}
+
+func BuildStaging() error {
+	fmt.Println("Ensuring mage is available...")
+	if err := pkg.EnsureMage(""); err != nil {
+		return err
+	}
+
+	if err := mage.EnsureKO(""); err != nil {
+		return err
+	}
+
+	if err := BuildImages(); err != nil {
+		return fmt.Errorf("building the images: %w", err)
+	}
+
+	return nil
+}
+
+func Clean() {
+	fmt.Println("Cleaning workspace...")
+	toClean := []string{"output"}
+
+	for _, clean := range toClean {
+		sh.Rm(clean)
+	}
+
+	fmt.Println("Done.")
+}
+
+// getBuildDateTime gets the build date and time
+func getBuildDateTime() string {
+	result, _ := sh.Output("git", "log", "-1", "--pretty=%ct")
+	if result != "" {
+		sourceDateEpoch := fmt.Sprintf("@%s", result)
+		date, _ := sh.Output("date", "-u", "-d", sourceDateEpoch, "+%Y-%m-%dT%H:%M:%SZ")
+		return date
+	}
+
+	date, _ := sh.Output("date", "+%Y-%m-%dT%H:%M:%SZ")
+	return date
+}
+
+// getCommit gets the hash of the current commit
+func getCommit() string {
+	commit, _ := sh.Output("git", "rev-parse", "--short", "HEAD")
+	return commit
+}
+
+// getGitState gets the state of the git repository
+func getGitState() string {
+	_, err := sh.Output("git", "diff", "--quiet")
+	if err != nil {
+		return "dirty"
+	}
+
+	return "clean"
+}
+
+// getVersion gets a description of the commit, e.g. v0.30.1 (latest) or v0.30.1-32-gfe72ff73 (canary)
+func getVersion() string {
+	version, _ := sh.Output("git", "describe", "--tags", "--match=v*")
+	if version != "" {
+		return version
+	}
+
+	// repo without any tags in it
+	return "v0.0.0"
 }

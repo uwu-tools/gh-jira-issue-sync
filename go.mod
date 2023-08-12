@@ -21,6 +21,7 @@ require (
 	github.com/spf13/viper v1.16.0
 	github.com/trivago/tgo v1.0.7
 	github.com/uwu-tools/go-jira/v2 v2.0.0-20230801175343-52f822b5cb80
+	github.com/uwu-tools/magex v0.10.0
 	golang.org/x/oauth2 v0.11.0
 	golang.org/x/term v0.11.0
 	sigs.k8s.io/release-sdk v0.10.3
@@ -69,7 +70,6 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/subosito/gotenv v1.4.2 // indirect
 	github.com/ulikunitz/xz v0.5.11 // indirect
-	github.com/uwu-tools/magex v0.10.0 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	golang.org/x/crypto v0.12.0 // indirect

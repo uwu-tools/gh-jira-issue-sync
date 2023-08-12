@@ -59,11 +59,11 @@ jobs:
       #    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       #  run: make license-check
 
-      - name: Run linter
+      - name: Run verify steps
         uses: magefile/mage-action@v2
         with:
           version: v1.14.0
-          args: lint
+          args: verify
 
   test:
     runs-on: ubuntu-latest
