@@ -25,7 +25,6 @@ PLATFORMS=(
     linux/arm64
     darwin/amd64
     darwin/arm64
-    windows/amd64
 )
 
 for PLATFORM in "${PLATFORMS[@]}"; do

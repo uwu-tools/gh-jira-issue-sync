@@ -27,10 +27,7 @@ jobs:
           check-latest: true
           cache: true
 
-      - name: Build (via go)
-        run: go build -v ./...
-
-      - name: Build (via make)
+      - name: Build
         uses: magefile/mage-action@v2
         with:
           version: v1.14.0
