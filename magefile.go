@@ -34,9 +34,12 @@ import (
 var Default = Verify
 
 const (
-	binDir     = "bin"
-	moduleName = "github.com/uwu-tools/gh-jira-issue-sync"
-	scriptDir  = "scripts"
+	binDir    = "bin"
+	scriptDir = "scripts"
+
+	// Module variables.
+	orgName  = "uwu-tools"
+	toolName = "gh-jira-issue-sync"
 
 	// Versions.
 	golangciVersion = "v1.50.1"
@@ -49,6 +52,20 @@ const (
 	// Test variables.
 	coverMode            = "atomic"
 	coverProfileFilename = "unit-coverage.out"
+)
+
+var (
+	moduleName = fmt.Sprintf(
+		"github.com/%s/%s",
+		orgName,
+		toolName,
+	)
+
+	koDockerRepo = fmt.Sprintf(
+		"ghcr.io/%s/%s",
+		orgName,
+		toolName,
+	)
 )
 
 // All runs all targets for this repository
@@ -177,7 +194,7 @@ func BuildBinariesSnapshot() error {
 	)
 }
 
-// BuildImages build bom image using ko
+// BuildImages build image using ko
 func BuildImages() error {
 	fmt.Println("Building images with ko...")
 
