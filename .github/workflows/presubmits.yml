@@ -28,7 +28,7 @@ jobs:
           cache: true
 
       - name: Build
-        uses: magefile/mage-action@v2
+        uses: magefile/mage-action@3b833fb24c0d19eed3aa760b9eb285b4b84f420f # v2.3.0
         with:
           version: v1.14.0
           args: build
@@ -57,7 +57,7 @@ jobs:
       #  run: make license-check
 
       - name: Run verify steps
-        uses: magefile/mage-action@v2
+        uses: magefile/mage-action@3b833fb24c0d19eed3aa760b9eb285b4b84f420f # v2.3.0
         with:
           version: v1.14.0
           args: verify
@@ -80,7 +80,7 @@ jobs:
           cache: true
 
       - name: Run unit tests
-        uses: magefile/mage-action@v2
+        uses: magefile/mage-action@3b833fb24c0d19eed3aa760b9eb285b4b84f420f # v2.3.0
         with:
           version: v1.14.0
           args: test
