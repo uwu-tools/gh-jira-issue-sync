@@ -337,7 +337,7 @@ func newViper(appName, cfgFile string) *viper.Viper {
 	if cfgFile != "" {
 		v.SetConfigFile(cfgFile)
 	}
-	v.SetConfigType("json")
+	v.SetConfigType(getConfigTypeFromName(cfgFile))
 
 	if err := v.ReadInConfig(); err == nil {
 		log.WithField("file", v.ConfigFileUsed()).Infof("config file loaded")
@@ -538,4 +538,17 @@ var (
 
 func errCustomFieldIDNotFound(field string) error {
 	return fmt.Errorf("could not find ID custom field '%s'; check that it is named correctly", field) //nolint:goerr113
+}
+
+// getConfigTypeFromName extracts the extension from the passed in filename,
+// returns `json` if it's empty.
+func getConfigTypeFromName(filename string) string {
+	if filename == "" {
+		return "json"
+	}
+
+	// it's enough to rely on the type from the filename because
+	// viper will parse and validate the the file's content
+	parts := strings.Split(filename, ".")
+	return parts[len(parts)-1]
 }
