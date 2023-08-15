@@ -25,7 +25,7 @@ require (
 	golang.org/x/oauth2 v0.11.0
 	golang.org/x/term v0.11.0
 	sigs.k8s.io/release-sdk v0.10.3
-	sigs.k8s.io/release-utils v0.7.5-0.20230707140704-1bf6b4c5d954
+	sigs.k8s.io/release-utils v0.7.5-0.20230814131120-e16435f5a2de
 )
 
 require (
