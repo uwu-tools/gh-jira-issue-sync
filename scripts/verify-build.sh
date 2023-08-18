@@ -31,7 +31,7 @@ for PLATFORM in "${PLATFORMS[@]}"; do
     OS="${PLATFORM%/*}"
     ARCH=$(basename "$PLATFORM")
 
-    output_name=bom'-'$OS'-'$ARCH
+    output_name=gh-jira-issue-sync'-'$OS'-'$ARCH
 
     if [ "$OS" = "windows" ]; then
         output_name+='.exe'

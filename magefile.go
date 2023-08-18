@@ -60,12 +60,6 @@ var (
 		orgName,
 		toolName,
 	)
-
-	koDockerRepo = fmt.Sprintf(
-		"ghcr.io/%s/%s",
-		orgName,
-		toolName,
-	)
 )
 
 // All runs all targets for this repository
@@ -275,33 +269,10 @@ func Clean() {
 	fmt.Println("Done.")
 }
 
-// getBuildDateTime gets the build date and time
-func getBuildDateTime() string {
-	result, _ := sh.Output("git", "log", "-1", "--pretty=%ct")
-	if result != "" {
-		sourceDateEpoch := fmt.Sprintf("@%s", result)
-		date, _ := sh.Output("date", "-u", "-d", sourceDateEpoch, "+%Y-%m-%dT%H:%M:%SZ")
-		return date
-	}
-
-	date, _ := sh.Output("date", "+%Y-%m-%dT%H:%M:%SZ")
-	return date
-}
-
 // getCommit gets the hash of the current commit
 func getCommit() string {
 	commit, _ := sh.Output("git", "rev-parse", "--short", "HEAD")
 	return commit
-}
-
-// getGitState gets the state of the git repository
-func getGitState() string {
-	_, err := sh.Output("git", "diff", "--quiet")
-	if err != nil {
-		return "dirty"
-	}
-
-	return "clean"
 }
 
 // getVersion gets a description of the commit, e.g. v0.30.1 (latest) or v0.30.1-32-gfe72ff73 (canary)
