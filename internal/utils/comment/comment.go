@@ -46,7 +46,7 @@ var jCommentIDRegex = regexp.MustCompile(`^Comment \[\(ID (\d+)\)\|`)
 // matches each one to a comment in `existing`. If it finds a match, it calls
 // UpdateComment; if it doesn't, it calls CreateComment.
 func Compare(
-	cfg *config.Config,
+	cfg config.IConfig,
 	ghIssue *gogh.Issue,
 	jIssue *gojira.Issue,
 	ghClient github.Client,
@@ -122,7 +122,7 @@ func Compare(
 // UpdateComment compares the body of a GitHub comment with the body (minus header)
 // of the Jira comment, and updates the Jira comment if necessary.
 func UpdateComment(
-	cfg *config.Config,
+	cfg config.IConfig,
 	ghComment *gogh.IssueComment,
 	jComment *gojira.Comment,
 	jIssue *gojira.Issue,
