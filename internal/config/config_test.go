@@ -1,0 +1,445 @@
+package config
+
+import (
+	"errors"
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+	"github.com/stretchr/testify/assert"
+	"github.com/uwu-tools/gh-jira-issue-sync/internal/filesystem"
+	"github.com/uwu-tools/gh-jira-issue-sync/internal/options"
+	jira "github.com/uwu-tools/go-jira/v2/cloud"
+	"strings"
+	"testing"
+)
+
+var rCmd *cobra.Command
+var config2 *config
+
+func setup() {
+	fs = &filesystem.MockFs{}
+}
+
+func setupGetConfigPath() {
+	rCmd = &cobra.Command{}
+	rCmd.Flags().String(options.ConfigKeyConfigFile, "", "config file path")
+}
+
+func setupValidation(t *testing.T, content string) {
+	config2 = &config{}
+	viper.Reset()
+	v := viper.GetViper()
+	v.SetConfigType("json")
+	if err := v.ReadConfig(strings.NewReader(content)); err != nil {
+		t.Errorf("error to read config: %s", err)
+	}
+	config2.cmdConfig = *v
+}
+
+func setupParseField() {
+	config2 = &config{}
+}
+
+func TestGetConfigPath(t *testing.T) {
+
+	tests := []struct {
+		name         string
+		cmdArgs      []string
+		initMock     func()
+		expectedPath string
+		expectedErr  error
+	}{
+		{
+			"successful with provided cli parameter",
+			[]string{"--config", "./test/config.json"},
+			func() {
+				fs.(*filesystem.MockFs).On("Stat", "./test/config.json").Return(&filesystem.FakeFileInfo{}, nil)
+			},
+			"./test/config.json",
+			nil,
+		},
+		{
+			"successful without provided cli parameter",
+			[]string{},
+			func() {
+				fs.(*filesystem.MockFs).On("Getwd").Return("/currentwd", nil)
+				fs.(*filesystem.MockFs).On("Stat", "/currentwd/.issue-sync.json").Return(&filesystem.FakeFileInfo{}, nil)
+			},
+			"/currentwd/.issue-sync.json",
+			nil,
+		},
+		{
+			"getting error because file doesn't exist",
+			[]string{"--config", "./test/config.json"},
+			func() {
+				fs.(*filesystem.MockFs).On("Stat", "./test/config.json").Return(&filesystem.FakeFileInfo{}, errors.New("file not found"))
+			},
+			"",
+			errors.New("file not found"),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			setup()
+			setupGetConfigPath()
+			tt.initMock()
+
+			if err := rCmd.ParseFlags(tt.cmdArgs); err != nil {
+				t.Errorf("Error during pasing flags: %s", err.Error())
+			}
+
+			path, err := getConfigFilePath(rCmd)
+
+			assert.Equal(t, tt.expectedPath, path)
+			if tt.expectedErr != nil {
+				if err == nil {
+					t.Errorf("error should be not null")
+				}
+				assert.Contains(t, err.Error(), tt.expectedErr.Error())
+			}
+		})
+	}
+}
+
+// Only basic auth is tested because OAuth 1.0 is deprecated.
+func TestValidateConfig(t *testing.T) {
+	tests := []struct {
+		name        string
+		config      string
+		expectedErr error
+	}{
+		{
+			"all field is valid",
+			`{
+	"jira-user": "user",
+	"jira-pass": "jiratoken",
+	"github-token": "ghtoken",
+	"repo-name": "example/repo",
+	"jira-uri": "https://jira.com",
+	"jira-project": "example",
+	"since": "2023-08-16T14:54:14.712Z"
+}`,
+			nil,
+		},
+		{
+			"should return error because github token is missing",
+			`{
+	"jira-user": "user",
+	"jira-pass": "jiratoken",
+	"repo-name": "example/repo",
+	"jira-uri": "https://jira.com",
+	"jira-project": "example",
+	"since": "2023-08-16T14:54:14.712Z"
+}`,
+			errGitHubTokenRequired,
+		},
+		{
+			"should return error because repo-name is missing",
+			`{
+	"jira-user": "user",
+	"jira-pass": "jiratoken",
+	"github-token": "ghtoken",
+	"jira-uri": "https://jira.com",
+	"jira-project": "example",
+	"since": "2023-08-16T14:54:14.712Z"
+}`,
+			errGitHubRepoRequired,
+		},
+		{
+			"should return error because repo-name is not in the right format",
+			`{
+	"jira-user": "user",
+	"jira-pass": "jiratoken",
+	"github-token": "ghtoken",
+	"repo-name": "repo",
+	"jira-uri": "https://jira.com",
+	"jira-project": "example",
+	"since": "2023-08-16T14:54:14.712Z"
+}`,
+			errGitHubRepoFormatInvalid,
+		},
+		{
+			"should return error because jira-uri is missing",
+			`{
+	"jira-user": "user",
+	"jira-pass": "jiratoken",
+	"github-token": "ghtoken",
+	"repo-name": "example/repo",
+	"jira-project": "example",
+	"since": "2023-08-16T14:54:14.712Z"
+}`,
+			errJiraURIRequired,
+		},
+		{
+			"should return error because jira-uri is invalid",
+			`{
+	"jira-user": "user",
+	"jira-pass": "jiratoken",
+	"github-token": "ghtoken",
+	"repo-name": "example/repo",
+	"jira-uri": "jira",
+	"jira-project": "example",
+	"since": "2023-08-16T14:54:14.712Z"
+}`,
+			errJiraURIInvalid,
+		},
+		{
+			"should return error because jira project is missing",
+			`{
+	"jira-user": "user",
+	"jira-pass": "jiratoken",
+	"github-token": "ghtoken",
+	"repo-name": "example/repo",
+	"jira-uri": "https://jira.com",
+	"since": "2023-08-16T14:54:14.712Z"
+}`,
+			errJiraProjectRequired,
+		},
+		{
+			"should return error because since field is in wrong format",
+			`{
+	"jira-user": "user",
+	"jira-pass": "jiratoken",
+	"github-token": "ghtoken",
+	"repo-name": "example/repo",
+	"jira-uri": "https://jira.com",
+	"jira-project": "example",
+	"since": "20230816"
+}`,
+			errDateInvalid,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			setup()
+			setupValidation(t, tt.config)
+
+			err := config2.validateConfig()
+
+			assert.Equal(t, tt.expectedErr, err)
+		})
+	}
+}
+
+func TestParseFields(t *testing.T) {
+	tests := []struct {
+		name           string
+		jiraFields     *[]jira.Field
+		expectedFields *fields
+		expectedError  error
+	}{
+		{
+			"successfull if all fields are filled",
+			&[]jira.Field{
+				{
+					Name:   "github-id",
+					Schema: jira.FieldSchema{CustomID: 1},
+				},
+				{
+					Name:   "github-number",
+					Schema: jira.FieldSchema{CustomID: 2},
+				},
+				{
+					Name:   "github-labels",
+					Schema: jira.FieldSchema{CustomID: 3},
+				},
+				{
+					Name:   "github-status",
+					Schema: jira.FieldSchema{CustomID: 4},
+				},
+				{
+					Name:   "github-reporter",
+					Schema: jira.FieldSchema{CustomID: 5},
+				},
+				{
+					Name:   "github-last-sync",
+					Schema: jira.FieldSchema{CustomID: 6},
+				},
+			},
+			&fields{
+				githubID:       "1",
+				githubNumber:   "2",
+				githubLabels:   "3",
+				githubReporter: "5",
+				githubStatus:   "4",
+				lastUpdate:     "6",
+			},
+			nil,
+		},
+		{
+			"github-id is missing",
+			&[]jira.Field{
+				{
+					Name:   "github-number",
+					Schema: jira.FieldSchema{CustomID: 2},
+				},
+				{
+					Name:   "github-labels",
+					Schema: jira.FieldSchema{CustomID: 3},
+				},
+				{
+					Name:   "github-status",
+					Schema: jira.FieldSchema{CustomID: 4},
+				},
+				{
+					Name:   "github-reporter",
+					Schema: jira.FieldSchema{CustomID: 5},
+				},
+				{
+					Name:   "github-last-sync",
+					Schema: jira.FieldSchema{CustomID: 6},
+				},
+			},
+			nil,
+			errCustomFieldIDNotFound("github-id"),
+		},
+		{
+			"github-number is missing",
+			&[]jira.Field{
+				{
+					Name:   "github-id",
+					Schema: jira.FieldSchema{CustomID: 1},
+				},
+				{
+					Name:   "github-labels",
+					Schema: jira.FieldSchema{CustomID: 3},
+				},
+				{
+					Name:   "github-status",
+					Schema: jira.FieldSchema{CustomID: 4},
+				},
+				{
+					Name:   "github-reporter",
+					Schema: jira.FieldSchema{CustomID: 5},
+				},
+				{
+					Name:   "github-last-sync",
+					Schema: jira.FieldSchema{CustomID: 6},
+				},
+			},
+			nil,
+			errCustomFieldIDNotFound("github-number"),
+		},
+		{
+			"github-labels is missing",
+			&[]jira.Field{
+				{
+					Name:   "github-number",
+					Schema: jira.FieldSchema{CustomID: 2},
+				},
+				{
+					Name:   "github-id",
+					Schema: jira.FieldSchema{CustomID: 1},
+				},
+				{
+					Name:   "github-status",
+					Schema: jira.FieldSchema{CustomID: 4},
+				},
+				{
+					Name:   "github-reporter",
+					Schema: jira.FieldSchema{CustomID: 5},
+				},
+				{
+					Name:   "github-last-sync",
+					Schema: jira.FieldSchema{CustomID: 6},
+				},
+			},
+			nil,
+			errCustomFieldIDNotFound("github-labels"),
+		},
+		{
+			"github-status is missing",
+			&[]jira.Field{
+				{
+					Name:   "github-number",
+					Schema: jira.FieldSchema{CustomID: 2},
+				},
+				{
+					Name:   "github-labels",
+					Schema: jira.FieldSchema{CustomID: 3},
+				},
+				{
+					Name:   "github-id",
+					Schema: jira.FieldSchema{CustomID: 1},
+				},
+				{
+					Name:   "github-reporter",
+					Schema: jira.FieldSchema{CustomID: 5},
+				},
+				{
+					Name:   "github-last-sync",
+					Schema: jira.FieldSchema{CustomID: 6},
+				},
+			},
+			nil,
+			errCustomFieldIDNotFound("github-status"),
+		},
+		{
+			"github-reporter is missing",
+			&[]jira.Field{
+				{
+					Name:   "github-number",
+					Schema: jira.FieldSchema{CustomID: 2},
+				},
+				{
+					Name:   "github-labels",
+					Schema: jira.FieldSchema{CustomID: 3},
+				},
+				{
+					Name:   "github-status",
+					Schema: jira.FieldSchema{CustomID: 4},
+				},
+				{
+					Name:   "github-id",
+					Schema: jira.FieldSchema{CustomID: 1},
+				},
+				{
+					Name:   "github-last-sync",
+					Schema: jira.FieldSchema{CustomID: 6},
+				},
+			},
+			nil,
+			errCustomFieldIDNotFound("github-reporter"),
+		},
+		{
+			"github-last-sync is missing",
+			&[]jira.Field{
+				{
+					Name:   "github-number",
+					Schema: jira.FieldSchema{CustomID: 2},
+				},
+				{
+					Name:   "github-labels",
+					Schema: jira.FieldSchema{CustomID: 3},
+				},
+				{
+					Name:   "github-status",
+					Schema: jira.FieldSchema{CustomID: 4},
+				},
+				{
+					Name:   "github-reporter",
+					Schema: jira.FieldSchema{CustomID: 5},
+				},
+				{
+					Name:   "github-id",
+					Schema: jira.FieldSchema{CustomID: 1},
+				},
+			},
+			nil,
+			errCustomFieldIDNotFound("github-last-sync"),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			setup()
+			setupParseField()
+
+			field, err := config2.parseFieldIDs(tt.jiraFields)
+
+			assert.Equal(t, tt.expectedFields, field)
+			assert.Equal(t, tt.expectedError, err)
+		})
+	}
+}
