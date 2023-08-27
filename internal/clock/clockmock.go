@@ -12,5 +12,5 @@ func NewClockMock() Clock {
 }
 
 func (c *clockMock) Now() time.Time {
-	return time.Unix(838850400, 0)
+	return time.Date(1996, 8, 1, 0, 0, 0, 0, time.FixedZone("CEST", 7200))
 }
