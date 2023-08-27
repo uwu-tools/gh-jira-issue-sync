@@ -36,15 +36,26 @@ const dateFormat = "2006-01-02T15:04:05.0-0700"
 
 // time contains the object used for get the current time.
 var time = clock.NewRealClock()
-var createIssueFn = CreateIssue
-var updateIssueFn = UpdateIssue
+
 var compareCommentFn = comment.Compare
 
-// Compare gets the list of GitHub issues updated since the `since` date,
+type ComparisonResult struct {
+	ShouldCreate []*gogh.Issue
+	ShouldUpdate []*IssuePair
+}
+
+// IssuePair contains an existing and linked issue pair related to the same issue. The issue can be found both in Jira
+// and in GitHub based on a GitHub id.
+type IssuePair struct {
+	GhIssue   *gogh.Issue
+	JiraIssue *gojira.Issue
+}
+
+// Reconcile gets the list of GitHub issues updated since the `since` date,
 // gets the list of Jira issues which have GitHub ID custom fields in that list,
 // then matches each one. If a Jira issue already exists for a given GitHub issue,
 // it calls UpdateIssue; if no Jira issue already exists, it calls CreateIssue.
-func Compare(cfg config.IConfig, ghClient github.Client, jiraClient jira.Client) error {
+func Reconcile(cfg config.IConfig, ghClient github.Client, jiraClient jira.Client) error {
 	log.Debug("Collecting issues")
 
 	owner, repo := cfg.GetRepo()
@@ -72,13 +83,39 @@ func Compare(cfg config.IConfig, ghClient github.Client, jiraClient jira.Client)
 	log.Debugf("Jira issues found: %v", len(jiraIssues))
 	log.Debug("Collected all Jira issues")
 
+	comparsionResult, err := Compare(cfg, ghIssues, jiraIssues)
+	if err != nil {
+		return fmt.Errorf("error during comparsion: %w", err)
+	}
+
+	for _, issue := range comparsionResult.ShouldCreate {
+		if err = CreateIssue(cfg, issue, ghClient, jiraClient); err != nil {
+			log.Errorf("Error creating issue for #%d. Error: %v", *issue.Number, err)
+		}
+	}
+
+	for _, issuePair := range comparsionResult.ShouldUpdate {
+		if err = UpdateIssue(cfg, issuePair.GhIssue, issuePair.JiraIssue, ghClient, jiraClient); err != nil {
+			log.Errorf("Error updating issue %s. Error: %v", issuePair.JiraIssue.Key, err)
+		}
+	}
+
+	return nil
+}
+
+// Compare gets GitHub issues and Jira issues and decides whether a GitHub issue should create in Jira or should update.
+// Compare returns ComparisonResult object.
+func Compare(cfg config.IConfig, ghIssues []*gogh.Issue, jiraIssues []gojira.Issue) (*ComparisonResult, error) {
+	comparisonResult := &ComparisonResult{
+		make([]*gogh.Issue, 0),
+		make([]*IssuePair, 0),
+	}
+
 	fieldKey := cfg.GetFieldKey(config.GitHubID)
 	log.Debugf("GitHub ID custom field key: %s", fieldKey)
 
-	// TODO(compare): Consider move ID comparison logic into separate function
+GhIssueLoop:
 	for _, ghIssue := range ghIssues {
-		found := false
-
 		ghID := *ghIssue.ID
 
 		for i := range jiraIssues {
@@ -102,23 +139,16 @@ func Compare(cfg config.IConfig, ghClient github.Client, jiraClient jira.Client)
 
 			ghIDFloat64 := float64(ghID)
 			if jiraID == ghIDFloat64 {
-				found = true
+				log.Infof("Updating issue %s", jIssue.ID)
+				comparisonResult.ShouldUpdate = append(comparisonResult.ShouldUpdate, &IssuePair{GhIssue: ghIssue, JiraIssue: &jIssue})
+				continue GhIssueLoop
+			}
+		}
 
-				log.Infof("updating issue %s", jIssue.ID)
-				if err := updateIssueFn(cfg, ghIssue, &jIssue, ghClient, jiraClient); err != nil {
-					log.Errorf("Error updating issue %s. Error: %v", jIssue.Key, err)
-				}
-				break
-			}
-		}
-		if !found {
-			if err := createIssueFn(cfg, ghIssue, ghClient, jiraClient); err != nil {
-				log.Errorf("Error creating issue for #%d. Error: %v", *ghIssue.Number, err)
-			}
-		}
+		comparisonResult.ShouldCreate = append(comparisonResult.ShouldCreate, ghIssue)
 	}
 
-	return nil
+	return comparisonResult, nil
 }
 
 // DidIssueChange tests each of the relevant fields on the provided Jira and GitHub issue
@@ -282,7 +312,7 @@ func CreateIssue(cfg config.IConfig, issue *gogh.Issue, ghClient github.Client, 
 	log.Debugf("Created Jira issue %s!", newIssue.Key)
 
 	if err := compareCommentFn(cfg, issue, foundIssue, ghClient, jClient); err != nil {
-		return fmt.Errorf("comparing comments for issue %s: %w", jIssue.Key, err)
+		return fmt.Errorf("comparing comments for issue failed %s: %w", jIssue.Key, err)
 	}
 
 	return nil
