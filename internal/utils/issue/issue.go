@@ -83,18 +83,18 @@ func Reconcile(cfg config.IConfig, ghClient github.Client, jiraClient jira.Clien
 	log.Debugf("Jira issues found: %v", len(jiraIssues))
 	log.Debug("Collected all Jira issues")
 
-	comparsionResult, err := Compare(cfg, ghIssues, jiraIssues)
+	comparisonResult, err := Compare(cfg, ghIssues, jiraIssues)
 	if err != nil {
-		return fmt.Errorf("error during comparsion: %w", err)
+		return fmt.Errorf("error during comparison: %w", err)
 	}
 
-	for _, issue := range comparsionResult.ShouldCreate {
+	for _, issue := range comparisonResult.ShouldCreate {
 		if err = CreateIssue(cfg, issue, ghClient, jiraClient); err != nil {
 			log.Errorf("Error creating issue for #%d. Error: %v", *issue.Number, err)
 		}
 	}
 
-	for _, issuePair := range comparsionResult.ShouldUpdate {
+	for _, issuePair := range comparisonResult.ShouldUpdate {
 		if err = UpdateIssue(cfg, issuePair.GhIssue, issuePair.JiraIssue, ghClient, jiraClient); err != nil {
 			log.Errorf("Error updating issue %s. Error: %v", issuePair.JiraIssue.Key, err)
 		}

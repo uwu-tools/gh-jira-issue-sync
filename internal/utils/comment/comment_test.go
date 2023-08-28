@@ -76,7 +76,9 @@ var jiraCommentWrongBody = gojira.Comment{
 	Body: "Wrong body",
 }
 
-func setup() {
+func setup(t *testing.T) {
+	t.Helper()
+
 	jiraClient = new(jira.JiraClientMock)
 	cfg = new(config.ConfigMock)
 	ghClient = new(github.GhClientMock)
@@ -111,7 +113,7 @@ func TestJiraCommentRegex(t *testing.T) {
 }
 
 func TestCompare(t *testing.T) {
-	tests := []struct {
+	tests := []struct { //nolint:govet
 		name           string
 		ghComments     []*gogh.IssueComment
 		jiraComments   []*gojira.Comment
@@ -156,10 +158,11 @@ func TestCompare(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			setup()
+			setup(t)
 
-			result, _ := Compare(tt.ghComments, tt.jiraComments)
+			result, err := Compare(tt.ghComments, tt.jiraComments)
 
+			assert.Nil(t, err)
 			assert.Equal(t, tt.expectedResult, result)
 			mock.AssertExpectationsForObjects(t, jiraClient)
 		})
@@ -169,14 +172,14 @@ func TestCompare(t *testing.T) {
 func TestUpdateComment(t *testing.T) {
 	jiraIssue := &gojira.Issue{ID: "1"}
 
-	tests := []struct {
+	tests := []struct { //nolint:govet
 		name        string
 		ghComment   *gogh.IssueComment
 		jiraComment *gojira.Comment
 		initMockFn  func()
 		expectedErr string
 	}{
-		//{
+		// {
 		//	"should create if the corresponding Jira comment is not in the right format",
 		//	&ghComment1,
 		//	&jiraCommentWrongBody,
@@ -184,7 +187,7 @@ func TestUpdateComment(t *testing.T) {
 		//		jiraClient.On("UpdateComment", jiraIssue, jiraCommentWrongBody.ID, &ghComment1, ghClient).Return(nil)
 		//	},
 		//	"",
-		//},
+		// }, // nolint
 		{
 			"should not update if the content of the comments are the same",
 			&ghComment1,
@@ -215,7 +218,7 @@ func TestUpdateComment(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			setup()
+			setup(t)
 			tt.initMockFn()
 
 			err := UpdateComment(cfg, tt.ghComment, tt.jiraComment, jiraIssue, ghClient, jiraClient)

@@ -23,7 +23,7 @@ func (c *ConfigMock) Context() context.Context {
 
 func (c *ConfigMock) LoadJiraConfig(client *jira.Client) error {
 	args := c.Called(client)
-	return args.Error(0)
+	return args.Error(0) //nolint:wrapcheck
 }
 
 func (c *ConfigMock) GetConfigFile() string {
@@ -97,5 +97,5 @@ func (c *ConfigMock) SetJiraToken(token *oauth1.Token) {
 
 func (c *ConfigMock) SaveConfig() error {
 	args := c.Called()
-	return args.Error(0)
+	return args.Error(0) //nolint:wrapcheck
 }

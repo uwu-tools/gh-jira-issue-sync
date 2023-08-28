@@ -2,6 +2,7 @@ package issue
 
 import (
 	"errors"
+	"fmt"
 	gogh "github.com/google/go-github/v53/github"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -139,14 +140,16 @@ var jiraIssueUpdate1 = gojira.Issue{
 	},
 }
 
-var jiraIssueNoGhId = gojira.Issue{
+var jiraIssueNoGhID = gojira.Issue{
 	Fields: &gojira.IssueFields{
 		Type:     gojira.IssueType{Name: "Task"},
 		Unknowns: tcontainer.MarshalMap{},
 	},
 }
 
-func setup() {
+func setup(t *testing.T) {
+	t.Helper()
+
 	commentFnMock = &commentMock.CommentFnMock{}
 	compareCommentFn = commentFnMock.Reconcile
 
@@ -163,7 +166,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestCompare(t *testing.T) {
-	tests := []struct {
+	tests := []struct { //nolint:govet
 		name           string
 		ghIssues       []*gogh.Issue
 		jiraIssues     []gojira.Issue
@@ -252,7 +255,7 @@ func TestCompare(t *testing.T) {
 		{
 			"gh issue should be recreated if the corresponding jira issue does not contain github-id",
 			[]*gogh.Issue{&ghIssue1},
-			[]gojira.Issue{jiraIssueNoGhId},
+			[]gojira.Issue{jiraIssueNoGhID},
 			&ComparisonResult{ShouldCreate: []*gogh.Issue{&ghIssue1}, ShouldUpdate: make([]*IssuePair, 0)},
 			nil,
 		},
@@ -260,7 +263,7 @@ func TestCompare(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			setup()
+			setup(t)
 			cfg.On("GetFieldKey", config.GitHubID).Return(testGitHubIdFieldName)
 
 			result, err := Compare(cfg, tt.ghIssues, tt.jiraIssues)
@@ -272,8 +275,8 @@ func TestCompare(t *testing.T) {
 	}
 }
 
-//func TestCreateIssue(t *testing.T) {
-//	tests := []struct {
+// func TestCreateIssue(t *testing.T) {
+//	tests := []struct { //nolint:govet
 //		name           string
 //		ghIssue        *gogh.Issue
 //		initMockFn     func()
@@ -348,7 +351,7 @@ func TestCompare(t *testing.T) {
 //
 //	for _, tt := range tests {
 //		t.Run(tt.name, func(t *testing.T) {
-//			setup()
+//			setup(t)
 //			tt.initMockFn()
 //
 //			err := CreateIssue(cfg, tt.ghIssue, ghClient, jClient)
@@ -359,13 +362,13 @@ func TestCompare(t *testing.T) {
 //			mock.AssertExpectationsForObjects(t, cfg, jClient)
 //		})
 //	}
-//}
+// }
 
 func TestUpdateIssue(t *testing.T) {
 	var ghIssue *gogh.Issue
 	var newJiraIssue *gojira.Issue
 
-	tests := []struct {
+	tests := []struct { //nolint:govet
 		name              string
 		getGhIssueFn      func() *gogh.Issue
 		getJiraIssueFn    func() *gojira.Issue
@@ -406,7 +409,7 @@ func TestUpdateIssue(t *testing.T) {
 			func() *gojira.Issue {
 				iss := jiraIssueUpdate1
 				issFields := *iss.Fields
-				issFields.Summary = "Updated title"
+				issFields.Summary = "Updated title" //nolint:goconst
 				iss.Fields = &issFields
 				return &iss
 			},
@@ -579,7 +582,7 @@ func TestUpdateIssue(t *testing.T) {
 			},
 			"",
 		},
-		//{
+		// {
 		//	"should update if a GH label was deleted",
 		//	func() *gogh.Issue {
 		//		iss := ghIssue1
@@ -612,8 +615,8 @@ func TestUpdateIssue(t *testing.T) {
 		//		commentFnMock.On("Reconcile", cfg, ghIssue, newJiraIssue, ghClient, jClient).Return(nil)
 		//	},
 		//	"",
-		//},
-		//{
+		// },
+		// {
 		//	"should update if a new GH label was added",
 		//	func() *gogh.Issue {
 		//		iss := ghIssue1
@@ -652,7 +655,7 @@ func TestUpdateIssue(t *testing.T) {
 		//		commentFnMock.On("Reconcile", cfg, ghIssue, newJiraIssue, ghClient, jClient).Return(nil)
 		//	},
 		//	"",
-		//},
+		// },
 		{
 			"should return error if update failed",
 			func() *gogh.Issue {
@@ -676,7 +679,7 @@ func TestUpdateIssue(t *testing.T) {
 				cfg.On("GetFieldKey", config.GitHubLabels).Return(testGitHubLabelsFieldName)
 				cfg.On("GetFieldKey", config.GitHubLastSync).Return(testGitHubLastSyncFieldName)
 				jClient.On("UpdateIssue", newJiraIssue).Return(&gojira.Issue{}, nil)
-				jClient.On("GetIssue", "jira-issue-1").Return(&gojira.Issue{}, errors.New("error during get issue"))
+				jClient.On("GetIssue", "jira-issue-1").Return(&gojira.Issue{}, fmt.Errorf("error during get issue"))
 			},
 			"getting Jira issue",
 		},
@@ -712,7 +715,7 @@ func TestUpdateIssue(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			setup()
+			setup(t)
 
 			ghIssue = tt.getGhIssueFn()
 			newJiraIssue = tt.getNewJiraIssueFn()

@@ -2,6 +2,7 @@ package config
 
 import (
 	"errors"
+	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
@@ -15,16 +16,22 @@ import (
 var rCmd *cobra.Command
 var config2 *config
 
-func setup() {
+func setup(t *testing.T) {
+	t.Helper()
+
 	fs = &filesystem.MockFs{}
 }
 
-func setupGetConfigPath() {
+func setupGetConfigPath(t *testing.T) {
+	t.Helper()
+
 	rCmd = &cobra.Command{}
 	rCmd.Flags().String(options.ConfigKeyConfigFile, "", "config file path")
 }
 
 func setupValidation(t *testing.T, content string) {
+	t.Helper()
+
 	config2 = &config{}
 	viper.Reset()
 	v := viper.GetViper()
@@ -35,13 +42,15 @@ func setupValidation(t *testing.T, content string) {
 	config2.cmdConfig = *v
 }
 
-func setupParseField() {
+func setupParseField(t *testing.T) {
+	t.Helper()
+
 	config2 = &config{}
 }
 
 func TestGetConfigPath(t *testing.T) {
 
-	tests := []struct {
+	tests := []struct { //nolint:govet
 		name         string
 		cmdArgs      []string
 		initMock     func()
@@ -74,14 +83,14 @@ func TestGetConfigPath(t *testing.T) {
 				fs.(*filesystem.MockFs).On("Stat", "./test/config.json").Return(&filesystem.FakeFileInfo{}, errors.New("file not found"))
 			},
 			"",
-			errors.New("file not found"),
+			fmt.Errorf("file not found"),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			setup()
-			setupGetConfigPath()
+			setup(t)
+			setupGetConfigPath(t)
 			tt.initMock()
 
 			if err := rCmd.ParseFlags(tt.cmdArgs); err != nil {
@@ -103,7 +112,7 @@ func TestGetConfigPath(t *testing.T) {
 
 // Only basic auth is tested because OAuth 1.0 is deprecated.
 func TestValidateConfig(t *testing.T) {
-	tests := []struct {
+	tests := []struct { //nolint:govet
 		name        string
 		config      string
 		expectedErr error
@@ -212,7 +221,7 @@ func TestValidateConfig(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			setup()
+			setup(t)
 			setupValidation(t, tt.config)
 
 			err := config2.validateConfig()
@@ -223,14 +232,14 @@ func TestValidateConfig(t *testing.T) {
 }
 
 func TestParseFields(t *testing.T) {
-	tests := []struct {
+	tests := []struct { //nolint:govet
 		name           string
 		jiraFields     *[]jira.Field
 		expectedFields *fields
 		expectedError  error
 	}{
 		{
-			"successfull if all fields are filled",
+			"successful if all fields are filled",
 			&[]jira.Field{
 				{
 					Name:   "github-id",
@@ -433,8 +442,8 @@ func TestParseFields(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			setup()
-			setupParseField()
+			setup(t)
+			setupParseField(t)
 
 			field, err := config2.parseFieldIDs(tt.jiraFields)
 
