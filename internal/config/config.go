@@ -21,7 +21,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/uwu-tools/gh-jira-issue-sync/internal/filesystem"
 	"io"
 	"net/url"
 	"os"
@@ -38,6 +37,7 @@ import (
 	jira "github.com/uwu-tools/go-jira/v2/cloud"
 	"golang.org/x/term"
 
+	"github.com/uwu-tools/gh-jira-issue-sync/internal/filesystem"
 	"github.com/uwu-tools/gh-jira-issue-sync/internal/github"
 	"github.com/uwu-tools/gh-jira-issue-sync/internal/options"
 )
@@ -466,7 +466,7 @@ func (c *config) getFieldIDs(client *jira.Client) (*fields, error) {
 }
 
 func (c *config) parseFieldIDs(jFieldsPtr *[]jira.Field) (*fields, error) {
-	var fieldIDs = new(fields)
+	fieldIDs := new(fields)
 
 	jFields := *jFieldsPtr
 	for i := range jFields {

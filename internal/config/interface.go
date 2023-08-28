@@ -2,9 +2,10 @@ package config
 
 import (
 	"context"
+	"time"
+
 	"github.com/dghubble/oauth1"
 	jira "github.com/uwu-tools/go-jira/v2/cloud"
-	"time"
 )
 
 type IConfig interface {

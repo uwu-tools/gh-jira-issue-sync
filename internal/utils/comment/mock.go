@@ -3,10 +3,11 @@ package comment
 import (
 	gogh "github.com/google/go-github/v53/github"
 	"github.com/stretchr/testify/mock"
+	gojira "github.com/uwu-tools/go-jira/v2/cloud"
+
 	"github.com/uwu-tools/gh-jira-issue-sync/internal/config"
 	"github.com/uwu-tools/gh-jira-issue-sync/internal/github"
 	"github.com/uwu-tools/gh-jira-issue-sync/internal/jira"
-	gojira "github.com/uwu-tools/go-jira/v2/cloud"
 )
 
 type CommentFnMock struct {

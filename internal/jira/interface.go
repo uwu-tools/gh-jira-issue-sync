@@ -2,8 +2,9 @@ package jira
 
 import (
 	gogh "github.com/google/go-github/v53/github"
-	"github.com/uwu-tools/gh-jira-issue-sync/internal/github"
 	jira "github.com/uwu-tools/go-jira/v2/cloud"
+
+	"github.com/uwu-tools/gh-jira-issue-sync/internal/github"
 )
 
 // Client is a wrapper around the Jira API clients library we

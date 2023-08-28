@@ -4,8 +4,7 @@ import (
 	"time"
 )
 
-type clockMock struct {
-}
+type clockMock struct{}
 
 func NewClockMock() Clock {
 	return &clockMock{}

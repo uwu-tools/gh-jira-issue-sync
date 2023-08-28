@@ -18,17 +18,18 @@ package issue
 
 import (
 	"fmt"
+	"strings"
+
 	gogh "github.com/google/go-github/v53/github"
 	log "github.com/sirupsen/logrus"
 	"github.com/trivago/tgo/tcontainer"
-	"github.com/uwu-tools/gh-jira-issue-sync/internal/clock"
-	"github.com/uwu-tools/gh-jira-issue-sync/internal/utils/comment"
 	gojira "github.com/uwu-tools/go-jira/v2/cloud"
-	"strings"
 
+	"github.com/uwu-tools/gh-jira-issue-sync/internal/clock"
 	"github.com/uwu-tools/gh-jira-issue-sync/internal/config"
 	"github.com/uwu-tools/gh-jira-issue-sync/internal/github"
 	"github.com/uwu-tools/gh-jira-issue-sync/internal/jira"
+	"github.com/uwu-tools/gh-jira-issue-sync/internal/utils/comment"
 )
 
 // dateFormat is the format used for the sync time field.

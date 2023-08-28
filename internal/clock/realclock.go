@@ -2,8 +2,7 @@ package clock
 
 import "time"
 
-type realClock struct {
-}
+type realClock struct{}
 
 func NewRealClock() Clock {
 	return &realClock{}

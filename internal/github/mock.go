@@ -1,9 +1,10 @@
 package github
 
 import (
+	"time"
+
 	gogh "github.com/google/go-github/v53/github"
 	"github.com/stretchr/testify/mock"
-	"time"
 )
 
 type GhClientMock struct {

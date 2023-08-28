@@ -5,8 +5,7 @@ import (
 	"os"
 )
 
-type OsFs struct {
-}
+type OsFs struct{}
 
 func (fs *OsFs) Stat(name string) (os.FileInfo, error) {
 	fileInfo, err := os.Stat(name)

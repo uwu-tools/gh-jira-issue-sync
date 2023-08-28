@@ -18,16 +18,18 @@ package comment
 
 import (
 	"errors"
+	"testing"
+	"time"
+
 	gogh "github.com/google/go-github/v53/github"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	gojira "github.com/uwu-tools/go-jira/v2/cloud"
+
 	"github.com/uwu-tools/gh-jira-issue-sync/internal/config"
 	"github.com/uwu-tools/gh-jira-issue-sync/internal/github"
 	"github.com/uwu-tools/gh-jira-issue-sync/internal/jira"
 	"github.com/uwu-tools/gh-jira-issue-sync/pkg"
-	gojira "github.com/uwu-tools/go-jira/v2/cloud"
-	"testing"
-	"time"
 )
 
 //nolint:lll
@@ -35,9 +37,11 @@ const testComment = `Comment [(ID 484163403)|https://github.com] from GitHub use
 
 Bla blibidy bloo bla`
 
-var jiraClient *jira.JiraClientMock
-var cfg *config.ConfigMock
-var ghClient *github.GhClientMock
+var (
+	jiraClient *jira.JiraClientMock
+	cfg        *config.ConfigMock
+	ghClient   *github.GhClientMock
+)
 
 var ghComment1 = gogh.IssueComment{
 	ID:        pkg.NewInt64(1),
@@ -152,7 +156,8 @@ func TestCompare(t *testing.T) {
 						&ghComment2,
 						&jiraComment2,
 					},
-				}},
+				},
+			},
 		},
 	}
 

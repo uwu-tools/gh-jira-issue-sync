@@ -2,10 +2,11 @@ package config
 
 import (
 	"context"
+	"time"
+
 	"github.com/dghubble/oauth1"
 	"github.com/stretchr/testify/mock"
 	jira "github.com/uwu-tools/go-jira/v2/cloud"
-	"time"
 )
 
 type ConfigMock struct {

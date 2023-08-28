@@ -2,36 +2,42 @@ package issue
 
 import (
 	"errors"
+	"os"
+	"testing"
+
 	gogh "github.com/google/go-github/v53/github"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/trivago/tgo/tcontainer"
+	gojira "github.com/uwu-tools/go-jira/v2/cloud"
+
 	clockMock "github.com/uwu-tools/gh-jira-issue-sync/internal/clock"
 	"github.com/uwu-tools/gh-jira-issue-sync/internal/config"
 	ghmock "github.com/uwu-tools/gh-jira-issue-sync/internal/github"
 	jmock "github.com/uwu-tools/gh-jira-issue-sync/internal/jira"
 	commentMock "github.com/uwu-tools/gh-jira-issue-sync/internal/utils/comment"
 	"github.com/uwu-tools/gh-jira-issue-sync/pkg"
-	gojira "github.com/uwu-tools/go-jira/v2/cloud"
-	"os"
-	"testing"
 )
 
-const testGitHubIdFieldName = "customfield_1000"
-const testGitHubNumberFieldName = "customfield_2000"
-const testGitHubStatusFieldName = "customfield_3000"
-const testGitHubReporterFieldName = "customfield_4000"
-const testGitHubLabelsFieldName = "customfield_5000"
-const testGitHubLastSyncFieldName = "customfield_6000"
+const (
+	testGitHubIdFieldName       = "customfield_1000"
+	testGitHubNumberFieldName   = "customfield_2000"
+	testGitHubStatusFieldName   = "customfield_3000"
+	testGitHubReporterFieldName = "customfield_4000"
+	testGitHubLabelsFieldName   = "customfield_5000"
+	testGitHubLastSyncFieldName = "customfield_6000"
+)
 
 var errMock = errors.New("mock error")
 
 var project gojira.Project
 
-var jClient *jmock.JiraClientMock
-var ghClient *ghmock.GhClientMock
-var cfg *config.ConfigMock
-var commentFnMock *commentMock.CommentFnMock
+var (
+	jClient       *jmock.JiraClientMock
+	ghClient      *ghmock.GhClientMock
+	cfg           *config.ConfigMock
+	commentFnMock *commentMock.CommentFnMock
+)
 
 var ghIssue1 = gogh.Issue{
 	ID:     pkg.NewInt64(1),

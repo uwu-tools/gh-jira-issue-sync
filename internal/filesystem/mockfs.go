@@ -1,8 +1,9 @@
 package filesystem
 
 import (
-	"github.com/stretchr/testify/mock"
 	"os"
+
+	"github.com/stretchr/testify/mock"
 )
 
 type MockFs struct {

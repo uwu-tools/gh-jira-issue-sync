@@ -1,8 +1,9 @@
 package github
 
 import (
-	gogh "github.com/google/go-github/v53/github"
 	"time"
+
+	gogh "github.com/google/go-github/v53/github"
 )
 
 // Client is a wrapper around the GitHub API Client library we

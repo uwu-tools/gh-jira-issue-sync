@@ -2,20 +2,24 @@ package config
 
 import (
 	"errors"
+	"strings"
+	"testing"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
+	jira "github.com/uwu-tools/go-jira/v2/cloud"
+
 	"github.com/uwu-tools/gh-jira-issue-sync/internal/filesystem"
 	"github.com/uwu-tools/gh-jira-issue-sync/internal/options"
-	jira "github.com/uwu-tools/go-jira/v2/cloud"
-	"strings"
-	"testing"
 )
 
 var errMock = errors.New("mock error")
 
-var rCmd *cobra.Command
-var config2 *config
+var (
+	rCmd    *cobra.Command
+	config2 *config
+)
 
 func setup(t *testing.T) {
 	t.Helper()
@@ -50,7 +54,6 @@ func setupParseField(t *testing.T) {
 }
 
 func TestGetConfigPath(t *testing.T) {
-
 	tests := []struct { //nolint:govet
 		name         string
 		cmdArgs      []string

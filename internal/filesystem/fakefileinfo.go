@@ -5,8 +5,7 @@ import (
 	"time"
 )
 
-type FakeFileInfo struct {
-}
+type FakeFileInfo struct{}
 
 func (f *FakeFileInfo) Name() string {
 	return "filename.ext"
