@@ -15,5 +15,5 @@ type CommentFnMock struct {
 
 func (c *CommentFnMock) Reconcile(cfg config.IConfig, ghIssue *gogh.Issue, jIssue *gojira.Issue, ghClient github.Client, jClient jira.Client) error {
 	args := c.Called(cfg, ghIssue, jIssue, ghClient, jClient)
-	return args.Error(0)
+	return args.Error(0) //nolint:wrapcheck
 }

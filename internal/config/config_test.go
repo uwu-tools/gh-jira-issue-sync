@@ -2,7 +2,6 @@ package config
 
 import (
 	"errors"
-	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
@@ -12,6 +11,8 @@ import (
 	"strings"
 	"testing"
 )
+
+var mockError = errors.New("mock error")
 
 var rCmd *cobra.Command
 var config2 *config
@@ -80,10 +81,10 @@ func TestGetConfigPath(t *testing.T) {
 			"getting error because file doesn't exist",
 			[]string{"--config", "./test/config.json"},
 			func() {
-				fs.(*filesystem.MockFs).On("Stat", "./test/config.json").Return(&filesystem.FakeFileInfo{}, errors.New("file not found"))
+				fs.(*filesystem.MockFs).On("Stat", "./test/config.json").Return(&filesystem.FakeFileInfo{}, mockError)
 			},
 			"",
-			fmt.Errorf("file not found"),
+			mockError,
 		},
 	}
 
