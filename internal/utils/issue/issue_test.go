@@ -368,6 +368,11 @@ func TestUpdateIssue(t *testing.T) {
 	var ghIssue *gogh.Issue
 	var newJiraIssue *gojira.Issue
 
+	const updatedTitle = "Updated title"
+	const updatedBody = "Updated body"
+	const updatedStatus = "Updated status"
+	const updatedUser = "Updated user"
+
 	tests := []struct { //nolint:govet
 		name              string
 		getGhIssueFn      func() *gogh.Issue
@@ -400,7 +405,7 @@ func TestUpdateIssue(t *testing.T) {
 			"should update the issue if GH title was changed",
 			func() *gogh.Issue {
 				iss := ghIssue1
-				iss.Title = pkg.NewString("Updated title")
+				iss.Title = pkg.NewString(updatedTitle)
 				return &iss
 			},
 			func() *gojira.Issue {
@@ -409,7 +414,7 @@ func TestUpdateIssue(t *testing.T) {
 			func() *gojira.Issue {
 				iss := jiraIssueUpdate1
 				issFields := *iss.Fields
-				issFields.Summary = "Updated title" //nolint:goconst
+				issFields.Summary = updatedTitle //nolint:goconst
 				iss.Fields = &issFields
 				return &iss
 			},
@@ -428,7 +433,7 @@ func TestUpdateIssue(t *testing.T) {
 			"should update the issue if GH body was changed",
 			func() *gogh.Issue {
 				iss := ghIssue1
-				iss.Body = pkg.NewString("Updated body")
+				iss.Body = pkg.NewString(updatedBody)
 				return &iss
 			},
 			func() *gojira.Issue {
@@ -437,7 +442,7 @@ func TestUpdateIssue(t *testing.T) {
 			func() *gojira.Issue {
 				iss := jiraIssueUpdate1
 				issFields := *iss.Fields
-				issFields.Description = "Updated body"
+				issFields.Description = updatedBody
 				iss.Fields = &issFields
 				return &iss
 			},
@@ -456,7 +461,7 @@ func TestUpdateIssue(t *testing.T) {
 			"should update the issue if GH status was changed",
 			func() *gogh.Issue {
 				iss := ghIssue1
-				iss.State = pkg.NewString("Updated status")
+				iss.State = pkg.NewString(updatedStatus)
 				return &iss
 			},
 			func() *gojira.Issue {
@@ -466,7 +471,7 @@ func TestUpdateIssue(t *testing.T) {
 				iss := jiraIssueUpdate1
 				issFields := *iss.Fields
 				issFields.Unknowns = issFields.Unknowns.Clone()
-				issFields.Unknowns.Set(testGitHubStatusFieldName, "Updated status")
+				issFields.Unknowns.Set(testGitHubStatusFieldName, updatedStatus)
 				iss.Fields = &issFields
 				return &iss
 			},
@@ -485,7 +490,7 @@ func TestUpdateIssue(t *testing.T) {
 			"should update the issue if GH status missing in Jira issue",
 			func() *gogh.Issue {
 				iss := ghIssue1
-				iss.State = pkg.NewString("Updated status")
+				iss.State = pkg.NewString(updatedStatus)
 				return &iss
 			},
 			func() *gojira.Issue {
@@ -500,7 +505,7 @@ func TestUpdateIssue(t *testing.T) {
 				iss := jiraIssueUpdate1
 				issFields := *iss.Fields
 				issFields.Unknowns = issFields.Unknowns.Clone()
-				issFields.Unknowns.Set(testGitHubStatusFieldName, "Updated status")
+				issFields.Unknowns.Set(testGitHubStatusFieldName, updatedStatus)
 				iss.Fields = &issFields
 				return &iss
 			},
@@ -520,7 +525,7 @@ func TestUpdateIssue(t *testing.T) {
 			func() *gogh.Issue {
 				iss := ghIssue1
 				issUser := *iss.User
-				issUser.Login = pkg.NewString("Updated user")
+				issUser.Login = pkg.NewString(updatedUser)
 				iss.User = &issUser
 				return &iss
 			},
@@ -531,7 +536,7 @@ func TestUpdateIssue(t *testing.T) {
 				iss := jiraIssueUpdate1
 				issFields := *iss.Fields
 				issFields.Unknowns = issFields.Unknowns.Clone()
-				issFields.Unknowns.Set(testGitHubReporterFieldName, "Updated user")
+				issFields.Unknowns.Set(testGitHubReporterFieldName, updatedUser)
 				iss.Fields = &issFields
 				return &iss
 			},
@@ -551,7 +556,7 @@ func TestUpdateIssue(t *testing.T) {
 			func() *gogh.Issue {
 				iss := ghIssue1
 				issUser := *iss.User
-				issUser.Login = pkg.NewString("Updated user")
+				issUser.Login = pkg.NewString(updatedUser)
 				iss.User = &issUser
 				return &iss
 			},
@@ -567,7 +572,7 @@ func TestUpdateIssue(t *testing.T) {
 				iss := jiraIssueUpdate1
 				issFields := *iss.Fields
 				issFields.Unknowns = issFields.Unknowns.Clone()
-				issFields.Unknowns.Set(testGitHubReporterFieldName, "Updated user")
+				issFields.Unknowns.Set(testGitHubReporterFieldName, updatedUser)
 				iss.Fields = &issFields
 				return &iss
 			},
@@ -660,7 +665,7 @@ func TestUpdateIssue(t *testing.T) {
 			"should return error if update failed",
 			func() *gogh.Issue {
 				iss := ghIssue1
-				iss.Title = pkg.NewString("Updated title")
+				iss.Title = pkg.NewString(updatedTitle)
 				return &iss
 			},
 			func() *gojira.Issue {
@@ -669,7 +674,7 @@ func TestUpdateIssue(t *testing.T) {
 			func() *gojira.Issue {
 				iss := jiraIssueUpdate1
 				issFields := *iss.Fields
-				issFields.Summary = "Updated title"
+				issFields.Summary = updatedTitle
 				iss.Fields = &issFields
 				return &iss
 			},
@@ -687,7 +692,7 @@ func TestUpdateIssue(t *testing.T) {
 			"should return error if comparison comments failed",
 			func() *gogh.Issue {
 				iss := ghIssue1
-				iss.Title = pkg.NewString("Updated title")
+				iss.Title = pkg.NewString(updatedTitle)
 				return &iss
 			},
 			func() *gojira.Issue {
@@ -696,7 +701,7 @@ func TestUpdateIssue(t *testing.T) {
 			func() *gojira.Issue {
 				iss := jiraIssueUpdate1
 				issFields := *iss.Fields
-				issFields.Summary = "Updated title"
+				issFields.Summary = updatedTitle
 				iss.Fields = &issFields
 				return &iss
 			},
