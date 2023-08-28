@@ -16,7 +16,12 @@ func (m *GhClientMock) ListIssues(owner, repo string) ([]*gogh.Issue, error) {
 	return args.Get(0).([]*gogh.Issue), args.Error(1) //nolint:wrapcheck
 }
 
-func (m *GhClientMock) ListComments(owner, repo string, issue *gogh.Issue, since time.Time) ([]*gogh.IssueComment, error) {
+func (m *GhClientMock) ListComments(
+	owner string,
+	repo string,
+	issue *gogh.Issue,
+	since time.Time,
+) ([]*gogh.IssueComment, error) {
 	args := m.Called(owner, repo, issue, since)
 	return args.Get(0).([]*gogh.IssueComment), args.Error(1) //nolint:wrapcheck
 }

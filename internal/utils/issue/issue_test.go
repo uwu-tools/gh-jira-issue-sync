@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	testGitHubIdFieldName       = "customfield_1000"
+	testGitHubIDFieldName       = "customfield_1000"
 	testGitHubNumberFieldName   = "customfield_2000"
 	testGitHubStatusFieldName   = "customfield_3000"
 	testGitHubReporterFieldName = "customfield_4000"
@@ -84,7 +84,7 @@ var jiraIssue1 = gojira.Issue{
 		Summary:     "Title 1",
 		Description: "Issue body 1",
 		Unknowns: tcontainer.MarshalMap{
-			testGitHubIdFieldName:       float64(1),
+			testGitHubIDFieldName:       float64(1),
 			testGitHubNumberFieldName:   1,
 			testGitHubStatusFieldName:   "Under review",
 			testGitHubReporterFieldName: "user1",
@@ -101,7 +101,7 @@ var jiraIssue2 = gojira.Issue{
 		Summary:     "Title 2",
 		Description: "Issue body 2",
 		Unknowns: tcontainer.MarshalMap{
-			testGitHubIdFieldName:       float64(2),
+			testGitHubIDFieldName:       float64(2),
 			testGitHubNumberFieldName:   2,
 			testGitHubStatusFieldName:   "Completed",
 			testGitHubReporterFieldName: "user2",
@@ -120,7 +120,7 @@ var jiraIssue1Id = gojira.Issue{
 		Summary:     "Title 1",
 		Description: "Issue body 1",
 		Unknowns: tcontainer.MarshalMap{
-			testGitHubIdFieldName:       float64(1),
+			testGitHubIDFieldName:       float64(1),
 			testGitHubNumberFieldName:   1,
 			testGitHubStatusFieldName:   "Under review",
 			testGitHubReporterFieldName: "user1",
@@ -250,7 +250,7 @@ func TestCompare(t *testing.T) {
 			nil,
 		},
 		{
-			"one issue should be created and one should be updated in Jira if only one matching jira issue exists as pair of gh issue",
+			"one issue should be created and one should be updated in Jira if only one matching jira issue exists as pair of gh issue", //nolint:lll
 			[]*gogh.Issue{&ghIssue1, &ghIssue2},
 			[]gojira.Issue{jiraIssue1},
 			&ComparisonResult{
@@ -271,7 +271,7 @@ func TestCompare(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			setup(t)
-			cfg.On("GetFieldKey", config.GitHubID).Return(testGitHubIdFieldName)
+			cfg.On("GetFieldKey", config.GitHubID).Return(testGitHubIDFieldName)
 
 			result, err := Compare(cfg, tt.ghIssues, tt.jiraIssues)
 
@@ -293,7 +293,7 @@ func TestCompare(t *testing.T) {
 //			"should create an issue if there is no external error",
 //			&ghIssue1,
 //			func() {
-//				cfg.On("GetFieldKey", config.GitHubID).Return(testGitHubIdFieldName)
+//				cfg.On("GetFieldKey", config.GitHubID).Return(testGitHubIDFieldName)
 //				cfg.On("GetFieldKey", config.GitHubNumber).Return(testGitHubNumberFieldName)
 //				cfg.On("GetFieldKey", config.GitHubStatus).Return(testGitHubStatusFieldName)
 //				cfg.On("GetFieldKey", config.GitHubReporter).Return(testGitHubReporterFieldName)
@@ -310,7 +310,7 @@ func TestCompare(t *testing.T) {
 //			"should return error if the creation of issue failed",
 //			&ghIssue1,
 //			func() {
-//				cfg.On("GetFieldKey", config.GitHubID).Return(testGitHubIdFieldName)
+//				cfg.On("GetFieldKey", config.GitHubID).Return(testGitHubIDFieldName)
 //				cfg.On("GetFieldKey", config.GitHubNumber).Return(testGitHubNumberFieldName)
 //				cfg.On("GetFieldKey", config.GitHubStatus).Return(testGitHubStatusFieldName)
 //				cfg.On("GetFieldKey", config.GitHubReporter).Return(testGitHubReporterFieldName)
@@ -325,7 +325,7 @@ func TestCompare(t *testing.T) {
 //			"should return error if checking of creation failed",
 //			&ghIssue1,
 //			func() {
-//				cfg.On("GetFieldKey", config.GitHubID).Return(testGitHubIdFieldName)
+//				cfg.On("GetFieldKey", config.GitHubID).Return(testGitHubIDFieldName)
 //				cfg.On("GetFieldKey", config.GitHubNumber).Return(testGitHubNumberFieldName)
 //				cfg.On("GetFieldKey", config.GitHubStatus).Return(testGitHubStatusFieldName)
 //				cfg.On("GetFieldKey", config.GitHubReporter).Return(testGitHubReporterFieldName)
@@ -341,7 +341,7 @@ func TestCompare(t *testing.T) {
 //			"should return error if the reconcile of the comments failed",
 //			&ghIssue1,
 //			func() {
-//				cfg.On("GetFieldKey", config.GitHubID).Return(testGitHubIdFieldName)
+//				cfg.On("GetFieldKey", config.GitHubID).Return(testGitHubIDFieldName)
 //				cfg.On("GetFieldKey", config.GitHubNumber).Return(testGitHubNumberFieldName)
 //				cfg.On("GetFieldKey", config.GitHubStatus).Return(testGitHubStatusFieldName)
 //				cfg.On("GetFieldKey", config.GitHubReporter).Return(testGitHubReporterFieldName)
@@ -350,7 +350,9 @@ func TestCompare(t *testing.T) {
 //				cfg.On("GetProject").Return(&project)
 //				jClient.On("CreateIssue", &jiraIssue1).Return(&jiraIssue1Id, nil)
 //				jClient.On("GetIssue", "jira-issue-1").Return(&jiraIssue1Id, nil)
-//				commentFnMock.On("Reconcile", cfg, &ghIssue1, &jiraIssue1Id, ghClient, jClient).Return(errors.New("compare error fails")).Once()
+//				commentFnMock.
+//					On("Reconcile", cfg, &ghIssue1, &jiraIssue1Id, ghClient, jClient).
+//					Return(errors.New("compare error fails")).Once()
 //			},
 //			"comparing comments for issue failed",
 //		},

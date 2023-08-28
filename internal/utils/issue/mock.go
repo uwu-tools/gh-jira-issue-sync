@@ -14,12 +14,23 @@ type IssueFnMock struct {
 	mock.Mock
 }
 
-func (ifn *IssueFnMock) CreateIssue(cfg config.IConfig, issue *gogh.Issue, ghClient github.Client, jClient jira.Client) error {
+func (ifn *IssueFnMock) CreateIssue(
+	cfg config.IConfig,
+	issue *gogh.Issue,
+	ghClient github.Client,
+	jClient jira.Client,
+) error {
 	args := ifn.Called(cfg, issue, ghClient, jClient)
 	return args.Error(0) //nolint:wrapcheck
 }
 
-func (ifn *IssueFnMock) UpdateIssue(cfg config.IConfig, ghIssue *gogh.Issue, jIssue *gojira.Issue, ghClient github.Client, jClient jira.Client) error {
+func (ifn *IssueFnMock) UpdateIssue(
+	cfg config.IConfig,
+	ghIssue *gogh.Issue,
+	jIssue *gojira.Issue,
+	ghClient github.Client,
+	jClient jira.Client,
+) error {
 	args := ifn.Called(cfg, ghIssue, jIssue, ghClient, jClient)
 	return args.Error(0) //nolint:wrapcheck
 }

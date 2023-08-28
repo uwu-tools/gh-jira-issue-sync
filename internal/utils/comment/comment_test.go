@@ -65,19 +65,14 @@ var jiraComment1 = gojira.Comment{
 	ID: "1",
 	Body: `Comment [(ID 1)|https://github.com] from GitHub user [user1|https://github.com/user1] (First User) at 00:00 AM, September 26 2000:
 
-Comment body 1`,
+Comment body 1`, //nolint:lll
 }
 
 var jiraComment2 = gojira.Comment{
 	ID: "2",
 	Body: `Comment [(ID 2)|https://github.com] from GitHub user [user2|https://github.com/user2] (Second User) at 00:00 AM, August 1 1996:
 
-Comment body 2`,
-}
-
-var jiraCommentWrongBody = gojira.Comment{
-	ID:   "1",
-	Body: "Wrong body",
+Comment body 2`, //nolint:lll
 }
 
 func setup(t *testing.T) {
@@ -215,7 +210,9 @@ func TestUpdateComment(t *testing.T) {
 			&ghComment1,
 			&jiraComment2,
 			func() {
-				jiraClient.On("UpdateComment", jiraIssue, jiraComment2.ID, &ghComment1, ghClient).Return(&jiraComment1, errors.New("update failed"))
+				jiraClient.
+					On("UpdateComment", jiraIssue, jiraComment2.ID, &ghComment1, ghClient).
+					Return(&jiraComment1, errors.New("update failed"))
 			},
 			"updating Jira comment",
 		},
