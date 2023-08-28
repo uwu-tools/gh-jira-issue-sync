@@ -117,7 +117,7 @@ func TestValidateConfig(t *testing.T) {
 	"repo-name": "example/repo",
 	"jira-uri": "https://jira.com",
 	"jira-project": "example",
-	"since": "2023-08-16T14:54:14.712Z"
+	"since": "2023-08-16T15:04:05-0000"
 }`,
 			nil,
 		},
