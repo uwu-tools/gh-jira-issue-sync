@@ -12,7 +12,7 @@ import (
 	"testing"
 )
 
-var mockError = errors.New("mock error")
+var errMock = errors.New("mock error")
 
 var rCmd *cobra.Command
 var config2 *config
@@ -81,10 +81,10 @@ func TestGetConfigPath(t *testing.T) {
 			"getting error because file doesn't exist",
 			[]string{"--config", "./test/config.json"},
 			func() {
-				fs.(*filesystem.MockFs).On("Stat", "./test/config.json").Return(&filesystem.FakeFileInfo{}, mockError)
+				fs.(*filesystem.MockFs).On("Stat", "./test/config.json").Return(&filesystem.FakeFileInfo{}, errMock)
 			},
 			"",
-			mockError,
+			errMock,
 		},
 	}
 

@@ -2,7 +2,6 @@ package issue
 
 import (
 	"errors"
-	"fmt"
 	gogh "github.com/google/go-github/v53/github"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -24,6 +23,8 @@ const testGitHubStatusFieldName = "customfield_3000"
 const testGitHubReporterFieldName = "customfield_4000"
 const testGitHubLabelsFieldName = "customfield_5000"
 const testGitHubLastSyncFieldName = "customfield_6000"
+
+var errMock = errors.New("mock error")
 
 var project gojira.Project
 
@@ -684,7 +685,7 @@ func TestUpdateIssue(t *testing.T) {
 				cfg.On("GetFieldKey", config.GitHubLabels).Return(testGitHubLabelsFieldName)
 				cfg.On("GetFieldKey", config.GitHubLastSync).Return(testGitHubLastSyncFieldName)
 				jClient.On("UpdateIssue", newJiraIssue).Return(&gojira.Issue{}, nil)
-				jClient.On("GetIssue", "jira-issue-1").Return(&gojira.Issue{}, fmt.Errorf("error during get issue"))
+				jClient.On("GetIssue", "jira-issue-1").Return(&gojira.Issue{}, errMock)
 			},
 			"getting Jira issue",
 		},
@@ -712,7 +713,7 @@ func TestUpdateIssue(t *testing.T) {
 				cfg.On("GetFieldKey", config.GitHubLastSync).Return(testGitHubLastSyncFieldName)
 				jClient.On("UpdateIssue", newJiraIssue).Return(&gojira.Issue{}, nil)
 				jClient.On("GetIssue", "jira-issue-1").Return(newJiraIssue, nil)
-				commentFnMock.On("Reconcile", cfg, ghIssue, newJiraIssue, ghClient, jClient).Return(errors.New("comparison comments error"))
+				commentFnMock.On("Reconcile", cfg, ghIssue, newJiraIssue, ghClient, jClient).Return(errMock)
 			},
 			"comparing comments",
 		},
