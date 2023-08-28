@@ -141,8 +141,10 @@ GhIssueLoop:
 			ghIDFloat64 := float64(ghID)
 			if jiraID == ghIDFloat64 {
 				log.Infof("Updating issue %s", jIssue.ID)
-				comparisonResult.ShouldUpdate =
-					append(comparisonResult.ShouldUpdate, &IssuePair{GhIssue: ghIssue, JiraIssue: &jIssue})
+				comparisonResult.ShouldUpdate = append(
+					comparisonResult.ShouldUpdate,
+					&IssuePair{GhIssue: ghIssue, JiraIssue: &jIssue},
+				)
 				continue GhIssueLoop
 			}
 		}

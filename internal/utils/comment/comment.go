@@ -135,8 +135,10 @@ GhCommentLoop:
 				continue
 			}
 
-			comparisonResult.ShouldUpdate =
-				append(comparisonResult.ShouldUpdate, &CommentPair{GhComment: ghComment, JiraComment: jComment})
+			comparisonResult.ShouldUpdate = append(
+				comparisonResult.ShouldUpdate,
+				&CommentPair{GhComment: ghComment, JiraComment: jComment},
+			)
 			continue GhCommentLoop
 		}
 
