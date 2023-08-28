@@ -37,6 +37,8 @@ const testComment = `Comment [(ID 484163403)|https://github.com] from GitHub use
 
 Bla blibidy bloo bla`
 
+var errMock = errors.New("mock error")
+
 var (
 	jiraClient *jira.JiraClientMock
 	cfg        *config.ConfigMock
@@ -63,16 +65,18 @@ var ghComment3 = gogh.IssueComment{
 
 var jiraComment1 = gojira.Comment{
 	ID: "1",
+	//nolint:lll
 	Body: `Comment [(ID 1)|https://github.com] from GitHub user [user1|https://github.com/user1] (First User) at 00:00 AM, September 26 2000:
 
-Comment body 1`, //nolint:lll
+Comment body 1`,
 }
 
 var jiraComment2 = gojira.Comment{
 	ID: "2",
+	//nolint:lll
 	Body: `Comment [(ID 2)|https://github.com] from GitHub user [user2|https://github.com/user2] (Second User) at 00:00 AM, August 1 1996:
 
-Comment body 2`, //nolint:lll
+Comment body 2`,
 }
 
 func setup(t *testing.T) {
@@ -212,7 +216,7 @@ func TestUpdateComment(t *testing.T) {
 			func() {
 				jiraClient.
 					On("UpdateComment", jiraIssue, jiraComment2.ID, &ghComment1, ghClient).
-					Return(&jiraComment1, errors.New("update failed"))
+					Return(&jiraComment1, errMock)
 			},
 			"updating Jira comment",
 		},
