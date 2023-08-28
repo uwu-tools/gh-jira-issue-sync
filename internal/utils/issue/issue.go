@@ -37,7 +37,7 @@ const dateFormat = "2006-01-02T15:04:05.0-0700"
 // time contains the object used for get the current time.
 var time = clock.NewRealClock()
 
-var compareCommentFn = comment.Compare
+var compareCommentFn = comment.Reconcile
 
 type ComparisonResult struct {
 	ShouldCreate []*gogh.Issue

@@ -37,6 +37,6 @@ func (j *JiraClientMock) CreateComment(issue *jira.Issue, comment *gogh.IssueCom
 }
 
 func (j *JiraClientMock) UpdateComment(issue *jira.Issue, id string, comment *gogh.IssueComment, githubClient github.Client) (*jira.Comment, error) {
-	args := j.Called(issue, comment, githubClient)
+	args := j.Called(issue, id, comment, githubClient)
 	return args.Get(0).(*jira.Comment), args.Error(1)
 }

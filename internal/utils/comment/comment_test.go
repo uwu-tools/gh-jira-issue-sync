@@ -16,12 +16,71 @@
 
 package comment
 
-import "testing"
+import (
+	"errors"
+	gogh "github.com/google/go-github/v53/github"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"github.com/uwu-tools/gh-jira-issue-sync/internal/config"
+	"github.com/uwu-tools/gh-jira-issue-sync/internal/github"
+	"github.com/uwu-tools/gh-jira-issue-sync/internal/jira"
+	"github.com/uwu-tools/gh-jira-issue-sync/pkg"
+	gojira "github.com/uwu-tools/go-jira/v2/cloud"
+	"testing"
+	"time"
+)
 
 //nolint:lll
 const testComment = `Comment [(ID 484163403)|https://github.com] from GitHub user [bilbo-baggins|https://github.com/bilbo-baggins] (Bilbo Baggins) at 16:27 PM, April 17 2019:
 
 Bla blibidy bloo bla`
+
+var jiraClient *jira.JiraClientMock
+var cfg *config.ConfigMock
+var ghClient *github.GhClientMock
+
+var ghComment1 = gogh.IssueComment{
+	ID:        pkg.NewInt64(1),
+	Body:      pkg.NewString("Comment body 1"),
+	CreatedAt: &gogh.Timestamp{Time: time.Date(2000, 9, 26, 0, 0, 0, 0, time.FixedZone("UTC", 0))},
+}
+
+var ghComment2 = gogh.IssueComment{
+	ID:        pkg.NewInt64(2),
+	Body:      pkg.NewString("Comment body 2"),
+	CreatedAt: &gogh.Timestamp{Time: time.Date(1996, 8, 1, 0, 0, 0, 0, time.FixedZone("UTC", 0))},
+}
+
+var ghComment3 = gogh.IssueComment{
+	ID:        pkg.NewInt64(3),
+	Body:      pkg.NewString("Comment body 3"),
+	CreatedAt: &gogh.Timestamp{Time: time.Date(2001, 1, 1, 0, 0, 0, 0, time.FixedZone("UTC", 0))},
+}
+
+var jiraComment1 = gojira.Comment{
+	ID: "1",
+	Body: `Comment [(ID 1)|https://github.com] from GitHub user [user1|https://github.com/user1] (First User) at 00:00 AM, September 26 2000:
+
+Comment body 1`,
+}
+
+var jiraComment2 = gojira.Comment{
+	ID: "2",
+	Body: `Comment [(ID 2)|https://github.com] from GitHub user [user2|https://github.com/user2] (Second User) at 00:00 AM, August 1 1996:
+
+Comment body 2`,
+}
+
+var jiraCommentWrongBody = gojira.Comment{
+	ID:   "1",
+	Body: "Wrong body",
+}
+
+func setup() {
+	jiraClient = new(jira.JiraClientMock)
+	cfg = new(config.ConfigMock)
+	ghClient = new(github.GhClientMock)
+}
 
 func TestJiraCommentRegex(t *testing.T) {
 	fields := jCommentRegex.FindStringSubmatch(testComment)
@@ -48,5 +107,123 @@ func TestJiraCommentRegex(t *testing.T) {
 
 	if fields[5] != "Bla blibidy bloo bla" {
 		t.Fatalf("Expected field[5] = Bla blibidy bloo bla; Got field[5] = %s", fields[5])
+	}
+}
+
+func TestCompare(t *testing.T) {
+	tests := []struct {
+		name           string
+		ghComments     []*gogh.IssueComment
+		jiraComments   []*gojira.Comment
+		expectedResult *ComparisonResult
+	}{
+		{
+			"should return empty result if there are no GH comment",
+			[]*gogh.IssueComment{},
+			[]*gojira.Comment{},
+			&ComparisonResult{make([]*gogh.IssueComment, 0), make([]*CommentPair, 0)},
+		},
+		{
+			"should create all ghComments if there are no existing Jira comments",
+			[]*gogh.IssueComment{&ghComment1, &ghComment2},
+			[]*gojira.Comment{},
+			&ComparisonResult{[]*gogh.IssueComment{&ghComment1, &ghComment2}, make([]*CommentPair, 0)},
+		},
+		{
+			"should create GH comment if no matching Jira comment",
+			[]*gogh.IssueComment{&ghComment3},
+			[]*gojira.Comment{&jiraComment1, &jiraComment2},
+			&ComparisonResult{[]*gogh.IssueComment{&ghComment3}, make([]*CommentPair, 0)},
+		},
+		{
+			"should update GH comments if there are matching Jira comments",
+			[]*gogh.IssueComment{&ghComment1, &ghComment2},
+			[]*gojira.Comment{&jiraComment1, &jiraComment2},
+			&ComparisonResult{
+				make([]*gogh.IssueComment, 0),
+				[]*CommentPair{
+					{
+						&ghComment1,
+						&jiraComment1,
+					},
+					{
+						&ghComment2,
+						&jiraComment2,
+					},
+				}},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			setup()
+
+			result, _ := Compare(tt.ghComments, tt.jiraComments)
+
+			assert.Equal(t, tt.expectedResult, result)
+			mock.AssertExpectationsForObjects(t, jiraClient)
+		})
+	}
+}
+
+func TestUpdateComment(t *testing.T) {
+	jiraIssue := &gojira.Issue{ID: "1"}
+
+	tests := []struct {
+		name        string
+		ghComment   *gogh.IssueComment
+		jiraComment *gojira.Comment
+		initMockFn  func()
+		expectedErr string
+	}{
+		//{
+		//	"should create if the corresponding Jira comment is not in the right format",
+		//	&ghComment1,
+		//	&jiraCommentWrongBody,
+		//	func() {
+		//		jiraClient.On("UpdateComment", jiraIssue, jiraCommentWrongBody.ID, &ghComment1, ghClient).Return(nil)
+		//	},
+		//	"",
+		//},
+		{
+			"should not update if the content of the comments are the same",
+			&ghComment1,
+			&jiraComment1,
+			func() {
+			},
+			"",
+		},
+		{
+			"should update if the content of the comments are different",
+			&ghComment1,
+			&jiraComment2,
+			func() {
+				jiraClient.On("UpdateComment", jiraIssue, jiraComment2.ID, &ghComment1, ghClient).Return(&jiraComment1, nil)
+			},
+			"",
+		},
+		{
+			"should return error if the update failed",
+			&ghComment1,
+			&jiraComment2,
+			func() {
+				jiraClient.On("UpdateComment", jiraIssue, jiraComment2.ID, &ghComment1, ghClient).Return(&jiraComment1, errors.New("update failed"))
+			},
+			"updating Jira comment",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			setup()
+			tt.initMockFn()
+
+			err := UpdateComment(cfg, tt.ghComment, tt.jiraComment, jiraIssue, ghClient, jiraClient)
+
+			if tt.expectedErr != "" {
+				assert.ErrorContains(t, err, tt.expectedErr)
+			}
+			mock.AssertExpectationsForObjects(t, jiraClient, cfg, ghClient)
+		})
 	}
 }

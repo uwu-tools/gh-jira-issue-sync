@@ -42,10 +42,20 @@ var jCommentRegex = regexp.MustCompile(
 // just their GitHub ID for matching.
 var jCommentIDRegex = regexp.MustCompile(`^Comment \[\(ID (\d+)\)\|`)
 
-// Compare takes a GitHub issue, and retrieves all of its comments. It then
+type ComparisonResult struct {
+	ShouldCreate []*gogh.IssueComment
+	ShouldUpdate []*CommentPair
+}
+
+type CommentPair struct {
+	GhComment   *gogh.IssueComment
+	JiraComment *gojira.Comment
+}
+
+// Reconcile takes a GitHub issue, and retrieves all of its comments. It then
 // matches each one to a comment in `existing`. If it finds a match, it calls
 // UpdateComment; if it doesn't, it calls CreateComment.
-func Compare(
+func Reconcile(
 	cfg config.IConfig,
 	ghIssue *gogh.Issue,
 	jIssue *gojira.Issue,
@@ -77,9 +87,39 @@ func Compare(
 		log.Debugf("Jira issue %s has %d comments", jIssue.Key, len(jComments))
 	}
 
+	comparisonResult, err := Compare(ghComments, jComments)
+	if err != nil {
+		log.Debugf("Error comparing comments: %s", err)
+		return fmt.Errorf("error comparing comments: %w", err)
+	}
+
+	for _, ghComment := range comparisonResult.ShouldCreate {
+		newComment, err := jClient.CreateComment(jIssue, ghComment, ghClient)
+		if err != nil {
+			return fmt.Errorf("creating Jira comment: %w", err)
+		}
+		log.Debugf("Created Jira comment %s.", newComment.ID)
+	}
+
+	for _, commentPair := range comparisonResult.ShouldUpdate {
+		if err = UpdateComment(cfg, commentPair.GhComment, commentPair.JiraComment, jIssue, ghClient, jClient); err != nil {
+			return fmt.Errorf("updating Jira comment: %w", err)
+		}
+	}
+
+	log.Debugf("Copied comments from GH issue #%d to Jira issue %s.", *ghIssue.Number, jIssue.Key)
+	return nil
+}
+
+func Compare(ghComments []*gogh.IssueComment, jiraComments []*gojira.Comment) (*ComparisonResult, error) {
+	comparisonResult := &ComparisonResult{
+		ShouldCreate: make([]*gogh.IssueComment, 0),
+		ShouldUpdate: make([]*CommentPair, 0),
+	}
+
+GhCommentLoop:
 	for _, ghComment := range ghComments {
-		found := false
-		for _, jComment := range jComments {
+		for _, jComment := range jiraComments {
 			if !jCommentIDRegex.MatchString(jComment.Body) {
 				continue
 			}
@@ -87,36 +127,22 @@ func Compare(
 			matches := jCommentIDRegex.FindStringSubmatch(jComment.Body)
 			intID, err := strconv.Atoi(matches[1])
 			if err != nil {
-				return fmt.Errorf("converting comment ID to int: %w", err)
+				return &ComparisonResult{}, fmt.Errorf("converting comment ID to int: %w", err)
 			}
 
 			id := int64(intID)
 			if *ghComment.ID != id {
 				continue
 			}
-			found = true
 
-			err = UpdateComment(cfg, ghComment, jComment, jIssue, ghClient, jClient)
-			if err != nil {
-				return err
-			}
-
-			break
-		}
-		if found {
-			continue
+			comparisonResult.ShouldUpdate = append(comparisonResult.ShouldUpdate, &CommentPair{GhComment: ghComment, JiraComment: jComment})
+			continue GhCommentLoop
 		}
 
-		comment, err := jClient.CreateComment(jIssue, ghComment, ghClient)
-		if err != nil {
-			return fmt.Errorf("creating Jira comment: %w", err)
-		}
-
-		log.Debugf("Created Jira comment %s.", comment.ID)
+		comparisonResult.ShouldCreate = append(comparisonResult.ShouldCreate, ghComment)
 	}
 
-	log.Debugf("Copied comments from GH issue #%d to Jira issue %s.", *ghIssue.Number, jIssue.Key)
-	return nil
+	return comparisonResult, nil
 }
 
 // UpdateComment compares the body of a GitHub comment with the body (minus header)

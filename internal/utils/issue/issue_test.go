@@ -24,9 +24,6 @@ const testGitHubReporterFieldName = "customfield_4000"
 const testGitHubLabelsFieldName = "customfield_5000"
 const testGitHubLastSyncFieldName = "customfield_6000"
 
-var issue1 gogh.Issue
-var issue2 gogh.Issue
-
 var project gojira.Project
 
 var jClient *jmock.JiraClientMock
@@ -149,15 +146,9 @@ var jiraIssueNoGhId = gojira.Issue{
 	},
 }
 
-var jiraProject = gojira.Project{
-	ID:          "project-1",
-	Description: "Project Description.",
-	Name:        "Project 1",
-}
-
 func setup() {
 	commentFnMock = &commentMock.CommentFnMock{}
-	compareCommentFn = commentFnMock.Compare
+	compareCommentFn = commentFnMock.Reconcile
 
 	jClient = new(jmock.JiraClientMock)
 	ghClient = new(ghmock.GhClientMock)
@@ -301,7 +292,7 @@ func TestCreateIssue(t *testing.T) {
 				cfg.On("GetProject").Return(&project)
 				jClient.On("CreateIssue", &jiraIssue1).Return(&jiraIssue1Id, nil)
 				jClient.On("GetIssue", "jira-issue-1").Return(&jiraIssue1Id, nil)
-				commentFnMock.On("Compare", cfg, &ghIssue1, &jiraIssue1Id, ghClient, jClient).Return(nil).Once()
+				commentFnMock.On("Reconcile", cfg, &ghIssue1, &jiraIssue1Id, ghClient, jClient).Return(nil).Once()
 			},
 			"",
 		},
@@ -349,7 +340,7 @@ func TestCreateIssue(t *testing.T) {
 				cfg.On("GetProject").Return(&project)
 				jClient.On("CreateIssue", &jiraIssue1).Return(&jiraIssue1Id, nil)
 				jClient.On("GetIssue", "jira-issue-1").Return(&jiraIssue1Id, nil)
-				commentFnMock.On("Compare", cfg, &ghIssue1, &jiraIssue1Id, ghClient, jClient).Return(errors.New("compare error fails")).Once()
+				commentFnMock.On("Reconcile", cfg, &ghIssue1, &jiraIssue1Id, ghClient, jClient).Return(errors.New("compare error fails")).Once()
 			},
 			"comparing comments for issue failed",
 		},
@@ -398,7 +389,7 @@ func TestUpdateIssue(t *testing.T) {
 				cfg.On("GetFieldKey", config.GitHubReporter).Return(testGitHubReporterFieldName)
 				cfg.On("GetFieldKey", config.GitHubLabels).Return(testGitHubLabelsFieldName)
 				jClient.On("GetIssue", "jira-issue-1").Return(newJiraIssue, nil)
-				commentFnMock.On("Compare", cfg, ghIssue, newJiraIssue, ghClient, jClient).Return(nil)
+				commentFnMock.On("Reconcile", cfg, ghIssue, newJiraIssue, ghClient, jClient).Return(nil)
 			},
 			"",
 		},
@@ -426,7 +417,7 @@ func TestUpdateIssue(t *testing.T) {
 				cfg.On("GetFieldKey", config.GitHubLastSync).Return(testGitHubLastSyncFieldName)
 				jClient.On("UpdateIssue", newJiraIssue).Return(&gojira.Issue{}, nil)
 				jClient.On("GetIssue", "jira-issue-1").Return(newJiraIssue, nil)
-				commentFnMock.On("Compare", cfg, ghIssue, newJiraIssue, ghClient, jClient).Return(nil)
+				commentFnMock.On("Reconcile", cfg, ghIssue, newJiraIssue, ghClient, jClient).Return(nil)
 			},
 			"",
 		},
@@ -454,7 +445,7 @@ func TestUpdateIssue(t *testing.T) {
 				cfg.On("GetFieldKey", config.GitHubLastSync).Return(testGitHubLastSyncFieldName)
 				jClient.On("UpdateIssue", newJiraIssue).Return(&gojira.Issue{}, nil)
 				jClient.On("GetIssue", "jira-issue-1").Return(newJiraIssue, nil)
-				commentFnMock.On("Compare", cfg, ghIssue, newJiraIssue, ghClient, jClient).Return(nil)
+				commentFnMock.On("Reconcile", cfg, ghIssue, newJiraIssue, ghClient, jClient).Return(nil)
 			},
 			"",
 		},
@@ -483,7 +474,7 @@ func TestUpdateIssue(t *testing.T) {
 				cfg.On("GetFieldKey", config.GitHubLastSync).Return(testGitHubLastSyncFieldName)
 				jClient.On("UpdateIssue", newJiraIssue).Return(&gojira.Issue{}, nil)
 				jClient.On("GetIssue", "jira-issue-1").Return(newJiraIssue, nil)
-				commentFnMock.On("Compare", cfg, ghIssue, newJiraIssue, ghClient, jClient).Return(nil)
+				commentFnMock.On("Reconcile", cfg, ghIssue, newJiraIssue, ghClient, jClient).Return(nil)
 			},
 			"",
 		},
@@ -517,7 +508,7 @@ func TestUpdateIssue(t *testing.T) {
 				cfg.On("GetFieldKey", config.GitHubLastSync).Return(testGitHubLastSyncFieldName)
 				jClient.On("UpdateIssue", newJiraIssue).Return(&gojira.Issue{}, nil)
 				jClient.On("GetIssue", "jira-issue-1").Return(newJiraIssue, nil)
-				commentFnMock.On("Compare", cfg, ghIssue, newJiraIssue, ghClient, jClient).Return(nil)
+				commentFnMock.On("Reconcile", cfg, ghIssue, newJiraIssue, ghClient, jClient).Return(nil)
 			},
 			"",
 		},
@@ -548,7 +539,7 @@ func TestUpdateIssue(t *testing.T) {
 				cfg.On("GetFieldKey", config.GitHubLastSync).Return(testGitHubLastSyncFieldName)
 				jClient.On("UpdateIssue", newJiraIssue).Return(&gojira.Issue{}, nil)
 				jClient.On("GetIssue", "jira-issue-1").Return(newJiraIssue, nil)
-				commentFnMock.On("Compare", cfg, ghIssue, newJiraIssue, ghClient, jClient).Return(nil)
+				commentFnMock.On("Reconcile", cfg, ghIssue, newJiraIssue, ghClient, jClient).Return(nil)
 			},
 			"",
 		},
@@ -584,7 +575,7 @@ func TestUpdateIssue(t *testing.T) {
 				cfg.On("GetFieldKey", config.GitHubLastSync).Return(testGitHubLastSyncFieldName)
 				jClient.On("UpdateIssue", newJiraIssue).Return(&gojira.Issue{}, nil)
 				jClient.On("GetIssue", "jira-issue-1").Return(newJiraIssue, nil)
-				commentFnMock.On("Compare", cfg, ghIssue, newJiraIssue, ghClient, jClient).Return(nil)
+				commentFnMock.On("Reconcile", cfg, ghIssue, newJiraIssue, ghClient, jClient).Return(nil)
 			},
 			"",
 		},
@@ -618,7 +609,7 @@ func TestUpdateIssue(t *testing.T) {
 				cfg.On("GetFieldKey", config.GitHubLastSync).Return(testGitHubLastSyncFieldName)
 				jClient.On("UpdateIssue", newJiraIssue).Return(&gojira.Issue{}, nil)
 				jClient.On("GetIssue", "jira-issue-1").Return(newJiraIssue, nil)
-				commentFnMock.On("Compare", cfg, ghIssue, newJiraIssue, ghClient, jClient).Return(nil)
+				commentFnMock.On("Reconcile", cfg, ghIssue, newJiraIssue, ghClient, jClient).Return(nil)
 			},
 			"",
 		},
@@ -658,7 +649,7 @@ func TestUpdateIssue(t *testing.T) {
 				cfg.On("GetFieldKey", config.GitHubLastSync).Return(testGitHubLastSyncFieldName)
 				jClient.On("UpdateIssue", newJiraIssue).Return(&gojira.Issue{}, nil)
 				jClient.On("GetIssue", "jira-issue-1").Return(newJiraIssue, nil)
-				commentFnMock.On("Compare", cfg, ghIssue, newJiraIssue, ghClient, jClient).Return(nil)
+				commentFnMock.On("Reconcile", cfg, ghIssue, newJiraIssue, ghClient, jClient).Return(nil)
 			},
 			"",
 		},
@@ -713,7 +704,7 @@ func TestUpdateIssue(t *testing.T) {
 				cfg.On("GetFieldKey", config.GitHubLastSync).Return(testGitHubLastSyncFieldName)
 				jClient.On("UpdateIssue", newJiraIssue).Return(&gojira.Issue{}, nil)
 				jClient.On("GetIssue", "jira-issue-1").Return(newJiraIssue, nil)
-				commentFnMock.On("Compare", cfg, ghIssue, newJiraIssue, ghClient, jClient).Return(errors.New("comparison comments error"))
+				commentFnMock.On("Reconcile", cfg, ghIssue, newJiraIssue, ghClient, jClient).Return(errors.New("comparison comments error"))
 			},
 			"comparing comments",
 		},
