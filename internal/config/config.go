@@ -37,20 +37,21 @@ import (
 	jira "github.com/uwu-tools/go-jira/v2/cloud"
 	"golang.org/x/term"
 
+	"github.com/uwu-tools/gh-jira-issue-sync/internal/filesystem"
 	"github.com/uwu-tools/gh-jira-issue-sync/internal/github"
 	"github.com/uwu-tools/gh-jira-issue-sync/internal/options"
 )
 
-// fieldKey is an enum-like type to represent the customfield ID keys.
-type fieldKey int
+// FieldKey is an enum-like type to represent the customfield ID keys.
+type FieldKey int
 
 const (
-	GitHubID       fieldKey = iota
-	GitHubNumber   fieldKey = iota
-	GitHubLabels   fieldKey = iota
-	GitHubStatus   fieldKey = iota
-	GitHubReporter fieldKey = iota
-	GitHubLastSync fieldKey = iota
+	GitHubID       FieldKey = iota
+	GitHubNumber   FieldKey = iota
+	GitHubLabels   FieldKey = iota
+	GitHubStatus   FieldKey = iota
+	GitHubReporter FieldKey = iota
+	GitHubLastSync FieldKey = iota
 
 	// Custom field names.
 	CustomFieldNameGitHubID       = "github-id"
@@ -60,6 +61,8 @@ const (
 	CustomFieldNameGitHubReporter = "github-reporter"
 	CustomFieldNameGitHubLastSync = "github-last-sync"
 )
+
+var fs filesystem.Filesystem = &filesystem.OsFs{}
 
 // fields represents the custom field IDs of the Jira custom fields we care about.
 type fields struct {
@@ -71,10 +74,10 @@ type fields struct {
 	lastUpdate     string
 }
 
-// Config is the root configuration object the application creates.
+// config is the root configuration object the application creates.
 //
 //nolint:govet
-type Config struct {
+type config struct {
 	// cmdFile is the file Viper is using for its configuration.
 	cmdFile string
 
@@ -102,32 +105,12 @@ type Config struct {
 // New creates a new, immutable configuration object. This object
 // holds the Viper configuration and the logger, and is validated. The
 // Jira configuration is not yet initialized.
-func New(ctx context.Context, cmd *cobra.Command) (*Config, error) {
-	var cfg Config
+func New(ctx context.Context, cmd *cobra.Command) (IConfig, error) {
+	var cfg config
 
-	cfgFilePath, err := cmd.Flags().GetString(options.ConfigKeyConfigFile)
+	cfgFilePath, err := getConfigFilePath(cmd)
 	if err != nil {
-		return nil, fmt.Errorf("getting config file: %w", err)
-	}
-
-	if cfgFilePath == "" {
-		log.Debug("config file path was not set, falling back to default")
-
-		cfgFileDir, err := os.Getwd()
-		if err != nil {
-			return nil, fmt.Errorf("getting working directory: %w", err)
-		}
-
-		cfgFilePath = filepath.Join(cfgFileDir, options.DefaultConfigFileName)
-	}
-
-	_, err = os.Stat(cfgFilePath)
-	if err != nil {
-		return nil, fmt.Errorf(
-			"checking if config file (%s) exists: %w",
-			cfgFilePath,
-			err,
-		)
+		return nil, fmt.Errorf("getting config path: %w", err)
 	}
 
 	log.Debugf("using config file: %s", cfgFilePath)
@@ -148,7 +131,7 @@ func New(ctx context.Context, cmd *cobra.Command) (*Config, error) {
 
 // LoadJiraConfig loads the Jira configuration (project key,
 // custom field IDs) from a remote Jira server.
-func (c *Config) LoadJiraConfig(client *jira.Client) error {
+func (c *config) LoadJiraConfig(client *jira.Client) error {
 	proj, res, err := client.Project.Get(
 		c.Context(),
 		c.cmdConfig.GetString(options.ConfigKeyJiraProject),
@@ -176,53 +159,53 @@ func (c *Config) LoadJiraConfig(client *jira.Client) error {
 }
 
 // Context returns the context.
-func (c *Config) Context() context.Context {
+func (c *config) Context() context.Context {
 	return c.ctx
 }
 
 // GetConfigFile returns the file that Viper loaded the configuration from.
-func (c *Config) GetConfigFile() string {
+func (c *config) GetConfigFile() string {
 	return c.cmdFile
 }
 
 // GetConfigString returns a string value from the Viper configuration.
-func (c *Config) GetConfigString(key string) string {
+func (c *config) GetConfigString(key string) string {
 	return c.cmdConfig.GetString(key)
 }
 
 // IsBasicAuth is true if we're using HTTP Basic Authentication, and false if
 // we're using OAuth.
-func (c *Config) IsBasicAuth() bool {
+func (c *config) IsBasicAuth() bool {
 	return c.basicAuth
 }
 
-// GetSinceParam returns the `since` configuration parameter, parsed as a time.Time.
-func (c *Config) GetSinceParam() time.Time {
+// GetSinceParam returns the `since` configuration parameter, parsed as a clock.Time.
+func (c *config) GetSinceParam() time.Time {
 	return c.since
 }
 
 // IsDryRun returns whether the application is running in confirmed mode or not.
-func (c *Config) IsDryRun() bool {
+func (c *config) IsDryRun() bool {
 	return !c.cmdConfig.GetBool(options.ConfigKeyConfirm)
 }
 
 // IsDaemon returns whether the application is running as a daemon.
-func (c *Config) IsDaemon() bool {
+func (c *config) IsDaemon() bool {
 	return c.cmdConfig.GetDuration(options.ConfigKeyPeriod) != 0
 }
 
 // GetDaemonPeriod returns the period on which the tool runs if in daemon mode.
-func (c *Config) GetDaemonPeriod() time.Duration {
+func (c *config) GetDaemonPeriod() time.Duration {
 	return c.cmdConfig.GetDuration(options.ConfigKeyPeriod)
 }
 
-// GetTimeout returns the configured timeout on all API calls, parsed as a time.Duration.
-func (c *Config) GetTimeout() time.Duration {
+// GetTimeout returns the configured timeout on all API calls, parsed as a clock.Duration.
+func (c *config) GetTimeout() time.Duration {
 	return c.cmdConfig.GetDuration(options.ConfigKeyTimeout)
 }
 
 // GetFieldID returns the customfield ID of a Jira custom field.
-func (c *Config) GetFieldID(key fieldKey) string {
+func (c *config) GetFieldID(key FieldKey) string {
 	switch key {
 	case GitHubID:
 		return c.fieldIDs.githubID
@@ -242,22 +225,22 @@ func (c *Config) GetFieldID(key fieldKey) string {
 }
 
 // GetFieldKey returns customfield_XXXXX, where XXXXX is the custom field ID (see GetFieldID).
-func (c *Config) GetFieldKey(key fieldKey) string {
+func (c *config) GetFieldKey(key FieldKey) string {
 	return fmt.Sprintf("customfield_%s", c.GetFieldID(key))
 }
 
 // GetProject returns the Jira project the user has configured.
-func (c *Config) GetProject() *jira.Project {
+func (c *config) GetProject() *jira.Project {
 	return c.project
 }
 
 // GetProjectKey returns the Jira key of the configured project.
-func (c *Config) GetProjectKey() string {
+func (c *config) GetProjectKey() string {
 	return c.project.Key
 }
 
 // GetRepo returns the user/org name and the repo name of the configured GitHub repository.
-func (c *Config) GetRepo() (string, string) {
+func (c *config) GetRepo() (string, string) {
 	repoPath := c.cmdConfig.GetString(options.ConfigKeyRepoName)
 	// We check that repo-name is two parts separated by a slash in New, so this is safe
 	return github.GetRepo(repoPath)
@@ -265,7 +248,7 @@ func (c *Config) GetRepo() (string, string) {
 
 // SetJiraToken adds the Jira OAuth tokens in the Viper configuration, ensuring that they
 // are saved for future runs.
-func (c *Config) SetJiraToken(token *oauth1.Token) {
+func (c *config) SetJiraToken(token *oauth1.Token) {
 	c.cmdConfig.Set(options.ConfigKeyJiraToken, token.Token)
 	c.cmdConfig.Set(options.ConfigKeyJiraSecret, token.TokenSecret)
 }
@@ -289,7 +272,7 @@ type configFile struct {
 }
 
 // SaveConfig updates the `since` parameter to now, then saves the configuration file.
-func (c *Config) SaveConfig() error {
+func (c *config) SaveConfig() error {
 	c.cmdConfig.Set(
 		options.ConfigKeySince,
 		time.Now().Format(options.DateFormat),
@@ -361,7 +344,7 @@ func newViper(appName, cfgFile string) *viper.Viper {
 // real URI, etc. This is the first level of checking. It does not confirm
 // if a Jira cli is running at `jira-uri` for example; that is checked
 // in getJiraClient when we actually make a call to the API.
-func (c *Config) validateConfig() error {
+func (c *config) validateConfig() error {
 	// Log level and config file location are validated already
 
 	log.Debug("Checking config variables...")
@@ -459,7 +442,7 @@ func (c *Config) validateConfig() error {
 
 // getFieldIDs requests the metadata of every issue field in the Jira
 // project, and saves the IDs of the custom fields used by issue-sync.
-func (c *Config) getFieldIDs(client *jira.Client) (*fields, error) {
+func (c *config) getFieldIDs(client *jira.Client) (*fields, error) {
 	log.Debug("Collecting field IDs.")
 	req, err := client.NewRequest(c.Context(), "GET", "/rest/api/2/field", nil)
 	if err != nil {
@@ -472,9 +455,20 @@ func (c *Config) getFieldIDs(client *jira.Client) (*fields, error) {
 		return nil, fmt.Errorf("getting field IDs: %w", err)
 	}
 
-	jFields := *jFieldsPtr
-	var fieldIDs fields
+	fieldIDs, err := c.parseFieldIDs(jFieldsPtr)
+	if err != nil {
+		return nil, fmt.Errorf("unable to parse field ids: %w", err)
+	}
 
+	log.Debug("All fields have been checked.")
+
+	return fieldIDs, nil
+}
+
+func (c *config) parseFieldIDs(jFieldsPtr *[]jira.Field) (*fields, error) {
+	fieldIDs := new(fields)
+
+	jFields := *jFieldsPtr
 	for i := range jFields {
 		field := jFields[i]
 		switch field.Name {
@@ -512,9 +506,38 @@ func (c *Config) getFieldIDs(client *jira.Client) (*fields, error) {
 		return nil, errCustomFieldIDNotFound(CustomFieldNameGitHubLastSync)
 	}
 
-	log.Debug("All fields have been checked.")
+	return fieldIDs, nil
+}
 
-	return &fieldIDs, nil
+// getConfigFilePath returns the path where the config file is located. If the config file is not found then
+// returns an error.
+func getConfigFilePath(cmd *cobra.Command) (string, error) {
+	cfgFilePath, err := cmd.Flags().GetString(options.ConfigKeyConfigFile)
+	if err != nil {
+		return "", fmt.Errorf("getting config file from cli: %w", err)
+	}
+
+	if cfgFilePath == "" {
+		log.Debug("config file path was not set, falling back to default")
+
+		cfgFileDir, err := fs.Getwd()
+		if err != nil {
+			return "", fmt.Errorf("getting working directory: %w", err)
+		}
+
+		cfgFilePath = filepath.Join(cfgFileDir, options.DefaultConfigFileName)
+	}
+
+	_, err = fs.Stat(cfgFilePath)
+	if err != nil {
+		return "", fmt.Errorf(
+			"checking if config file (%s) exists: %w",
+			cfgFilePath,
+			err,
+		)
+	}
+
+	return cfgFilePath, nil
 }
 
 // Errors

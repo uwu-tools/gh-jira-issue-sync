@@ -29,8 +29,8 @@ import (
 	"github.com/uwu-tools/gh-jira-issue-sync/internal/config"
 	"github.com/uwu-tools/gh-jira-issue-sync/internal/github"
 	"github.com/uwu-tools/gh-jira-issue-sync/internal/jira"
-	"github.com/uwu-tools/gh-jira-issue-sync/internal/jira/issue"
 	"github.com/uwu-tools/gh-jira-issue-sync/internal/options"
+	"github.com/uwu-tools/gh-jira-issue-sync/internal/utils/issue"
 )
 
 var opts = &options.Options{}
@@ -67,7 +67,7 @@ var RootCmd = &cobra.Command{
 		}
 
 		for {
-			if err := issue.Compare(cfg, ghClient, jiraClient); err != nil {
+			if err := issue.Reconcile(cfg, ghClient, jiraClient); err != nil {
 				// TODO(log): Better error message
 				logrus.Error(err)
 			}

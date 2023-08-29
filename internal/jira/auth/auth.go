@@ -36,7 +36,7 @@ import (
 // NewJiraHTTPClient obtains an access token (either from configuration
 // or from an OAuth handshake) and creates an HTTP client that uses the
 // token, which can be used to configure a Jira client.
-func NewJiraHTTPClient(cfg *config.Config) (*http.Client, error) {
+func NewJiraHTTPClient(cfg config.IConfig) (*http.Client, error) {
 	ctx := context.Background()
 
 	oauthConfig, err := oauthConfig(cfg)
@@ -59,7 +59,7 @@ func NewJiraHTTPClient(cfg *config.Config) (*http.Client, error) {
 // oauthConfig parses a private key and consumer key from the
 // configuration, and creates an OAuth configuration which can
 // be used to begin a handshake.
-func oauthConfig(cfg *config.Config) (*oauth1.Config, error) {
+func oauthConfig(cfg config.IConfig) (*oauth1.Config, error) {
 	pvtKeyPath := cfg.GetConfigString(options.ConfigKeyJiraPrivateKeyPath)
 
 	pvtKeyFile, err := os.Open(pvtKeyPath)
@@ -104,7 +104,7 @@ func oauthConfig(cfg *config.Config) (*oauth1.Config, error) {
 // jiraTokenFromConfig attempts to load an OAuth access token from the
 // application configuration file. It returns the token (or null if not
 // configured) and an "ok" bool to indicate whether the token is provided.
-func jiraTokenFromConfig(cfg *config.Config) (*oauth1.Token, bool) {
+func jiraTokenFromConfig(cfg config.IConfig) (*oauth1.Token, bool) {
 	token := cfg.GetConfigString(options.ConfigKeyJiraToken)
 	if token == "" {
 		return nil, false

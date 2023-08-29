@@ -54,12 +54,10 @@ const (
 	coverProfileFilename = "unit-coverage.out"
 )
 
-var (
-	moduleName = fmt.Sprintf(
-		"github.com/%s/%s",
-		orgName,
-		toolName,
-	)
+var moduleName = fmt.Sprintf(
+	"github.com/%s/%s",
+	orgName,
+	toolName,
 )
 
 // All runs all targets for this repository
