@@ -269,6 +269,11 @@ func CreateIssue(cfg *config.Config, issue *gogh.Issue, ghClient github.Client, 
 		return fmt.Errorf("creating Jira issue: %w", err)
 	}
 
+	// in dry run mode we don't actually create the Jira issue so we shouldn't validate it
+	if cfg.IsDryRun() {
+		return nil
+	}
+
 	foundIssue, err := jClient.GetIssue(newIssue.Key)
 	if err != nil {
 		return fmt.Errorf("getting Jira issue %s: %w", newIssue.Key, err)
