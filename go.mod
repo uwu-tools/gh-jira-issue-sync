@@ -23,7 +23,7 @@ require (
 	github.com/uwu-tools/go-jira/v2 v2.0.0-20230801175343-52f822b5cb80
 	github.com/uwu-tools/magex v0.10.0
 	golang.org/x/oauth2 v0.11.0
-	golang.org/x/term v0.11.0
+	golang.org/x/term v0.12.0
 	sigs.k8s.io/release-sdk v0.10.3
 	sigs.k8s.io/release-utils v0.7.5-0.20230814131120-e16435f5a2de
 )
@@ -75,7 +75,7 @@ require (
 	golang.org/x/crypto v0.12.0 // indirect
 	golang.org/x/mod v0.11.0 // indirect
 	golang.org/x/net v0.14.0 // indirect
-	golang.org/x/sys v0.11.0 // indirect
+	golang.org/x/sys v0.12.0 // indirect
 	golang.org/x/text v0.12.0 // indirect
 	golang.org/x/tools v0.9.3 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
