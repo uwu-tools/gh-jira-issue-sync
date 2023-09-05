@@ -31,7 +31,7 @@ type Options struct {
 	RepoName       string
 	JiraURI        string
 	JiraProject    string
-	JiraComponents string
+	JiraComponents []string
 	// TODO(options): Should this be a time type?
 	Since   string
 	Confirm bool

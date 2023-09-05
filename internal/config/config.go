@@ -298,7 +298,7 @@ type configFile struct {
 	RepoName       string        `json:"repo-name,omitempty" mapstructure:"repo-name"`
 	JiraURI        string        `json:"jira-uri,omitempty" mapstructure:"jira-uri"`
 	JiraProject    string        `json:"jira-project,omitempty" mapstructure:"jira-project"`
-	JiraComponents string        `json:"jira-components,omitempty" mapstructure:"jira-components"`
+	JiraComponents []string      `json:"jira-components,omitempty" mapstructure:"jira-components"`
 	Since          string        `json:"since,omitempty" mapstructure:"since"`
 	Confirm        bool          `json:"confirm,omitempty" mapstructure:"confirm"`
 	Timeout        time.Duration `json:"timeout,omitempty" mapstructure:"timeout"`
@@ -538,13 +538,7 @@ func (c *Config) getFieldIDs(client *jira.Client) (*fields, error) {
 func (c *Config) getComponents(proj *jira.Project) ([]*jira.Component, error) {
 	var returnComponents []*jira.Component
 
-	componentsStr := c.cmdConfig.GetString(options.ConfigKeyJiraComponents)
-
-	if componentsStr == "" {
-		return returnComponents, nil
-	}
-
-	components := strings.Split(componentsStr, ",")
+	components := c.cmdConfig.GetStringSlice(options.ConfigKeyJiraComponents)
 
 	for _, configComponent := range components {
 		found := false

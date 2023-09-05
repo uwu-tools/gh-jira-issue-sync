@@ -148,11 +148,11 @@ func init() {
 		"set the key of the Jira project",
 	)
 
-	RootCmd.PersistentFlags().StringVarP(
+	RootCmd.PersistentFlags().StringSliceVarP(
 		&opts.JiraComponents,
 		options.ConfigKeyJiraComponents,
 		"C",
-		"",
+		nil,
 		"set the Jira components to be used",
 	)
 
