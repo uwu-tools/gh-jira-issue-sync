@@ -216,9 +216,7 @@ func UpdateIssue(
 		}
 
 		missingComponents := GetMissingComponents(cfg, jIssue)
-		for i := range missingComponents {
-			issue.Fields.Components = append(issue.Fields.Components, missingComponents[i])
-		}
+		issue.Fields.Components = append(issue.Fields.Components, missingComponents...)
 
 		_, err := jClient.UpdateIssue(issue)
 		if err != nil {
