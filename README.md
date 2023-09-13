@@ -40,8 +40,8 @@ in
 
 ### Application Configuration
 
-Arguments to the program may be passed on the command line or in a JSON
-configuration file.
+Arguments to the program may be passed on the command line or in a configuration file.
+Currently supported configuration file types are: JSON, YAML, TOML.
 
 For the command line arguments, run:
 
@@ -49,7 +49,7 @@ For the command line arguments, run:
 gh-jira-issue-sync help
 ```
 
-The JSON format is a single, flat object, with the argument long
+The configuration is a single, flat object, with the argument long
 names as keys.
 
 Configuration arguments are as follows:

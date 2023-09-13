@@ -18,7 +18,6 @@ package config
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -31,12 +30,17 @@ import (
 
 	"github.com/dghubble/oauth1"
 	"github.com/fsnotify/fsnotify"
+	"github.com/mitchellh/mapstructure"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	jira "github.com/uwu-tools/go-jira/v2/cloud"
 	"golang.org/x/term"
 
+	"github.com/uwu-tools/gh-jira-issue-sync/internal/encoding"
+	"github.com/uwu-tools/gh-jira-issue-sync/internal/encoding/json"
+	"github.com/uwu-tools/gh-jira-issue-sync/internal/encoding/toml"
+	"github.com/uwu-tools/gh-jira-issue-sync/internal/encoding/yaml"
 	"github.com/uwu-tools/gh-jira-issue-sync/internal/github"
 	"github.com/uwu-tools/gh-jira-issue-sync/internal/options"
 )
@@ -59,6 +63,9 @@ const (
 	CustomFieldNameGitHubStatus   = "github-status"
 	CustomFieldNameGitHubReporter = "github-reporter"
 	CustomFieldNameGitHubLastSync = "github-last-sync"
+
+	// Config file related constants.
+	DefaultConfigFileType = "json"
 )
 
 // fields represents the custom field IDs of the Jira custom fields we care about.
@@ -78,6 +85,9 @@ type Config struct {
 	// cmdFile is the file Viper is using for its configuration.
 	cmdFile string
 
+	// cmdFileType is the extension of the config file.
+	cmdFileType string
+
 	// cmdConfig is the Viper configuration object created from the command line and config file.
 	cmdConfig viper.Viper
 
@@ -93,6 +103,9 @@ type Config struct {
 
 	// project represents the Jira project the user has requested.
 	project *jira.Project
+
+	// encoderRegistry is used for encoding the config file to supported Viper types.
+	encoderRegistry *encoding.EncoderRegistry
 
 	// components represents the Jira components the user would like use for the sync.
 	// Comes from the value of the `jira-components` configuration parameter.
@@ -137,7 +150,8 @@ func New(ctx context.Context, cmd *cobra.Command) (*Config, error) {
 
 	log.Debugf("using config file: %s", cfgFilePath)
 	cfg.cmdFile = cfgFilePath
-	cfg.cmdConfig = *newViper(options.AppName, cfg.cmdFile)
+	cfg.cmdFileType = getConfigTypeFromName(cfgFilePath)
+	cfg.cmdConfig = *newViper(options.AppName, cfg.cmdFile, cfg.cmdFileType)
 	cfg.cmdConfig.BindPFlags(cmd.Flags()) //nolint:errcheck
 
 	cfg.cmdFile = cfg.cmdConfig.ConfigFileUsed()
@@ -145,6 +159,10 @@ func New(ctx context.Context, cmd *cobra.Command) (*Config, error) {
 	cfg.ctx = ctx
 
 	if err := cfg.validateConfig(); err != nil {
+		return nil, err
+	}
+
+	if err := cfg.resetEncoding(); err != nil {
 		return nil, err
 	}
 
@@ -287,25 +305,25 @@ func (c *Config) SetJiraToken(token *oauth1.Token) {
 
 // configFile is a serializable representation of the current Viper configuration.
 type configFile struct {
-	LogLevel       string        `json:"log-level,omitempty" mapstructure:"log-level"`
-	GithubToken    string        `json:"github-token,omitempty" mapstructure:"github-token"`
-	JiraUser       string        `json:"jira-user,omitempty" mapstructure:"jira-user"`
-	JiraPass       string        `json:"jira-pass,omitempty" mapstructure:"jira-pass"`
-	JiraToken      string        `json:"jira-token,omitempty" mapstructure:"jira-token"`
-	JiraSecret     string        `json:"jira-secret,omitempty" mapstructure:"jira-secret"`
-	JiraKey        string        `json:"jira-private-key-path,omitempty" mapstructure:"jira-private-key-path"`
-	JiraCKey       string        `json:"jira-consumer-key,omitempty" mapstructure:"jira-consumer-key"`
-	RepoName       string        `json:"repo-name,omitempty" mapstructure:"repo-name"`
-	JiraURI        string        `json:"jira-uri,omitempty" mapstructure:"jira-uri"`
-	JiraProject    string        `json:"jira-project,omitempty" mapstructure:"jira-project"`
-	Since          string        `json:"since,omitempty" mapstructure:"since"`
-	JiraComponents []string      `json:"jira-components,omitempty" mapstructure:"jira-components"`
-	Confirm        bool          `json:"confirm,omitempty" mapstructure:"confirm"`
-	Timeout        time.Duration `json:"timeout,omitempty" mapstructure:"timeout"`
+	LogLevel       string        `mapstructure:"log-level,omitempty"`
+	GithubToken    string        `mapstructure:"github-token,omitempty"`
+	JiraUser       string        `mapstructure:"jira-user,omitempty"`
+	JiraPass       string        `mapstructure:"jira-pass,omitempty"`
+	JiraToken      string        `mapstructure:"jira-token,omitempty"`
+	JiraSecret     string        `mapstructure:"jira-secret,omitempty"`
+	JiraKey        string        `mapstructure:"jira-private-key-path,omitempty"`
+	JiraCKey       string        `mapstructure:"jira-consumer-key,omitempty"`
+	RepoName       string        `mapstructure:"repo-name,omitempty"`
+	JiraURI        string        `mapstructure:"jira-uri,omitempty"`
+	JiraProject    string        `mapstructure:"jira-project,omitempty"`
+	Since          string        `mapstructure:"since,omitempty"`
+	JiraComponents []string      `mapstructure:"jira-components"`
+	Confirm        bool          `mapstructure:"confirm,omitempty"`
+	Timeout        time.Duration `mapstructure:"timeout,omitempty"`
 }
 
-// SaveConfig updates the `since` parameter to now, then saves the configuration file.
-func (c *Config) SaveConfig() error {
+// UpdateConfig updates the `since` parameter to now, then saves the configuration file.
+func (c *Config) UpdateConfig() error {
 	c.cmdConfig.Set(
 		options.ConfigKeySince,
 		time.Now().Format(options.DateFormat),
@@ -316,9 +334,14 @@ func (c *Config) SaveConfig() error {
 		return fmt.Errorf("unmarshalling config: %w", err)
 	}
 
-	b, err := json.MarshalIndent(cf, "", "  ")
+	cfMap := make(map[string]interface{})
+	if err := mapstructure.Decode(cf, &cfMap); err != nil {
+		return fmt.Errorf("decoding configFile struct to map[string]interface{}: %w", err)
+	}
+
+	b, err := c.encoderRegistry.Encode(c.cmdFileType, cfMap)
 	if err != nil {
-		return fmt.Errorf("marshalling config: %w", err)
+		return fmt.Errorf("encoding config to %s format: %w", c.cmdFileType, err)
 	}
 
 	f, err := os.OpenFile(c.cmdConfig.ConfigFileUsed(), os.O_RDWR|os.O_TRUNC|os.O_CREATE, 0o644)
@@ -340,7 +363,7 @@ func (c *Config) SaveConfig() error {
 // command line options, configuration file options, and
 // default configuration values. This viper object becomes
 // the single source of truth for the app configuration.
-func newViper(appName, cfgFile string) *viper.Viper {
+func newViper(appName, cfgFile, cfgFileType string) *viper.Viper {
 	logger := log.New()
 	v := viper.New()
 
@@ -353,7 +376,7 @@ func newViper(appName, cfgFile string) *viper.Viper {
 	if cfgFile != "" {
 		v.SetConfigFile(cfgFile)
 	}
-	v.SetConfigType("json")
+	v.SetConfigType(cfgFileType)
 
 	if err := v.ReadInConfig(); err == nil {
 		log.WithField("file", v.ConfigFileUsed()).Infof("config file loaded")
@@ -533,6 +556,47 @@ func (c *Config) getFieldIDs(client *jira.Client) (*fields, error) {
 	return &fieldIDs, nil
 }
 
+// resetEncoding creates a new encoding registry with the currently supported file formats.
+func (c *Config) resetEncoding() error {
+	encoderRegistry := encoding.NewEncoderRegistry()
+	registerEncoder := func(format string, codec encoding.Encoder) error {
+		if err := encoderRegistry.RegisterEncoder(format, codec); err != nil {
+			return fmt.Errorf("registering encoder for %s extension: %w", format, err)
+		}
+
+		return nil
+	}
+
+	{
+		codec := &yaml.Codec{}
+		if err := registerEncoder("yaml", codec); err != nil {
+			return err
+		}
+		if err := registerEncoder("yml", codec); err != nil {
+			return err
+		}
+	}
+
+	{
+		codec := &json.Codec{
+			Indent: "  ",
+		}
+		if err := registerEncoder("json", codec); err != nil {
+			return err
+		}
+	}
+
+	{
+		codec := &toml.Codec{}
+		if err := registerEncoder("toml", codec); err != nil {
+			return err
+		}
+	}
+
+	c.encoderRegistry = encoderRegistry
+	return nil
+}
+
 // getComponents resolves every component set in config against
 // Jira project, and returns with these components used by issue-sync.
 func (c *Config) getComponents(proj *jira.Project) ([]*jira.Component, error) {
@@ -587,6 +651,19 @@ var (
 
 func errCustomFieldIDNotFound(field string) error {
 	return fmt.Errorf("could not find ID custom field '%s'; check that it is named correctly", field) //nolint:goerr113
+}
+
+// getConfigTypeFromName extracts the extension from the passed in filename,
+// returns json if it's empty.
+func getConfigTypeFromName(filename string) string {
+	// it's enough to rely on the type from the filename because
+	// viper will parse and validate the file's content
+	ext := filepath.Ext(filename)
+	if ext == "" {
+		return DefaultConfigFileType
+	}
+
+	return strings.TrimPrefix(ext, ".")
 }
 
 type ReadingJiraComponentError string

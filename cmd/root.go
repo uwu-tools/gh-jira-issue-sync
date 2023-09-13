@@ -72,7 +72,7 @@ var RootCmd = &cobra.Command{
 				logrus.Error(err)
 			}
 			if !cfg.IsDryRun() {
-				if err := cfg.SaveConfig(); err != nil {
+				if err := cfg.UpdateConfig(); err != nil {
 					// TODO(log): Better error message
 					logrus.Error(err)
 				}
