@@ -32,10 +32,11 @@ type Options struct {
 	JiraURI      string
 	JiraProject  string
 	// TODO(options): Should this be a time type?
-	Since   string
-	Confirm bool
-	Timeout time.Duration
-	Period  time.Duration
+	Since          string
+	JiraComponents []string
+	Confirm        bool
+	Timeout        time.Duration
+	Period         time.Duration
 }
 
 const (
@@ -65,6 +66,7 @@ const (
 	ConfigKeyJiraSecret         = "jira-secret"
 	ConfigKeyJiraConsumerKey    = "jira-consumer-key"
 	ConfigKeyJiraPrivateKeyPath = "jira-private-key-path"
+	ConfigKeyJiraComponents     = "jira-components"
 
 	// Default values
 	//

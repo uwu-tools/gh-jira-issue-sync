@@ -19,7 +19,7 @@ jobs:
           egress-policy: audit # TODO: change to 'egress-policy: block' after couple of runs
 
       - name: Checkout
-        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9
+        uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac
       - name: Set up Go
         uses: actions/setup-go@93397bea11091df50f3d7e59dc26a7711a8bcfbe
         with:
@@ -28,13 +28,13 @@ jobs:
           cache: true
 
       - name: Build
-        uses: magefile/mage-action@3b833fb24c0d19eed3aa760b9eb285b4b84f420f # v2.3.0
+        uses: magefile/mage-action@bed74f487871c92ba8e9aa957bbf3e05bf9c9aea # v2.4.0
         with:
           version: v1.14.0
           args: build
 
       - name: Build images
-        uses: magefile/mage-action@3b833fb24c0d19eed3aa760b9eb285b4b84f420f # v2.3.0
+        uses: magefile/mage-action@bed74f487871c92ba8e9aa957bbf3e05bf9c9aea # v2.4.0
         with:
           version: v1.14.0
           args: buildImagesLocal
@@ -48,7 +48,7 @@ jobs:
           egress-policy: audit # TODO: change to 'egress-policy: block' after couple of runs
 
       - name: Checkout
-        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9
+        uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac
       - name: Set up Go
         uses: actions/setup-go@93397bea11091df50f3d7e59dc26a7711a8bcfbe
         with:
@@ -63,7 +63,7 @@ jobs:
       #  run: make license-check
 
       - name: Run verify steps
-        uses: magefile/mage-action@3b833fb24c0d19eed3aa760b9eb285b4b84f420f # v2.3.0
+        uses: magefile/mage-action@bed74f487871c92ba8e9aa957bbf3e05bf9c9aea # v2.4.0
         with:
           version: v1.14.0
           args: verify
@@ -77,7 +77,7 @@ jobs:
           egress-policy: audit # TODO: change to 'egress-policy: block' after couple of runs
 
       - name: Checkout
-        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9
+        uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac
       - name: Set up Go
         uses: actions/setup-go@93397bea11091df50f3d7e59dc26a7711a8bcfbe
         with:
@@ -86,7 +86,7 @@ jobs:
           cache: true
 
       - name: Run unit tests
-        uses: magefile/mage-action@3b833fb24c0d19eed3aa760b9eb285b4b84f420f # v2.3.0
+        uses: magefile/mage-action@bed74f487871c92ba8e9aa957bbf3e05bf9c9aea # v2.4.0
         with:
           version: v1.14.0
           args: test

@@ -107,6 +107,11 @@ type Config struct {
 	// encoderRegistry is used for encoding the config file to supported Viper types.
 	encoderRegistry *encoding.EncoderRegistry
 
+	// components represents the Jira components the user would like use for the sync.
+	// Comes from the value of the `jira-components` configuration parameter.
+	// Items in Jira will have the components field set to these values.
+	components []*jira.Component
+
 	// since is the parsed value of the `since` configuration parameter, which is the earliest that
 	// a GitHub issue can have been updated to be retrieved.
 	since time.Time
@@ -184,6 +189,11 @@ func (c *Config) LoadJiraConfig(client *jira.Client) error {
 		return fmt.Errorf("reading error body: %s", string(body)) //nolint:goerr113
 	}
 	c.project = proj
+
+	c.components, err = c.getComponents(proj)
+	if err != nil {
+		return err
+	}
 
 	c.fieldIDs, err = c.getFieldIDs(client)
 	if err != nil {
@@ -281,6 +291,11 @@ func (c *Config) GetRepo() (string, string) {
 	return github.GetRepo(repoPath)
 }
 
+// GetJiraComponents returns the Jira component the user has configured.
+func (c *Config) GetJiraComponents() []*jira.Component {
+	return c.components
+}
+
 // SetJiraToken adds the Jira OAuth tokens in the Viper configuration, ensuring that they
 // are saved for future runs.
 func (c *Config) SetJiraToken(token *oauth1.Token) {
@@ -290,20 +305,21 @@ func (c *Config) SetJiraToken(token *oauth1.Token) {
 
 // configFile is a serializable representation of the current Viper configuration.
 type configFile struct {
-	LogLevel    string        `mapstructure:"log-level,omitempty"`
-	GithubToken string        `mapstructure:"github-token,omitempty"`
-	JiraUser    string        `mapstructure:"jira-user,omitempty"`
-	JiraPass    string        `mapstructure:"jira-pass,omitempty"`
-	JiraToken   string        `mapstructure:"jira-token,omitempty"`
-	JiraSecret  string        `mapstructure:"jira-secret,omitempty"`
-	JiraKey     string        `mapstructure:"jira-private-key-path,omitempty"`
-	JiraCKey    string        `mapstructure:"jira-consumer-key,omitempty"`
-	RepoName    string        `mapstructure:"repo-name,omitempty"`
-	JiraURI     string        `mapstructure:"jira-uri,omitempty"`
-	JiraProject string        `mapstructure:"jira-project,omitempty"`
-	Since       string        `mapstructure:"since,omitempty"`
-	Confirm     bool          `mapstructure:"confirm,omitempty"`
-	Timeout     time.Duration `mapstructure:"timeout,omitempty"`
+	LogLevel       string        `mapstructure:"log-level,omitempty"`
+	GithubToken    string        `mapstructure:"github-token,omitempty"`
+	JiraUser       string        `mapstructure:"jira-user,omitempty"`
+	JiraPass       string        `mapstructure:"jira-pass,omitempty"`
+	JiraToken      string        `mapstructure:"jira-token,omitempty"`
+	JiraSecret     string        `mapstructure:"jira-secret,omitempty"`
+	JiraKey        string        `mapstructure:"jira-private-key-path,omitempty"`
+	JiraCKey       string        `mapstructure:"jira-consumer-key,omitempty"`
+	RepoName       string        `mapstructure:"repo-name,omitempty"`
+	JiraURI        string        `mapstructure:"jira-uri,omitempty"`
+	JiraProject    string        `mapstructure:"jira-project,omitempty"`
+	Since          string        `mapstructure:"since,omitempty"`
+	JiraComponents []string      `mapstructure:"jira-components"`
+	Confirm        bool          `mapstructure:"confirm,omitempty"`
+	Timeout        time.Duration `mapstructure:"timeout,omitempty"`
 }
 
 // UpdateConfig updates the `since` parameter to now, then saves the configuration file.
@@ -581,6 +597,39 @@ func (c *Config) resetEncoding() error {
 	return nil
 }
 
+// getComponents resolves every component set in config against
+// Jira project, and returns with these components used by issue-sync.
+func (c *Config) getComponents(proj *jira.Project) ([]*jira.Component, error) {
+	var returnComponents []*jira.Component
+
+	components := c.cmdConfig.GetStringSlice(options.ConfigKeyJiraComponents)
+
+	for _, configComponent := range components {
+		found := false
+
+		for j := range proj.Components {
+			projComponent := &proj.Components[j]
+
+			if projComponent.Name == configComponent {
+				found = true
+				foundComponent := jira.Component{
+					Name: projComponent.Name,
+					ID:   projComponent.ID,
+				}
+
+				returnComponents = append(returnComponents, &foundComponent)
+			}
+		}
+
+		if !found {
+			log.Errorf("The Jira project does not have such component defined: %s", configComponent)
+			return nil, ReadingJiraComponentError(configComponent)
+		}
+	}
+
+	return returnComponents, nil
+}
+
 // Errors
 
 var (
@@ -615,4 +664,10 @@ func getConfigTypeFromName(filename string) string {
 	}
 
 	return strings.TrimPrefix(ext, ".")
+}
+
+type ReadingJiraComponentError string
+
+func (r ReadingJiraComponentError) Error() string {
+	return fmt.Sprintf("could not find Jira component: %s; check that it is named correctly", string(r))
 }

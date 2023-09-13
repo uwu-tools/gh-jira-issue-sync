@@ -140,6 +140,10 @@ func DidIssueChange(cfg *config.Config, ghIssue *gogh.Issue, jIssue *gojira.Issu
 		anyDifferent = true
 	}
 
+	if GetMissingComponents(cfg, jIssue) != nil {
+		anyDifferent = true
+	}
+
 	if len(ghIssue.Labels) > 0 { //nolint:nestif // TODO(lint)
 		ghLabels := githubLabelsToStrSlice(ghIssue.Labels)
 
@@ -211,6 +215,9 @@ func UpdateIssue(
 			ID:     jIssue.ID,
 		}
 
+		missingComponents := GetMissingComponents(cfg, jIssue)
+		issue.Fields.Components = append(issue.Fields.Components, missingComponents...)
+
 		_, err := jClient.UpdateIssue(issue)
 		if err != nil {
 			return fmt.Errorf("updating Jira issue: %w", err)
@@ -231,6 +238,30 @@ func UpdateIssue(
 	}
 
 	return nil
+}
+
+// GetMissingComponents compares configurated components with the Jira issue
+// components. Returns the components that are missing from the Jira issue.
+func GetMissingComponents(cfg *config.Config, jIssue *gojira.Issue) []*gojira.Component {
+	var returnComponents []*gojira.Component
+
+	components := cfg.GetJiraComponents()
+	for _, configComponent := range components {
+		found := false
+
+		for _, issueComponent := range jIssue.Fields.Components {
+			if issueComponent.Name == configComponent.Name {
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			returnComponents = append(returnComponents, configComponent)
+		}
+	}
+
+	return returnComponents
 }
 
 // CreateIssue generates a Jira issue from the various fields on the given GitHub issue, then
@@ -258,6 +289,7 @@ func CreateIssue(cfg *config.Config, issue *gogh.Issue, ghClient github.Client, 
 		Summary:     issue.GetTitle(),
 		Description: issue.GetBody(),
 		Unknowns:    unknowns,
+		Components:  cfg.GetJiraComponents(),
 	}
 
 	jIssue := &gojira.Issue{
@@ -267,6 +299,11 @@ func CreateIssue(cfg *config.Config, issue *gogh.Issue, ghClient github.Client, 
 	newIssue, err := jClient.CreateIssue(jIssue)
 	if err != nil {
 		return fmt.Errorf("creating Jira issue: %w", err)
+	}
+
+	// in dry run mode we don't actually create the Jira issue so we shouldn't validate it
+	if cfg.IsDryRun() {
+		return nil
 	}
 
 	foundIssue, err := jClient.GetIssue(newIssue.Key)
