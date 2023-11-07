@@ -34,7 +34,7 @@ import (
 // GitHub Comment ID (\1), the GitHub username (\2), the GitHub real name (\3, if it exists),
 // the time the comment was posted (\3 or \4), and the body of the comment (\4 or \5).
 var jCommentRegex = regexp.MustCompile(
-	`^Comment \[\(ID (\d+)\)\|.*?] from GitHub user \[(.+)\|.*?] \((.+)\) at (.+):\n\n(.+)$`,
+	`^Comment \[\(ID (\d+)\)\|.*?] from GitHub user \[(.+)\|.*?] (?:\(?(.+)\) |.*)at (.+):\n\n([\S\s]*)*?$`,
 )
 
 // jCommentIDRegex just matches the beginning of a generated Jira comment. It's a smaller,
