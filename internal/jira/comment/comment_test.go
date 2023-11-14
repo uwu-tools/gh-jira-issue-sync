@@ -23,6 +23,17 @@ const testComment = `Comment [(ID 484163403)|https://github.com] from GitHub use
 
 Bla blibidy bloo bla`
 
+//nolint:lll
+const testCommentNewLine = `Comment [(ID 484163403)|https://github.com] from GitHub user [bilbo-baggins|https://github.com/bilbo-baggins] (Bilbo Baggins) at 16:27 PM, May 31 2020:
+
+Bla blibidy bloo bla
+bla bla`
+
+//nolint:lll
+const testCommentUnnamed = `Comment [(ID 123456789)|https://github.com] from GitHub user [smaug-bot|https://github.com/smaug-bot] at 16:27 PM, Jan 22 2021:
+
+rawr`
+
 func TestJiraCommentRegex(t *testing.T) {
 	fields := jCommentRegex.FindStringSubmatch(testComment)
 
@@ -48,5 +59,61 @@ func TestJiraCommentRegex(t *testing.T) {
 
 	if fields[5] != "Bla blibidy bloo bla" {
 		t.Fatalf("Expected field[5] = Bla blibidy bloo bla; Got field[5] = %s", fields[5])
+	}
+}
+
+func TestJiraCommentRegexNewLine(t *testing.T) {
+	fields := jCommentRegex.FindStringSubmatch(testCommentNewLine)
+
+	if len(fields) != 6 {
+		t.Fatalf("Regex failed to parse fields %v", fields)
+	}
+
+	if fields[1] != "484163403" {
+		t.Fatalf("Expected field[1] = 484163403; Got field[1] = %s", fields[1])
+	}
+
+	if fields[2] != "bilbo-baggins" {
+		t.Fatalf("Expected field[2] = bilbo-baggins; Got field[2] = %s", fields[2])
+	}
+
+	if fields[3] != "Bilbo Baggins" {
+		t.Fatalf("Expected field[3] = Bilbo Baggins; Got field[3] = %s", fields[3])
+	}
+
+	if fields[4] != "16:27 PM, May 31 2020" {
+		t.Fatalf("Expected field[4] = 16:27 PM, May 31 2020; Got field[4] = %s", fields[4])
+	}
+
+	if fields[5] != "Bla blibidy bloo bla\nbla bla" {
+		t.Fatalf("Expected field[5] = Bla blibidy bloo bla\nbla bla; Got field[5] = %s", fields[5])
+	}
+}
+
+func TestJiraCommentRegexUnnamed(t *testing.T) {
+	fields := jCommentRegex.FindStringSubmatch(testCommentUnnamed)
+
+	if len(fields) != 6 {
+		t.Fatalf("Regex failed to parse fields %v", fields)
+	}
+
+	if fields[1] != "123456789" {
+		t.Fatalf("Expected field[1] = 123456789; Got field[1] = %s", fields[1])
+	}
+
+	if fields[2] != "smaug-bot" {
+		t.Fatalf("Expected field[2] = smaug-bot; Got field[2] = %s", fields[2])
+	}
+
+	if fields[3] != "" {
+		t.Fatalf("Expected field[3] = ; Got field[3] = %s", fields[3])
+	}
+
+	if fields[4] != "16:27 PM, Jan 22 2021" {
+		t.Fatalf("Expected field[4] = 16:27 PM, Jan 22 2021; Got field[4] = %s", fields[4])
+	}
+
+	if fields[5] != "rawr" {
+		t.Fatalf("Expected field[5] = rawr; Got field[5] = %s", fields[5])
 	}
 }
