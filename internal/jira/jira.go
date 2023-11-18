@@ -145,68 +145,37 @@ func (j *jiraClient) ListIssues(ids []int) ([]jira.Issue, error) { //nolint:goco
 	)
 
 	var issues []jira.Issue
-	// TODO(dry-run): Simplify logic
-	if !j.dryRun { //nolint:nestif // TODO(lint): complex nested blocks (nestif)
-		// TODO(backoff): Consider restoring backoff logic here
-		// TODO(j-v2): Parameterize all query options
-		searchOpts := &jira.SearchOptions{
-			MaxResults: maxIssueSearchResults,
-		}
-		jiraIssues, res, err := j.client.Issue.Search(j.cfg.Context(), jql, searchOpts)
-		if err != nil {
-			log.Errorf("Error retrieving Jira issues: %+v", err)
-			return nil, getErrorBody(res)
-		}
+	// TODO(backoff): Consider restoring backoff logic here
+	// TODO(j-v2): Parameterize all query options
+	searchOpts := &jira.SearchOptions{
+		MaxResults: maxIssueSearchResults,
+	}
 
-		if len(ids) < maxJQLIssueLength {
-			// The issues were already filtered by our JQL, so use as is
-			issues = jiraIssues
-		} else {
-			// Filter only issues which have a defined GitHub ID in the list of IDs
-			for _, v := range jiraIssues {
-				if id, err := v.Fields.Unknowns.Int(j.cfg.GetFieldKey(config.GitHubID)); err == nil {
-					for _, idOpt := range ids {
-						if id == int64(idOpt) {
-							issues = append(issues, v)
-							break
-						}
-					}
-				}
-			}
-		}
+	var jiraIssues []jira.Issue
+	err := j.client.Issue.SearchPages(j.cfg.Context(), jql, searchOpts, func(i jira.Issue) error {
+		jiraIssues = append(jiraIssues, i)
+		return nil
+	})
+	if err != nil {
+		log.Errorf("Error retrieving Jira issues: %+v", err)
+		return nil, fmt.Errorf("error retrieving Jira issues: %w", err)
+	}
+	if len(ids) < maxJQLIssueLength {
+		// The issues were already filtered by our JQL, so use as is
+		issues = jiraIssues
 	} else {
-		ji, res, err := j.request(func() (interface{}, *jira.Response, error) {
-			// TODO(j-v2): Add query options
-			return j.client.Issue.Search(j.cfg.Context(), jql, nil) //nolint:wrapcheck
-		})
-		if err != nil {
-			log.Errorf("Error retrieving Jira issues: %+v", err)
-			return nil, getErrorBody(res)
-		}
-		jiraIssues, ok := ji.([]jira.Issue)
-		if !ok {
-			log.Errorf("Get Jira issues did not return issues! Got: %v", ji)
-			return nil, fmt.Errorf("get Jira issues failed: expected []jira.Issue; got %T", ji) //nolint:goerr113
-		}
-
-		if len(ids) < maxJQLIssueLength {
-			// The issues were already filtered by our JQL, so use as is
-			issues = jiraIssues
-		} else {
-			// Filter only issues which have a defined GitHub ID in the list of IDs
-			for _, v := range jiraIssues {
-				if id, err := v.Fields.Unknowns.Int(j.cfg.GetFieldKey(config.GitHubID)); err == nil {
-					for _, idOpt := range ids {
-						if id == int64(idOpt) {
-							issues = append(issues, v)
-							break
-						}
+		// Filter only issues which have a defined GitHub ID in the list of IDs
+		for _, v := range jiraIssues {
+			if id, err := v.Fields.Unknowns.Int(j.cfg.GetFieldKey(config.GitHubID)); err == nil {
+				for _, idOpt := range ids {
+					if id == int64(idOpt) {
+						issues = append(issues, v)
+						break
 					}
 				}
 			}
 		}
 	}
-
 	return issues, nil
 }
 
