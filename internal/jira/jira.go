@@ -23,7 +23,7 @@ import (
 	"regexp"
 	"strings"
 
-	gogh "github.com/google/go-github/v53/github"
+	gogh "github.com/google/go-github/v56/github"
 	log "github.com/sirupsen/logrus"
 	jira "github.com/uwu-tools/go-jira/v2/cloud"
 
