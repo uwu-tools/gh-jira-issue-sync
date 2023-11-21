@@ -21,7 +21,7 @@ import (
 	"regexp"
 	"strconv"
 
-	gogh "github.com/google/go-github/v53/github"
+	gogh "github.com/google/go-github/v56/github"
 	log "github.com/sirupsen/logrus"
 	gojira "github.com/uwu-tools/go-jira/v2/cloud"
 
