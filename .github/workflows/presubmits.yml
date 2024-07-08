@@ -19,7 +19,7 @@ jobs:
           egress-policy: audit # TODO: change to 'egress-policy: block' after couple of runs
 
       - name: Checkout
-        uses: actions/checkout@b80ff79f1755d06ba70441c368a6fe801f5f3a62
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
       - name: Set up Go
         uses: actions/setup-go@cdcb36043654635271a94b9a6d1392de5bb323a7
         with:
@@ -48,7 +48,7 @@ jobs:
           egress-policy: audit # TODO: change to 'egress-policy: block' after couple of runs
 
       - name: Checkout
-        uses: actions/checkout@b80ff79f1755d06ba70441c368a6fe801f5f3a62
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
       - name: Set up Go
         uses: actions/setup-go@cdcb36043654635271a94b9a6d1392de5bb323a7
         with:
@@ -77,7 +77,7 @@ jobs:
           egress-policy: audit # TODO: change to 'egress-policy: block' after couple of runs
 
       - name: Checkout
-        uses: actions/checkout@b80ff79f1755d06ba70441c368a6fe801f5f3a62
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
       - name: Set up Go
         uses: actions/setup-go@cdcb36043654635271a94b9a6d1392de5bb323a7
         with:
