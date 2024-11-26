@@ -11,7 +11,7 @@ go 1.20
 //             ref: https://github.com/uwu-tools/gh-jira-issue-sync/issues/62
 
 require (
-	github.com/cenkalti/backoff/v4 v4.2.1
+	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/dghubble/oauth1 v0.7.2
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/google/go-github/v56 v56.0.0
