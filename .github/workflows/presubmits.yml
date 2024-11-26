@@ -92,7 +92,7 @@ jobs:
           args: test
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@eaaf4bedf32dbdc6b720b63067d99c4d77d6047d
+        uses: codecov/codecov-action@015f24e6818733317a2da2edd6290ab26238649a
         with:
           files: ./unit-coverage.out
           verbose: true
