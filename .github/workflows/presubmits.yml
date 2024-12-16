@@ -21,7 +21,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@cbb722410c2e876e24abbe8de2cc27693e501dcb
       - name: Set up Go
-        uses: actions/setup-go@41dfa10bad2bb2ae585af6ee5bb4d7d973ad74ed
+        uses: actions/setup-go@3041bf56c941b39c61721a86cd11f3bb1338122a
         with:
           go-version: 1.19
           check-latest: true
@@ -50,7 +50,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@cbb722410c2e876e24abbe8de2cc27693e501dcb
       - name: Set up Go
-        uses: actions/setup-go@41dfa10bad2bb2ae585af6ee5bb4d7d973ad74ed
+        uses: actions/setup-go@3041bf56c941b39c61721a86cd11f3bb1338122a
         with:
           go-version: 1.19
           check-latest: true
@@ -79,7 +79,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@cbb722410c2e876e24abbe8de2cc27693e501dcb
       - name: Set up Go
-        uses: actions/setup-go@41dfa10bad2bb2ae585af6ee5bb4d7d973ad74ed
+        uses: actions/setup-go@3041bf56c941b39c61721a86cd11f3bb1338122a
         with:
           go-version: 1.19
           check-latest: true
