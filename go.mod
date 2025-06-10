@@ -1,6 +1,6 @@
 module github.com/uwu-tools/gh-jira-issue-sync
 
-go 1.20
+go 1.22.0
 
 // TODO(deps): Revert the dependency on github.com/uwu-tools/go-jira/v2 once
 //             https://github.com/andygrunwald/go-jira/pull/640 has merged.
@@ -35,7 +35,7 @@ require (
 	github.com/ProtonMail/go-crypto v0.0.0-20230923063757-afb1ddc0824c // indirect
 	github.com/andybalholm/brotli v1.0.6 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
-	github.com/cloudflare/circl v1.3.7 // indirect
+	github.com/cloudflare/circl v1.6.1 // indirect
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be // indirect
 	github.com/cyphar/filepath-securejoin v0.2.4 // indirect
 	github.com/dsnet/compress v0.0.2-0.20210315054119-f66993602bf5 // indirect
