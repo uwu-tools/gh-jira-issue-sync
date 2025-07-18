@@ -1,6 +1,6 @@
 module github.com/uwu-tools/gh-jira-issue-sync
 
-go 1.20
+go 1.23.0
 
 // TODO(deps): Revert the dependency on github.com/uwu-tools/go-jira/v2 once
 //             https://github.com/andygrunwald/go-jira/pull/640 has merged.
@@ -22,7 +22,7 @@ require (
 	github.com/trivago/tgo v1.0.7
 	github.com/uwu-tools/go-jira/v2 v2.0.0-20230801175343-52f822b5cb80
 	github.com/uwu-tools/magex v0.10.0
-	golang.org/x/oauth2 v0.24.0
+	golang.org/x/oauth2 v0.27.0
 	golang.org/x/term v0.26.0
 	sigs.k8s.io/release-sdk v0.10.4
 	sigs.k8s.io/release-utils v0.7.7
