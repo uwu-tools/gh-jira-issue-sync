@@ -1,6 +1,6 @@
 module github.com/uwu-tools/gh-jira-issue-sync
 
-go 1.20
+go 1.24.0
 
 // TODO(deps): Revert the dependency on github.com/uwu-tools/go-jira/v2 once
 //             https://github.com/andygrunwald/go-jira/pull/640 has merged.
@@ -23,7 +23,7 @@ require (
 	github.com/uwu-tools/go-jira/v2 v2.0.0-20230801175343-52f822b5cb80
 	github.com/uwu-tools/magex v0.10.0
 	golang.org/x/oauth2 v0.24.0
-	golang.org/x/term v0.26.0
+	golang.org/x/term v0.37.0
 	sigs.k8s.io/release-sdk v0.10.4
 	sigs.k8s.io/release-utils v0.7.7
 )
@@ -74,13 +74,14 @@ require (
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/crypto v0.21.0 // indirect
+	golang.org/x/crypto v0.45.0 // indirect
 	golang.org/x/exp v0.0.0-20231006140011-7918f672742d // indirect
-	golang.org/x/mod v0.13.0 // indirect
-	golang.org/x/net v0.23.0 // indirect
-	golang.org/x/sys v0.27.0 // indirect
-	golang.org/x/text v0.14.0 // indirect
-	golang.org/x/tools v0.14.0 // indirect
+	golang.org/x/mod v0.29.0 // indirect
+	golang.org/x/net v0.47.0 // indirect
+	golang.org/x/sync v0.18.0 // indirect
+	golang.org/x/sys v0.38.0 // indirect
+	golang.org/x/text v0.31.0 // indirect
+	golang.org/x/tools v0.38.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
